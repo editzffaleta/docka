@@ -11,6 +11,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.applicationIconImage = icon
         }
         TrayController.shared.start()
+        if CommandLine.arguments.contains("--demo") {
+            TrayController.shared.startDemo()
+        }
         HotKeyManager.shared.onPress = { TrayController.shared.toggleFromHotKey() }
         HotKeyManager.shared.register()
     }

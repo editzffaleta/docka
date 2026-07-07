@@ -55,6 +55,10 @@ final class DockaStore: ObservableObject {
     @Published var trayVisible = false
     @Published var pinnedOpen = false      // aberta pelo atalho global: não auto-esconde
 
+    // modo demo (--demo): bandeja fixa + hover simulado varrendo os ícones
+    @Published var demoHoverX: CGFloat? = nil
+    var demoMode = false
+
     func move(_ path: String, before target: String) {
         guard let from = apps.firstIndex(where: { $0.path == path }),
               let to = apps.firstIndex(where: { $0.path == target }),

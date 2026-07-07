@@ -128,6 +128,22 @@ final class TrayController {
             reveal()
         }
     }
+
+    // modo demo: fixa a bandeja aberta e varre um hover simulado pelos ícones
+    func startDemo() {
+        store.demoMode = true
+        store.pinnedOpen = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [self] in
+            reveal()
+            let start = Date()
+            let sweepWidth = CGFloat(max(1, store.apps.count)) * (store.iconSize + 14) + 40
+            Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { _ in
+                let t = Date().timeIntervalSince(start)
+                let phase = 0.5 + 0.5 * sin(t * 2.0 * .pi / 3.0)   // ciclo de 3 s
+                self.store.demoHoverX = 15 + (sweepWidth - 30) * phase
+            }
+        }
+    }
 }
 
 // MARK: - A bandeja em si (vidro + ícones com magnificação estilo Dock)
@@ -157,10 +173,15 @@ struct TrayView: View {
             .compactMap { $0.bundleURL?.path })
     }
 
+    // no modo demo o hover vem do varredor simulado
+    private var effectiveHoverX: CGFloat? {
+        store.demoMode ? store.demoHoverX : hoverX
+    }
+
     private var tray: some View {
         HStack(alignment: .bottom, spacing: 4) {
             ForEach(store.apps) { app in
-                TrayIcon(app: app, hoverX: hoverX, baseSize: store.iconSize,
+                TrayIcon(app: app, hoverX: effectiveHoverX, baseSize: store.iconSize,
                          isRunning: running.contains(app.path)) {
                     store.playSound("Tink")
                     app.launch()

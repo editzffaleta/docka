@@ -19,6 +19,10 @@
   <img src="https://img.shields.io/badge/licen%C3%A7a-MIT-green?style=flat-square" alt="Licença MIT" />
 </p>
 
+<p align="center">
+  <img src="assets/demo.gif" width="780" alt="Docka — bandeja com magnificação de ícones estilo Dock" />
+</p>
+
 ---
 
 ## O que é o Docka?
@@ -109,12 +113,16 @@ swift run
 Na primeira execução, o onboarding abre para você escolher os apps.
 Depois, empurre o cursor até a borda inferior direita da tela — ou pressione **⌘⇧D**. ✨
 
-### Regenerar a logo
+### Regenerar a logo e o demo
 
-A logo é arte gerada por código:
+A logo é arte gerada por código, e o GIF de demonstração é capturado do app real
+rodando em modo demo (`--demo` fixa a bandeja aberta com um hover simulado):
 
 ```bash
-swift scripts/make_logo.swift
+swift scripts/make_logo.swift                                # logo
+.build/debug/Docka --demo &                                  # bandeja em modo demo
+# capture frames com screencapture -R e depois:
+swift scripts/make_gif.swift <pasta-dos-frames> assets/demo.gif
 ```
 
 ## Licença
