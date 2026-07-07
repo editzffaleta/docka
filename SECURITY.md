@@ -16,7 +16,7 @@ migrações de dados, atualizar é sempre seguro: basta substituir o app.
 
 1. Use a aba **[Security → Report a vulnerability](https://github.com/editzffaleta/docka/security/advisories/new)**
    do GitHub (relato privado), ou
-2. Envie e-mail para **brunofaleta0@gmail.com** com o assunto `[SEGURANÇA] Docka`.
+2. Envie e-mail para **iosgithub.unsaddle264@passmail.com** com o assunto `[SEGURANÇA] Docka`.
 
 Inclua, se possível:
 - Versão do Docka e do macOS
