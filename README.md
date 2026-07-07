@@ -10,6 +10,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/editzffaleta/docka/releases/latest"><img src="https://img.shields.io/github/v/release/editzffaleta/docka?style=flat-square&color=14b8a6&label=download" alt="Download" /></a>
   <a href="https://github.com/editzffaleta/docka/stargazers"><img src="https://img.shields.io/github/stars/editzffaleta/docka?style=flat-square&color=gold" alt="Estrelas no GitHub" /></a>
   <img src="https://img.shields.io/badge/plataforma-macOS%2014%2B-blue?style=flat-square" alt="macOS 14+" />
   <img src="https://img.shields.io/badge/swift-5.9-orange?style=flat-square" alt="Swift 5.9" />
@@ -65,6 +66,16 @@ Perfeita para quem mantém o Dock enxuto mas quer um segundo escalão de apps se
 | **Onboarding em 3 passos** | Boas-vindas → escolha de apps (grade com busca) → modo de revelação |
 | **Barra de menus** | Ícone com atalhos rápidos: sons, Pressure Zone, configurações e encerrar |
 
+### O gerenciador
+
+<p align="center">
+  <img src="assets/manager.png" width="780" alt="Gerenciador do Docka — escolha de apps, prévia da bandeja e ajustes" />
+</p>
+
+Janela única com três abas: **Apps** (prévia da bandeja + grade de todos os apps
+instalados com busca), **Comportamento** (ampliação, posição, indicadores, quique,
+Pressure Zone, sons e calibração ao vivo) e **Sobre**.
+
 ## Arquitetura
 
 ```
@@ -102,6 +113,14 @@ A maioria dos utilitários de borda de tela pede Acessibilidade ou Monitoramento
 
 ## Instalação
 
+### DMG (recomendado)
+
+Baixe o instalador na [página de releases](https://github.com/editzffaleta/docka/releases/latest),
+abra o DMG e arraste o **Docka** para **Aplicativos**. Como o app não é notarizado,
+no primeiro uso clique com o botão direito no ícone → **Abrir**.
+
+### Compilar do código-fonte
+
 Requisitos: macOS 14+ e as Command Line Tools do Xcode.
 
 ```bash
@@ -123,6 +142,7 @@ swift scripts/make_logo.swift                                # logo
 .build/debug/Docka --demo &                                  # bandeja em modo demo
 # capture frames com screencapture -R e depois:
 swift scripts/make_gif.swift <pasta-dos-frames> assets/demo.gif
+./scripts/make_dmg.sh 1.0.0                                  # Docka.app + instalador DMG
 ```
 
 ## Licença

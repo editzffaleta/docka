@@ -58,7 +58,12 @@ final class TrayController {
         let icon = store.iconSize
         // largura: ícones + espaçamentos + padding do vidro + margem p/ magnificação
         let width = CGFloat(count) * (icon + 14) + 150
-        let x = screen.frame.maxX - width - store.offsetX
+        let x: CGFloat
+        switch store.position {
+        case "left":   x = screen.frame.minX + store.offsetX
+        case "center": x = screen.frame.midX - width / 2
+        default:       x = screen.frame.maxX - width - store.offsetX
+        }
         panel.setFrame(NSRect(x: x, y: screen.frame.minY, width: width, height: trayHeight),
                        display: true)
     }
@@ -82,9 +87,8 @@ final class TrayController {
             let inZoneX = loc.x >= f.minX - 8 && loc.x <= f.maxX + 8
             let shouldReveal: Bool
             if store.pressureZone {
-                // só quando o cursor é EMPURRADO contra o canto inferior direito
-                shouldReveal = loc.y <= bottomY + 1
-                    && loc.x >= screen.frame.maxX - f.width - store.offsetX - 8
+                // só quando o cursor é EMPURRADO contra a borda, dentro da zona
+                shouldReveal = loc.y <= bottomY + 1 && inZoneX
             } else {
                 shouldReveal = loc.y <= bottomY + 2 && inZoneX
             }
@@ -182,7 +186,9 @@ struct TrayView: View {
         HStack(alignment: .bottom, spacing: 4) {
             ForEach(store.apps) { app in
                 TrayIcon(app: app, hoverX: effectiveHoverX, baseSize: store.iconSize,
-                         isRunning: running.contains(app.path)) {
+                         maxBoost: store.magnification,
+                         isRunning: running.contains(app.path) && store.showIndicators,
+                         bounceEnabled: store.bounceOnLaunch) {
                     store.playSound("Tink")
                     app.launch()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { refreshRunning() }
@@ -259,24 +265,26 @@ struct TrayIcon: View {
     let app: PinnedApp
     let hoverX: CGFloat?
     let baseSize: Double
+    var maxBoost: Double = 0.75                // 0 = ampliação desativada
     let isRunning: Bool
+    var bounceEnabled = true
     let action: () -> Void
 
     @State private var frameX: CGFloat = 0
     @State private var pressed = false
     @State private var bounce: CGFloat = 0     // deslocamento Y do quique
 
-    private let maxBoost: CGFloat = 0.75       // até 1.75× como o Dock
-
     private var scale: CGFloat {
-        guard let hx = hoverX, frameX > 0 else { return 1 }
+        guard maxBoost > 0, let hx = hoverX, frameX > 0 else { return 1 }
         let d = abs(hx - frameX)
         let sigma: CGFloat = 64
         let boost = exp(-(d * d) / (2 * sigma * sigma))   // curva gaussiana 0…1
         return 1 + maxBoost * boost
     }
 
-    private var magnified: Bool { scale > 1.55 }
+    private var magnified: Bool {
+        maxBoost > 0 && scale > 1 + maxBoost * 0.72
+    }
 
     var body: some View {
         Button {
@@ -352,6 +360,7 @@ struct TrayIcon: View {
 
     // quique duplo, como o Dock ao abrir um app
     private func launchBounce() {
+        guard bounceEnabled else { return }
         func hop(_ height: CGFloat, delay: Double, fall: Double) {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                 withAnimation(.easeOut(duration: 0.22)) { bounce = -height }

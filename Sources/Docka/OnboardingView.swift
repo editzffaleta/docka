@@ -42,17 +42,9 @@ struct OnboardingView: View {
         VStack(spacing: 18) {
             Spacer()
 
-            ZStack {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .fill(LinearGradient(colors: [Theme.accent, Theme.accent.opacity(0.6)],
-                                         startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 110, height: 110)
-                    .pulseGlow(Theme.accent)
-                Image(systemName: "tray.full.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.white)
-            }
-            .reveal(delay: 0.05)
+            AppLogo(size: 116)
+                .pulseGlow(Theme.accent)
+                .reveal(delay: 0.05)
 
             Text("Bem-vindo ao Docka")
                 .font(.system(size: 36, weight: .bold))

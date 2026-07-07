@@ -12,15 +12,7 @@ struct SettingsWindowView: View {
             VStack(spacing: 18) {
                 // cabeçalho
                 HStack(spacing: 12) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(LinearGradient(colors: [Theme.accent, Theme.accent.opacity(0.6)],
-                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 44, height: 44)
-                        Image(systemName: "tray.full.fill")
-                            .font(.system(size: 20))
-                            .foregroundStyle(.white)
-                    }
+                    AppLogo(size: 48)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Docka").font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
                         Text("Empurre o cursor para a borda inferior direita para revelar a bandeja")
@@ -135,6 +127,16 @@ struct SettingsWindowView: View {
                            desc: "Mantém o Docka alinhado quando o Dock muda de tamanho.",
                            on: Binding(get: { store.followDock }, set: { store.followDock = $0 }))
 
+                settingRow(icon: "arrow.up.circle",
+                           title: "Animar abertura de aplicativos",
+                           desc: "O ícone quica duas vezes enquanto o app abre.",
+                           on: Binding(get: { store.bounceOnLaunch }, set: { store.bounceOnLaunch = $0 }))
+
+                settingRow(icon: "smallcircle.filled.circle",
+                           title: "Mostrar indicadores para aplicativos abertos",
+                           desc: "Bolinha branca sob cada app em execução.",
+                           on: Binding(get: { store.showIndicators }, set: { store.showIndicators = $0 }))
+
                 // calibração
                 VStack(alignment: .leading, spacing: 14) {
                     Label("Calibração", systemImage: "slider.horizontal.3")
@@ -163,6 +165,32 @@ struct SettingsWindowView: View {
                     }
                     Slider(value: Binding(get: { store.iconSize }, set: { store.iconSize = $0 }),
                            in: 32...64, step: 4).tint(Theme.accent)
+
+                    HStack {
+                        Text("Ampliação")
+                            .font(.system(size: 12.5)).foregroundStyle(.white.opacity(0.75))
+                        Spacer()
+                        Text(store.magnification == 0 ? "Desativada" : "\(Int(store.magnification * 100))%")
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(Theme.accent)
+                            .contentTransition(.numericText())
+                    }
+                    Slider(value: Binding(get: { store.magnification }, set: { store.magnification = $0 }),
+                           in: 0...1).tint(Theme.accent)
+
+                    HStack {
+                        Text("Posição da bandeja na tela")
+                            .font(.system(size: 12.5)).foregroundStyle(.white.opacity(0.75))
+                        Spacer()
+                        Picker("", selection: Binding(get: { store.position },
+                                                      set: { store.position = $0 })) {
+                            Text("Esquerda").tag("left")
+                            Text("Centro").tag("center")
+                            Text("Direita").tag("right")
+                        }
+                        .pickerStyle(.segmented)
+                        .fixedSize()
+                    }
 
                     Text("Dica: mexa nos valores e empurre o cursor para a borda para testar na hora.")
                         .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
@@ -213,17 +241,9 @@ struct SettingsWindowView: View {
     private var aboutTab: some View {
         VStack(spacing: 14) {
             Spacer()
-            ZStack {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(LinearGradient(colors: [Theme.accent, Theme.accent.opacity(0.6)],
-                                         startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 90, height: 90)
-                    .pulseGlow(Theme.accent)
-                Image(systemName: "tray.full.fill")
-                    .font(.system(size: 40)).foregroundStyle(.white)
-            }
+            AppLogo(size: 96).pulseGlow(Theme.accent)
             Text("Docka").font(.system(size: 26, weight: .bold)).foregroundStyle(.white)
-            Text("Versão 2.0.0 (recriação em SwiftUI)")
+            Text("Versão 1.0.0")
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundStyle(.white.opacity(0.5))
             Text("Uma bandeja de apps que vive na borda da sua tela.")

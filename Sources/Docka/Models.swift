@@ -73,8 +73,12 @@ final class DockaStore: ObservableObject {
     @AppStorage("docka.sounds") var soundsEnabled = true
     @AppStorage("docka.pressureZone") var pressureZone = false
     @AppStorage("docka.followDock") var followDock = true
-    @AppStorage("docka.offsetX") var offsetX = 24.0        // distância da borda direita
+    @AppStorage("docka.offsetX") var offsetX = 24.0        // distância da borda
     @AppStorage("docka.iconSize") var iconSize = 48.0
+    @AppStorage("docka.magnification") var magnification = 0.75  // 0 = desativada
+    @AppStorage("docka.showIndicators") var showIndicators = true
+    @AppStorage("docka.bounceOnLaunch") var bounceOnLaunch = true
+    @AppStorage("docka.position") var position = "right"   // left | center | right
 
     private init() {
         let saved = UserDefaults.standard.stringArray(forKey: "docka.apps") ?? []

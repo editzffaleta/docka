@@ -163,3 +163,24 @@ struct PrimaryButton: View {
         .onHover { hovering = $0 }
     }
 }
+
+// Logo do app (carregada dos recursos do pacote)
+struct AppLogo: View {
+    var size: CGFloat
+
+    var body: some View {
+        if let url = Bundle.module.url(forResource: "logo-256", withExtension: "png",
+                                       subdirectory: "Assets"),
+           let img = NSImage(contentsOf: url) {
+            Image(nsImage: img)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: size, height: size)
+                .shadow(color: Theme.accent.opacity(0.45), radius: size * 0.16, y: 3)
+        } else {
+            Image(systemName: "tray.full.fill")
+                .font(.system(size: size * 0.5))
+                .foregroundStyle(Theme.accent)
+        }
+    }
+}
