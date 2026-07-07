@@ -1,11 +1,25 @@
 #!/bin/bash
 # Monta o Docka.app e o instalador DMG.
+#
 # Uso: ./scripts/make_dmg.sh [versao]   (padrão: 1.0.0)
+#
+# Sem variáveis extras → assinatura ad-hoc (usuário precisa de clique-direito → Abrir).
+# Com uma conta Apple Developer, exporte antes de rodar e o script assina com
+# Developer ID, notariza na Apple e grampeia o carimbo — zero avisos do Gatekeeper:
+#
+#   export DOCKA_SIGN_ID="Developer ID Application: Seu Nome (TEAMID)"
+#   export DOCKA_NOTARY_PROFILE="docka-notary"
+#
+# O perfil de notarização é criado uma única vez com:
+#   xcrun notarytool store-credentials docka-notary \
+#     --apple-id seu@email.com --team-id TEAMID --password <senha-de-app>
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 VERSION="${1:-1.0.0}"
 APP="dist/Docka.app"
+SIGN_ID="${DOCKA_SIGN_ID:-}"
+NOTARY_PROFILE="${DOCKA_NOTARY_PROFILE:-}"
 
 echo "▸ compilando (release)…"
 swift build -c release 2>&1 | tail -1
@@ -47,17 +61,38 @@ cat > "$APP/Contents/Info.plist" << PLIST
 </plist>
 PLIST
 
-echo "▸ assinando (ad-hoc)…"
-codesign --force --deep -s - "$APP" 2>/dev/null
+if [[ -n "$SIGN_ID" ]]; then
+    echo "▸ assinando com Developer ID…"
+    codesign --force --deep --options runtime --timestamp \
+        -s "$SIGN_ID" "$APP"
+else
+    echo "▸ assinando (ad-hoc — usuários precisarão de clique-direito → Abrir)…"
+    codesign --force --deep -s - "$APP" 2>/dev/null
+fi
 
 echo "▸ criando DMG…"
+DMG="dist/Docka-${VERSION}.dmg"
 DMGROOT="dist/dmg"
 mkdir -p "$DMGROOT"
 cp -R "$APP" "$DMGROOT/"
 ln -s /Applications "$DMGROOT/Applications"
-hdiutil create -volname "Docka" -srcfolder "$DMGROOT" -ov -format UDZO \
-    "dist/Docka-${VERSION}.dmg" >/dev/null
+hdiutil create -volname "Docka" -srcfolder "$DMGROOT" -ov -format UDZO "$DMG" >/dev/null
 rm -rf "$DMGROOT"
 
-echo "✓ dist/Docka-${VERSION}.dmg pronto"
-ls -lh "dist/Docka-${VERSION}.dmg"
+if [[ -n "$SIGN_ID" && -n "$NOTARY_PROFILE" ]]; then
+    echo "▸ assinando o DMG…"
+    codesign --force --timestamp -s "$SIGN_ID" "$DMG"
+
+    echo "▸ enviando para notarização (pode levar alguns minutos)…"
+    xcrun notarytool submit "$DMG" --keychain-profile "$NOTARY_PROFILE" --wait
+
+    echo "▸ grampeando o carimbo de notarização…"
+    xcrun stapler staple "$APP"
+    xcrun stapler staple "$DMG"
+    echo "✓ notarizado — abre sem nenhum aviso do Gatekeeper"
+elif [[ -n "$SIGN_ID" ]]; then
+    echo "⚠ assinado com Developer ID, mas sem notarização (defina DOCKA_NOTARY_PROFILE)"
+fi
+
+echo "✓ $DMG pronto"
+ls -lh "$DMG"

@@ -145,6 +145,12 @@ swift scripts/make_gif.swift <pasta-dos-frames> assets/demo.gif
 ./scripts/make_dmg.sh 1.0.0                                  # Docka.app + instalador DMG
 ```
 
+O `make_dmg.sh` também sabe assinar e notarizar: com uma conta Apple Developer,
+exporte `DOCKA_SIGN_ID` (identidade Developer ID) e `DOCKA_NOTARY_PROFILE`
+(perfil do `notarytool`) antes de rodar e o DMG sai notarizado e grampeado —
+sem nenhum aviso do Gatekeeper. Sem as variáveis, o script usa assinatura
+ad-hoc, e o primeiro uso pede clique-direito → Abrir.
+
 ## Licença
 
 MIT — veja [LICENSE](LICENSE).
