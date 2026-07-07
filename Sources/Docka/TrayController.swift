@@ -44,36 +44,55 @@ final class TrayController {
         panel.orderFrontRegardless()
     }
 
+    // tela onde a bandeja está atualmente (segue o mouse entre monitores)
+    private var currentScreen: NSScreen? = NSScreen.main
+
+    private func screenUnderMouse() -> NSScreen? {
+        let loc = NSEvent.mouseLocation
+        return NSScreen.screens.first { NSMouseInRect(loc, $0.frame, false) } ?? NSScreen.main
+    }
+
     private func layoutPanel() {
-        guard let screen = NSScreen.main else { return }
+        guard let screen = currentScreen else { return }
         let count = max(1, store.apps.count)
         let icon = store.iconSize
         // largura: ícones + espaçamentos + padding do vidro + margem p/ magnificação
         let width = CGFloat(count) * (icon + 14) + 150
         let x = screen.frame.maxX - width - store.offsetX
-        panel.setFrame(NSRect(x: x, y: 0, width: width, height: trayHeight), display: true)
+        panel.setFrame(NSRect(x: x, y: screen.frame.minY, width: width, height: trayHeight),
+                       display: true)
     }
 
     // MARK: - Detecção do mouse (polling, sem permissões)
 
     private func tick() {
-        guard store.onboarded, !store.apps.isEmpty, let screen = NSScreen.main else { return }
+        guard store.onboarded, !store.apps.isEmpty else { return }
         let loc = NSEvent.mouseLocation
+
+        // multi-monitor: a bandeja acompanha a tela onde o cursor está
+        if !store.trayVisible, let s = screenUnderMouse(), s != currentScreen {
+            currentScreen = s
+            layoutPanel()
+        }
+        guard let screen = currentScreen else { return }
         let f = panel.frame
+        let bottomY = screen.frame.minY
 
         if !store.trayVisible {
             let inZoneX = loc.x >= f.minX - 8 && loc.x <= f.maxX + 8
             let shouldReveal: Bool
             if store.pressureZone {
                 // só quando o cursor é EMPURRADO contra o canto inferior direito
-                shouldReveal = loc.y <= 1 && loc.x >= screen.frame.maxX - f.width - store.offsetX - 8
+                shouldReveal = loc.y <= bottomY + 1
+                    && loc.x >= screen.frame.maxX - f.width - store.offsetX - 8
             } else {
-                shouldReveal = loc.y <= 2 && inZoneX
+                shouldReveal = loc.y <= bottomY + 2 && inZoneX
             }
             if shouldReveal { reveal() }
-        } else {
-            // esconde quando o cursor sai da região da bandeja
-            let inside = loc.x >= f.minX - 30 && loc.x <= f.maxX + 30 && loc.y <= trayHeight + 30
+        } else if !store.pinnedOpen {
+            // esconde quando o cursor sai da região da bandeja (exceto se fixada por atalho)
+            let inside = loc.x >= f.minX - 30 && loc.x <= f.maxX + 30
+                && loc.y <= bottomY + trayHeight + 30
             if inside {
                 hideDelay = 0
             } else {
@@ -92,8 +111,21 @@ final class TrayController {
     }
 
     private func hide() {
+        store.pinnedOpen = false
         withAnimation(.spring(duration: 0.32)) {
             store.trayVisible = false
+        }
+    }
+
+    // alternado pelo atalho global ⌘⇧D
+    func toggleFromHotKey() {
+        if store.trayVisible {
+            hide()
+        } else {
+            currentScreen = screenUnderMouse()
+            layoutPanel()
+            store.pinnedOpen = true
+            reveal()
         }
     }
 }
@@ -126,7 +158,7 @@ struct TrayView: View {
     }
 
     private var tray: some View {
-        HStack(alignment: .bottom, spacing: 6) {
+        HStack(alignment: .bottom, spacing: 4) {
             ForEach(store.apps) { app in
                 TrayIcon(app: app, hoverX: hoverX, baseSize: store.iconSize,
                          isRunning: running.contains(app.path)) {
@@ -134,14 +166,29 @@ struct TrayView: View {
                     app.launch()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { refreshRunning() }
                 }
+                // arrastar o ícone (reordenar) — o payload é a URL do próprio .app
+                .draggable(URL(fileURLWithPath: app.path))
+                // soltar em cima: outro ícone do Docka = reordenar; arquivos = abrir com o app
+                .dropDestination(for: URL.self) { urls, _ in
+                    guard let first = urls.first else { return false }
+                    if store.apps.contains(where: { $0.path == first.path }) {
+                        withAnimation(.spring(duration: 0.35)) {
+                            store.move(first.path, before: app.path)
+                        }
+                    } else {
+                        app.open(files: urls)
+                        store.playSound("Tink")
+                    }
+                    return true
+                }
             }
 
             // separador + engrenagem
             RoundedRectangle(cornerRadius: 1)
-                .fill(.white.opacity(0.15))
-                .frame(width: 1.5, height: store.iconSize * 0.7)
-                .padding(.horizontal, 4)
-                .padding(.bottom, 8)
+                .fill(.white.opacity(0.2))
+                .frame(width: 1, height: store.iconSize * 0.75)
+                .padding(.horizontal, 3)
+                .padding(.bottom, 10)
 
             Button {
                 NSApp.setActivationPolicy(.regular)
@@ -157,23 +204,22 @@ struct TrayView: View {
             .buttonStyle(.plain)
             .padding(.bottom, 10)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
+        // visual do Dock real: vidro claro translúcido, padding justo, borda fina
+        .padding(.horizontal, 10)
+        .padding(.top, 6)
+        .padding(.bottom, 5)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(.ultraThinMaterial)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(.regularMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(Theme.card.opacity(0.45))
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(Color.white.opacity(0.06))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(colors: [.white.opacity(0.35), .white.opacity(0.06)],
-                                           startPoint: .top, endPoint: .bottom),
-                            lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .strokeBorder(.white.opacity(0.14), lineWidth: 0.8)
                 )
-                .shadow(color: .black.opacity(0.45), radius: 22, y: 8)
+                .shadow(color: .black.opacity(0.35), radius: 16, y: 6)
         )
         .coordinateSpace(name: "tray")
         .onContinuousHover(coordinateSpace: .named("tray")) { phase in
@@ -240,6 +286,17 @@ struct TrayIcon: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        // clique-direito: ações do ícone
+        .contextMenu {
+            Button("Abrir") { action() }
+            Button("Mostrar no Finder") { app.revealInFinder() }
+            Divider()
+            Button("Remover do Docka", role: .destructive) {
+                withAnimation(.spring(duration: 0.35)) {
+                    DockaStore.shared.toggle(app.path)
+                }
+            }
+        }
         // balão com o nome sobre o ícone ampliado
         .overlay(alignment: .top) {
             if magnified {

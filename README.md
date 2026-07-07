@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Sources/Docka/Assets/logo-256.png" width="128" alt="Logo do Docka">
+</p>
+
 # Docka
 
 Uma bandeja de apps que vive escondida na borda inferior da tela do seu Mac.
@@ -21,6 +25,11 @@ Empurre o cursor para a borda e ela desliza para cima — com magnificação de
   com efeito imediato
 - 🔊 Sons de sistema opcionais ao revelar e ao abrir apps
 - 🧭 Onboarding em 3 passos + ícone na barra de menus com atalhos rápidos
+- 📦 **Arraste arquivos** sobre um ícone para abri-los com aquele app
+- ↔️ **Reordene os ícones** arrastando um sobre o outro
+- 🖱️ **Clique-direito** em um ícone: Abrir, Mostrar no Finder, Remover
+- ⌨️ **Atalho global ⌘⇧D** para mostrar/esconder a bandeja (fica fixa até fechar)
+- 🖥️ **Multi-monitor**: a bandeja aparece na tela onde o cursor está
 
 ## Como funciona
 
@@ -50,6 +59,7 @@ Sources/Docka/
 ├── DockaApp.swift          # @main, MenuBarExtra, janela principal
 ├── Models.swift            # DockaStore (estado + preferências), PinnedApp
 ├── TrayController.swift    # NSPanel da bandeja + magnificação + polling do mouse
+├── HotKey.swift            # atalho global ⌘⇧D (Carbon, sem permissões)
 ├── OnboardingView.swift    # fluxo de boas-vindas em 3 passos
 ├── SettingsWindowView.swift# abas Apps / Comportamento / Sobre
 └── Effects.swift           # glass cards, aurora, partículas, botões

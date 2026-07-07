@@ -1,12 +1,12 @@
 import SwiftUI
 import Combine
 
-// Paleta do app (tema escuro premium, accent azul-gelo)
+// Paleta do app (tema escuro premium, accent azul-turquesa — mesma cor da logo)
 enum Theme {
-    static let accent = Color(red: 0.45, green: 0.72, blue: 0.98)
-    static let bgTop = Color(red: 0.07, green: 0.10, blue: 0.16)
-    static let bgBottom = Color(red: 0.03, green: 0.045, blue: 0.08)
-    static let card = Color(red: 0.10, green: 0.14, blue: 0.21)
+    static let accent = Color(red: 0.13, green: 0.83, blue: 0.76)
+    static let bgTop = Color(red: 0.05, green: 0.12, blue: 0.13)
+    static let bgBottom = Color(red: 0.02, green: 0.06, blue: 0.07)
+    static let card = Color(red: 0.08, green: 0.16, blue: 0.17)
 }
 
 // MARK: - App fixado na bandeja
@@ -19,12 +19,25 @@ struct PinnedApp: Identifiable, Hashable {
         (path as NSString).lastPathComponent.replacingOccurrences(of: ".app", with: "")
     }
     var icon: NSImage {
-        NSWorkspace.shared.icon(forFile: path)
+        // pede a representação grande: sem isso o macOS entrega 32px e o ícone
+        // fica borrado/lavado quando ampliado
+        let img = NSWorkspace.shared.icon(forFile: path)
+        img.size = NSSize(width: 256, height: 256)
+        return img
     }
 
     func launch() {
         NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: path),
                                            configuration: .init(), completionHandler: nil)
+    }
+
+    func revealInFinder() {
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+    }
+
+    func open(files: [URL]) {
+        NSWorkspace.shared.open(files, withApplicationAt: URL(fileURLWithPath: path),
+                                configuration: .init(), completionHandler: nil)
     }
 }
 
@@ -40,6 +53,16 @@ final class DockaStore: ObservableObject {
 
     // bandeja
     @Published var trayVisible = false
+    @Published var pinnedOpen = false      // aberta pelo atalho global: não auto-esconde
+
+    func move(_ path: String, before target: String) {
+        guard let from = apps.firstIndex(where: { $0.path == path }),
+              let to = apps.firstIndex(where: { $0.path == target }),
+              from != to else { return }
+        let app = apps.remove(at: from)
+        // após remover, o alvo desloca 1 posição p/ trás quando vinha depois do arrastado
+        apps.insert(app, at: from < to ? to - 1 : to)
+    }
 
     // ajustes
     @AppStorage("docka.onboarded") var onboarded = false

@@ -5,7 +5,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         NSApp.windows.first?.makeKeyAndOrderFront(nil)
+        if let url = Bundle.module.url(forResource: "logo", withExtension: "png",
+                                       subdirectory: "Assets"),
+           let icon = NSImage(contentsOf: url) {
+            NSApp.applicationIconImage = icon
+        }
         TrayController.shared.start()
+        HotKeyManager.shared.onPress = { TrayController.shared.toggleFromHotKey() }
+        HotKeyManager.shared.register()
     }
 }
 

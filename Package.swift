@@ -5,6 +5,7 @@ let package = Package(
     name: "Docka",
     platforms: [.macOS(.v14)],
     targets: [
-        .executableTarget(name: "Docka", path: "Sources/Docka")
+        .executableTarget(name: "Docka", path: "Sources/Docka",
+                          resources: [.copy("Assets")])
     ]
 )
