@@ -151,6 +151,14 @@ exporte `DOCKA_SIGN_ID` (identidade Developer ID) e `DOCKA_NOTARY_PROFILE`
 sem nenhum aviso do Gatekeeper. Sem as variáveis, o script usa assinatura
 ad-hoc, e o primeiro uso pede clique-direito → Abrir.
 
+## Comunidade
+
+- **[Contribuindo](CONTRIBUTING.md)** — como preparar o ambiente, princípios do
+  projeto (zero dependências, zero permissões), estilo de código e processo de PR
+- **[Política de Segurança](SECURITY.md)** — como reportar vulnerabilidades em
+  privado, prazos de resposta e o modelo de segurança do app
+- **[Issues](https://github.com/editzffaleta/docka/issues)** — bugs e ideias
+
 ## Licença
 
 MIT — veja [LICENSE](LICENSE).
