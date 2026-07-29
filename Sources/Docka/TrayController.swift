@@ -51,7 +51,7 @@ final class TrayController {
         let host = NSHostingView(rootView: TrayView().environmentObject(store))
         panel.contentView = host
         layoutPanel()
-        panel.orderFrontRegardless()
+        // nasce fora da tela: quem traz o painel para frente é o reveal()
     }
 
     // tela onde a bandeja está atualmente (segue o mouse entre monitores)
@@ -115,8 +115,17 @@ final class TrayController {
         NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
     }
 
+    /// Tira o painel da tela depois que a animação de saída termina.
+    private var retirada: DispatchWorkItem?
+
     private func reveal() {
         hideDelay = 0
+        retirada?.cancel()
+        retirada = nil
+        // O painel só fica na tela enquanto a bandeja está aberta. Antes ele vivia
+        // ali com opacidade 0, e o Liquid Glass seguia amostrando o fundo o tempo
+        // todo — vidro custa GPU mesmo invisível.
+        panel.orderFrontRegardless()
         store.playSound("Pop")
         // com Reduzir Movimento a bandeja aparece por opacidade, sem subir nem quicar
         withAnimation(reduceMotion ? .easeOut(duration: 0.18)
@@ -130,6 +139,13 @@ final class TrayController {
         withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.32)) {
             store.trayVisible = false
         }
+        let item = DispatchWorkItem { [weak self] in
+            // um reveal no meio da saída cancela isto, mas confere de novo
+            guard let self, !self.store.trayVisible else { return }
+            self.panel.orderOut(nil)
+        }
+        retirada = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: item)
     }
 
     // alternado pelo atalho global ⌘⇧D

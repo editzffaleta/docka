@@ -42,8 +42,10 @@ extension View {
 
 /// O balão com o nome do app.
 ///
-/// No Dock ele é uma cápsula escura simples, sem borda clara — a borda branca
-/// que estava aqui é o tipo de detalhe que denuncia um app de terceiros.
+/// Cápsula escura sólida, de propósito: ela fica POR CIMA do vidro da bandeja, e
+/// vidro não consegue amostrar vidro — empilhar `glassEffect` aqui é vidro sobre
+/// vidro, que o próprio sistema não resolve. Também é o que o Dock faz: o rótulo
+/// dele é uma cápsula escura, não um painel de vidro.
 struct DockLabel: View {
     let text: String
 
@@ -53,16 +55,7 @@ struct DockLabel: View {
             .foregroundStyle(.white)
             .padding(.horizontal, 11)
             .padding(.vertical, 5)
-            .background(capsule)
+            .background(Capsule().fill(.black.opacity(0.78)))
             .fixedSize()
-    }
-
-    @ViewBuilder
-    private var capsule: some View {
-        if #available(macOS 26.0, *) {
-            Capsule().fill(.black.opacity(0.55)).glassEffect(.regular, in: .capsule)
-        } else {
-            Capsule().fill(.black.opacity(0.75))
-        }
     }
 }
