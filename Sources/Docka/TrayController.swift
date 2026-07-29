@@ -47,6 +47,7 @@ final class TrayController {
         panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.isFloatingPanel = true
+        panel.acceptsMouseMovedEvents = true   // necessário para o cursorUpdate da alça
 
         let host = NSHostingView(rootView: TrayView().environmentObject(store))
         panel.contentView = host
@@ -191,6 +192,33 @@ final class TrayController {
     }
 }
 
+// Cursor sobre a alça do separador.
+//
+// NSCursor.set() chamado por um app INATIVO é ignorado — o cursor pertence ao
+// app ativo, e o Docka vive em segundo plano. O canal que o AppKit oferece
+// para janelas sem foco é o evento cursorUpdate de uma NSTrackingArea com
+// .activeAlways: o sistema pede o cursor à janela sob o mouse (é assim que o
+// Safari mostra a mãozinha em links mesmo desfocado).
+private struct CursorDeRedimensionar: NSViewRepresentable {
+    final class V: NSView {
+        override func updateTrackingAreas() {
+            super.updateTrackingAreas()
+            trackingAreas.forEach(removeTrackingArea)
+            addTrackingArea(NSTrackingArea(
+                rect: .zero,
+                options: [.cursorUpdate, .activeAlways, .inVisibleRect],
+                owner: self))
+        }
+        override func cursorUpdate(with event: NSEvent) {
+            NSCursor.resizeUpDown.set()
+        }
+        // invisível ao clique: o arrasto e o menu continuam com a SwiftUI abaixo
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    }
+    func makeNSView(context: Context) -> NSView { V() }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
 // MARK: - A bandeja em si (vidro + ícones com magnificação estilo Dock)
 
 struct TrayView: View {
@@ -304,16 +332,7 @@ struct TrayView: View {
                 .padding(.horizontal, TrayGeometry.gap(size: store.iconSize) + 3)
                 .padding(.bottom, TrayGeometry.indicatorRow(size: store.iconSize))
                 .contentShape(Rectangle())          // pegada maior que o traço de 1 pt
-                // O cursor precisa ser REAFIRMADO a cada movimento: num painel
-                // não-ativante o AppKit reseta o cursor sozinho, e um push/pop
-                // único se perde. onContinuousHover dispara por movimento, então
-                // o set() ganha a disputa — é como o Dock se comporta no traço.
-                .onContinuousHover { fase in
-                    switch fase {
-                    case .active: NSCursor.resizeUpDown.set()
-                    case .ended:  NSCursor.arrow.set()
-                    }
-                }
+                .overlay(CursorDeRedimensionar())
                 .gesture(redimensionarPeloSeparador)
                 .contextMenu {
                     Picker("Posição na Tela", selection: $store.position) {
