@@ -13,6 +13,9 @@ enum Secao: String, CaseIterable, Identifiable {
     case geral, apps, aparencia, bandeja, atalho, sobre
     var id: String { rawValue }
 
+    /// As Configurações agrupam a barra lateral em blocos separados por um vão.
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .atalho], [.sobre]]
+
     var titulo: String {
         switch self {
         case .geral:     return "Geral"
@@ -64,26 +67,90 @@ struct IconeSecao: View {
 struct SettingsWindowView: View {
     @EnvironmentObject var store: DockaStore
     @State private var secao: Secao = .geral
+    @State private var busca = ""
+    /// Histórico de navegação, para os botões voltar/avançar funcionarem de fato.
+    @State private var anteriores: [Secao] = []
+    @State private var posteriores: [Secao] = []
 
     var body: some View {
         NavigationSplitView {
-            List(Secao.allCases, selection: $secao) { s in
-                NavigationLink(value: s) {
-                    Label { Text(s.titulo) } icon: { IconeSecao(secao: s) }
-                }
-            }
-            // largura fixa: nas Configurações a barra lateral não é
-            // redimensionável nem recolhível
-            .navigationSplitViewColumnWidth(200)
-            // fora o botão de recolher — ele desalinha a barra de título e o
-            // painel da Apple não tem esse controle
-            .toolbar(removing: .sidebarToggle)
+            barraLateral
+                // largura fixa: nas Configurações a barra lateral não é
+                // redimensionável nem recolhível
+                .navigationSplitViewColumnWidth(215)
+                // fora o botão de recolher — ele desalinha a barra de título e o
+                // painel da Apple não tem esse controle
+                .toolbar(removing: .sidebarToggle)
         } detail: {
             conteudo
                 .navigationTitle(secao.titulo)
+                .toolbar { navegacao }
         }
         .navigationSplitViewStyle(.balanced)
         .onAppear { store.refreshLaunchAtLogin() }
+    }
+
+    private var resultados: [Secao] {
+        busca.isEmpty ? [] : Secao.allCases.filter {
+            $0.titulo.localizedCaseInsensitiveContains(busca)
+        }
+    }
+
+    @ViewBuilder
+    private var barraLateral: some View {
+        List(selection: selecao) {
+            if busca.isEmpty {
+                ForEach(Secao.grupos.indices, id: \.self) { i in
+                    Section { linhas(Secao.grupos[i]) }
+                }
+            } else {
+                Section { linhas(resultados) }
+            }
+        }
+        .listStyle(.sidebar)
+        .searchable(text: $busca, placement: .sidebar, prompt: "Buscar")
+    }
+
+    private func linhas(_ itens: [Secao]) -> some View {
+        ForEach(itens) { s in
+            NavigationLink(value: s) {
+                Label { Text(s.titulo) } icon: { IconeSecao(secao: s) }
+            }
+        }
+    }
+
+    /// Grava o histórico a cada troca de seção pela barra lateral.
+    private var selecao: Binding<Secao?> {
+        Binding(get: { secao }, set: { novo in
+            guard let novo, novo != secao else { return }
+            anteriores.append(secao)
+            posteriores.removeAll()
+            secao = novo
+        })
+    }
+
+    @ToolbarContentBuilder
+    private var navegacao: some ToolbarContent {
+        ToolbarItemGroup(placement: .navigation) {
+            Button { voltar() } label: { Image(systemName: "chevron.backward") }
+                .disabled(anteriores.isEmpty)
+                .help("Voltar")
+            Button { avancar() } label: { Image(systemName: "chevron.forward") }
+                .disabled(posteriores.isEmpty)
+                .help("Avançar")
+        }
+    }
+
+    private func voltar() {
+        guard let destino = anteriores.popLast() else { return }
+        posteriores.append(secao)
+        secao = destino
+    }
+
+    private func avancar() {
+        guard let destino = posteriores.popLast() else { return }
+        anteriores.append(secao)
+        secao = destino
     }
 
     @ViewBuilder
