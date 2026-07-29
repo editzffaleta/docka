@@ -268,21 +268,22 @@ struct TrayView: View {
             RoundedRectangle(cornerRadius: 0.5)
                 .fill(.white.opacity(0.18))
                 .frame(width: 1, height: store.iconSize * 0.9)
-                .padding(.horizontal, 5)
-                .padding(.bottom, 6)
+                .padding(.horizontal, TrayGeometry.gap(size: store.iconSize) + 3)
+                .padding(.bottom, TrayGeometry.indicatorRow(size: store.iconSize))
                 .accessibilityHidden(true)          // traço decorativo
 
             Button {
                 SettingsWindowController.shared.show()
             } label: {
+                // mesmo tile dos apps, como o Lixo no Dock
                 Image(systemName: "gearshape.fill")
-                    .font(.system(size: 16))
+                    .font(.system(size: store.iconSize * 0.5))
                     .foregroundStyle(.white.opacity(0.55))
-                    .frame(width: 30, height: 30)
+                    .frame(width: store.iconSize, height: store.iconSize)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .padding(.bottom, 10)
+            .padding(.bottom, TrayGeometry.indicatorRow(size: store.iconSize))
             .accessibilityLabel("Configurações do Docka")
         }
         .padding(.horizontal, TrayGeometry.padding(size: store.iconSize))

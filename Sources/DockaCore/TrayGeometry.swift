@@ -44,7 +44,10 @@ public enum TrayGeometry {
     /// Vidro abaixo da bolinha de execução, que quase encosta na borda.
     public static func paddingBottom(size: CGFloat) -> CGFloat { size * 0.055 }
     /// Separador + engrenagem no fim da bandeja.
-    public static let trailingWidth: CGFloat = 44
+    ///
+    /// Escala com o tile: no Dock o Lixo tem exatamente o tamanho dos outros
+    /// ícones, e o traço antes dele acompanha.
+    public static func trailingWidth(size: CGFloat) -> CGFloat { size * 1.35 }
 
     /// Altura do vidro — calculada com o ícone **em repouso**, de propósito.
     ///
@@ -120,7 +123,7 @@ public enum TrayGeometry {
                                  maxRange: CGFloat) -> CGFloat {
         magnifiedContentWidth(appCount: appCount, size: size,
                               maxScale: maxScale, maxRange: maxRange)
-            + 2 * padding(size: size) + trailingWidth
+            + 2 * padding(size: size) + trailingWidth(size: size)
     }
 
     /// Linha de base da bandeja.
