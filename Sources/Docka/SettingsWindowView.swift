@@ -264,24 +264,41 @@ private struct AparenciaView: View {
             }
 
             Section {
-                LabeledContent("Material do painel") {
-                    Text(materialDescrito).foregroundStyle(.secondary)
-                }
-                Slider(value: $store.glassTint, in: 0...1) {
-                    Text("Material do painel")
-                } minimumValueLabel: {
-                    Image(systemName: "square.on.square.dashed")
-                } maximumValueLabel: {
-                    Image(systemName: "square.filled.on.square")
-                }
-                .labelsHidden()
-                if !GlassTint.isSystemNeutral(store.glassTint) {
-                    Button("Voltar ao padrão") {
-                        withAnimation { store.matchSystemGlassTint() }
+                // no formato do controle Liquid Glass das Configurações:
+                // rótulo à esquerda, prévia simulada à direita e o slider embaixo dela
+                LabeledContent {
+                    VStack(alignment: .trailing, spacing: 10) {
+                        MaterialPreview(tint: store.glassTint,
+                                        appearance: TrayAppearance(persisted: store.appearance),
+                                        apps: store.apps)
+                            .frame(width: 330, height: 180)
+
+                        HStack(spacing: 8) {
+                            Image(systemName: "square.on.square.dashed")
+                                .foregroundStyle(.secondary)
+                                .accessibilityHidden(true)
+                            Slider(value: $store.glassTint, in: 0...1)
+                                .labelsHidden()
+                                .accessibilityLabel("Material do painel")
+                                .accessibilityValue(materialDescrito)
+                            Image(systemName: "square.filled.on.square")
+                                .foregroundStyle(.secondary)
+                                .accessibilityHidden(true)
+                        }
+                        .frame(width: 330)
+
+                        if !GlassTint.isSystemNeutral(store.glassTint) {
+                            Button("Voltar ao padrão") {
+                                withAnimation { store.matchSystemGlassTint() }
+                            }
+                        }
                     }
+                } label: {
+                    Text("Material do painel")
+                    Text(materialDescrito)
                 }
             } footer: {
-                Text("Vibrância do sistema, a mesma do Dock e da barra de menus. À esquerda deixa mais do fundo atravessar; à direita fecha.")
+                Text("Prévia sobre a sua imagem de fundo atual. Vibrância do sistema, a mesma do Dock: à esquerda deixa mais do fundo atravessar; à direita fecha.")
             }
 
             Section {
@@ -379,6 +396,103 @@ private struct BandejaView: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// Prévia do material, no formato do controle Liquid Glass das Configurações:
+/// a bandeja em miniatura sobre a imagem de fundo atual do usuário, reagindo ao
+/// slider e ao Tom escolhidos.
+///
+/// A prévia NÃO usa a vibrância real — ela amostra atrás da janela, e aqui o
+/// fundo é conteúdo da própria janela. Simula o resultado com os materiais
+/// de dentro da janela, nas mesmas proporções do painel de verdade.
+private struct MaterialPreview: View {
+    let tint: Double
+    let appearance: TrayAppearance
+    let apps: [PinnedApp]
+
+    /// Carregada uma vez: recarregar a cada redraw tocaria o disco no arrasto do slider.
+    private static let wallpaper: NSImage? = {
+        guard let screen = NSScreen.main,
+              let url = NSWorkspace.shared.desktopImageURL(for: screen) else { return nil }
+        return NSImage(contentsOf: url)
+    }()
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            // Color.clear assume o tamanho proposto (330×180) e o overlay prende
+            // a imagem nele — sem isso o scaledToFill estoura o frame e engole
+            // a linha inteira do Form
+            Color.clear.overlay(fundo)
+            bandejinha.padding(.bottom, 16)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1))
+        .modifier(EsquemaDaPrevia(appearance: appearance))
+    }
+
+    @ViewBuilder
+    private var fundo: some View {
+        if let img = Self.wallpaper {
+            Image(nsImage: img).resizable().scaledToFill()
+        } else {
+            LinearGradient(colors: [.teal.opacity(0.7), .indigo.opacity(0.6)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
+    }
+
+    private var bandejinha: some View {
+        let size: CGFloat = 30
+        return HStack(spacing: TrayGeometry.gap(size: size)) {
+            ForEach(iconesDaPrevia.indices, id: \.self) { i in
+                Image(nsImage: iconesDaPrevia[i])
+                    .resizable().interpolation(.high)
+                    .frame(width: size, height: size)
+            }
+        }
+        .padding(.horizontal, TrayGeometry.padding(size: size))
+        .padding(.top, TrayGeometry.paddingTop(size: size))
+        .padding(.bottom, TrayGeometry.indicatorRow(size: size) + TrayGeometry.paddingBottom(size: size))
+        .background(materialSimulado)
+    }
+
+    private var materialSimulado: some View {
+        let forma = RoundedRectangle(cornerRadius: TrayGeometry.cornerRadius(size: 30),
+                                     style: .continuous)
+        let escurecer = GlassTint.overlayOpacity(tint)
+        return ZStack {
+            forma.fill(GlassTint.material(for: tint) == .translucido
+                       ? AnyShapeStyle(.ultraThinMaterial)
+                       : AnyShapeStyle(.regularMaterial))
+            if escurecer > 0 { forma.fill(.black.opacity(escurecer)) }
+        }
+        .overlay(forma.strokeBorder(
+            LinearGradient(colors: [.white.opacity(0.30), .white.opacity(0.06)],
+                           startPoint: .top, endPoint: .bottom),
+            lineWidth: 0.8))
+    }
+
+    private var iconesDaPrevia: [NSImage] {
+        if !apps.isEmpty { return apps.prefix(4).map(\.icon) }
+        // antes de escolher qualquer app, a prévia usa apps do sistema
+        return ["/System/Applications/App Store.app",
+                "/System/Applications/Notes.app",
+                "/System/Applications/Utilities/Terminal.app"]
+            .filter { FileManager.default.fileExists(atPath: $0) }
+            .map { PinnedApp(path: $0).icon }
+    }
+}
+
+/// O Tom escolhido vale também para a prévia; automático segue o sistema.
+private struct EsquemaDaPrevia: ViewModifier {
+    let appearance: TrayAppearance
+    func body(content: Content) -> some View {
+        switch appearance {
+        case .automatico: content
+        case .claro:      content.environment(\.colorScheme, .light)
+        case .escuro:     content.environment(\.colorScheme, .dark)
+        }
     }
 }
 
