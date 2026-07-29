@@ -139,6 +139,50 @@ struct MagnificationTests {
         #expect(fracaoDoPico(1, 200) > 0.9)
     }
 
+    // MARK: redistribuição soma-zero (o vidro parado)
+
+    private func somaZero(_ p: CGFloat?, count: Int = 5,
+                          maxScale: CGFloat = 1.7) -> [CGFloat] {
+        Magnification.zeroSumScales(pointer: p, count: count, size: 48, gap: 6,
+                                    padding: 10, maxScale: maxScale, maxRange: 140)
+    }
+
+    @Test("Sem cursor, todos em repouso")
+    func somaZeroSemCursor() {
+        #expect(somaZero(nil) == [1, 1, 1, 1, 1])
+        #expect(somaZero(100, maxScale: 1) == [1, 1, 1, 1, 1])
+        #expect(somaZero(100, count: 0).isEmpty)
+    }
+
+    @Test("A largura total da fileira NÃO muda com o cursor")
+    func larguraConstante() {
+        // é o que deixa o vidro parado — a reclamação era o fundo se mexendo
+        for p in stride(from: CGFloat(10), through: 270, by: 13) {
+            let soma = somaZero(p).reduce(0, +)
+            #expect(abs(soma - 5) < 0.02, "cursor em \(p): soma \(soma)")
+        }
+    }
+
+    @Test("O apontado é o maior; os distantes cedem abaixo do repouso")
+    func apontadoCresceDistantesCedem() {
+        // cursor no centro do primeiro ícone
+        let e = somaZero(34)
+        #expect(e[0] == e.max())
+        #expect(e[0] > 1.2)
+        #expect(e[4] < 1)                       // o mais distante cedeu
+        #expect(e[4] >= Magnification.minScale) // mas nunca abaixo do piso
+    }
+
+    @Test("O alcance numa fileira curta é limitado a ~metade da fileira")
+    func alcanceLimitado() {
+        // range 400 do usuário não pode cobrir a fileira inteira de 4 ícones
+        let fileira: CGFloat = 4 * 48 + 3 * 6
+        let capped = Magnification.cappedRange(count: 4, size: 48, gap: 6, maxRange: 400)
+        #expect(capped < fileira / 2 + 1)
+        // mas um range pequeno do usuário é respeitado
+        #expect(Magnification.cappedRange(count: 4, size: 48, gap: 6, maxRange: 70) == 70)
+    }
+
     // MARK: ancoragem da fileira (o conserto do tremor)
 
     private func shift(_ p: CGFloat?, count: Int = 5, maxScale: CGFloat = 1.75) -> CGFloat {

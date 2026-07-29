@@ -235,14 +235,16 @@ struct TrayView: View {
         1 + (store.maxScale - 1) * Double(hoverForca)
     }
 
-    private var deslocamentoDaFileira: CGFloat {
-        Magnification.centeredRowShift(pointer: effectiveHoverX,
-                                       count: store.apps.count,
-                                       size: store.iconSize,
-                                       gap: TrayGeometry.gap(size: store.iconSize),
-                                       padding: TrayGeometry.padding(size: store.iconSize),
-                                       maxScale: ampliacaoEfetiva,
-                                       maxRange: store.maxRange)
+    /// Escalas soma-zero da fileira: o apontado cresce, os distantes cedem, e
+    /// a largura total não muda — é isso que deixa o vidro parado.
+    private var escalas: [CGFloat] {
+        Magnification.zeroSumScales(pointer: effectiveHoverX,
+                                    count: store.apps.count,
+                                    size: store.iconSize,
+                                    gap: TrayGeometry.gap(size: store.iconSize),
+                                    padding: TrayGeometry.padding(size: store.iconSize),
+                                    maxScale: ampliacaoEfetiva,
+                                    maxRange: store.maxRange)
     }
 
     /// Converte o cursor do espaço do painel para o do vidro em repouso.
@@ -269,7 +271,7 @@ struct TrayView: View {
                 encerrarHover()
             } else if hoverX == nil {
                 // entrada: uma mola curta para o efeito nascer sem estalo
-                withAnimation(.spring(duration: 0.22)) {
+                withAnimation(.smooth(duration: 0.18)) {
                     hoverX = p.x - vidroEsq
                     hoverForca = forca
                 }
@@ -284,7 +286,7 @@ struct TrayView: View {
 
     private func encerrarHover() {
         guard hoverX != nil else { return }
-        withAnimation(.spring(duration: 0.3)) {
+        withAnimation(.smooth(duration: 0.22)) {
             hoverX = nil
             hoverForca = 1
         }
@@ -315,9 +317,6 @@ struct TrayView: View {
             VStack {
                 Spacer(minLength: 0)
                 tray
-                    // compensa a origem móvel da fileira centralizada: mantém
-                    // PARADO o ponto sob o cursor enquanto os ícones crescem
-                    .offset(x: deslocamentoDaFileira)
                     // sem o deslize de baixo quando o sistema pede menos movimento:
                     // a bandeja só surge e some
                     .offset(y: store.trayVisible || reduceMotion ? 0 : 200)
@@ -362,16 +361,18 @@ struct TrayView: View {
         HStack(alignment: .bottom, spacing: TrayGeometry.gap(size: store.iconSize)) {
             ForEach(Array(store.apps.enumerated()), id: \.element.id) { index, app in
                 TrayIcon(app: app,
-                         // o centro vem da posição EM REPOUSO, calculada pelo índice:
-                         // medir o centro já ampliado realimentaria a conta
-                         center: Magnification.restingCenter(index: index,
-                                                             size: store.iconSize,
-                                                             gap: TrayGeometry.gap(size: store.iconSize),
-                                                             padding: TrayGeometry.padding(size: store.iconSize)),
-                         hoverX: effectiveHoverX,
+                         scale: escalas[index],
+                         apontado: Magnification.isHovered(
+                             pointer: effectiveHoverX,
+                             itemCenter: Magnification.restingCenter(
+                                 index: index,
+                                 size: store.iconSize,
+                                 gap: TrayGeometry.gap(size: store.iconSize),
+                                 padding: TrayGeometry.padding(size: store.iconSize)),
+                             size: store.iconSize,
+                             gap: TrayGeometry.gap(size: store.iconSize)),
                          size: store.iconSize,
-                         maxScale: ampliacaoEfetiva,
-                         maxRange: store.maxRange,
+                         slotScale: store.maxScale,
                          isRunning: running.contains(app.path) && store.showIndicators,
                          bounceEnabled: store.bounceOnLaunch) {
                     store.playSound("Tink")
@@ -452,30 +453,19 @@ struct TrayView: View {
 // balão quando ampliado, tem bolinha de "app aberto" e quica ao lançar.
 struct TrayIcon: View {
     let app: PinnedApp
-    /// Centro do ícone com a bandeja em repouso, no espaço "tray".
-    let center: CGFloat
-    let hoverX: CGFloat?
+    /// Escala deste ícone, já resolvida pela redistribuição soma-zero da fileira.
+    let scale: CGFloat
+    /// O cursor está sobre ESTE ícone — decide o balão de nome.
+    let apontado: Bool
     let size: Double
-    var maxScale: Double = 1.75                // 1 = ampliação desativada
-    var maxRange: Double = 200
+    /// Teto de ampliação — só para a ALTURA do slot não pulsar com o hover.
+    var slotScale: Double = 1.75
     let isRunning: Bool
     var bounceEnabled = true
     let action: () -> Void
 
     @State private var bounce: CGFloat = 0     // deslocamento Y do quique
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    private var scale: CGFloat {
-        guard let hx = hoverX else { return 1 }
-        return Magnification.scale(pointer: hx, itemCenter: center, itemSize: size,
-                                   maxRange: maxRange, maxScale: maxScale)
-    }
-
-    /// Só o ícone apontado mostra o nome, como no Dock.
-    private var magnified: Bool {
-        Magnification.isHovered(pointer: hoverX, itemCenter: center,
-                                size: size, gap: TrayGeometry.gap(size: size))
-    }
 
     /// A bolinha do Dock é pequena e proporcional ao tile.
     private var indicatorSize: CGFloat { TrayGeometry.indicatorSize(size: size) }
@@ -504,7 +494,7 @@ struct TrayIcon: View {
             // container de altura fixa alinhado embaixo: o ícone cresce PARA CIMA.
             // A largura acompanha a escala — é ela que empurra os vizinhos.
             .frame(width: size * scale,
-                   height: size * maxScale + TrayGeometry.indicatorRow(size: size)
+                   height: size * slotScale + TrayGeometry.indicatorRow(size: size)
                           + TrayGeometry.paddingBottom(size: size),
                    alignment: .bottom)
             .contentShape(Rectangle())
@@ -529,17 +519,17 @@ struct TrayIcon: View {
         // balão com o nome. No Dock ele acompanha o TOPO DO ÍCONE — com um
         // deslocamento fixo ele flutuava alto sobre os ícones em repouso.
         .overlay(alignment: .bottom) {
-            if magnified {
+            if apontado {
                 // sem transição: no Dock real o rótulo troca SECO ao passar de um
                 // ícone ao outro — o crossfade deixava dois balões na tela
                 DockLabel(text: app.name)
-                    .offset(y: -(size * scale) - 16)
+                    .offset(y: -(size * scale) - 6)
                     .transition(.identity)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)   // o nome já vai no rótulo do botão
             }
         }
-        .zIndex(magnified ? 1 : 0)
+        .zIndex(apontado ? 1 : 0)
     }
 
     // quique duplo, como o Dock ao abrir um app

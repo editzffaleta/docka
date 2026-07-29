@@ -75,19 +75,43 @@ extension View {
     }
 }
 
-/// O balão com o nome do app — cápsula sólida, como a do Dock.
+/// O balão de nome do Dock: retângulo arredondado com RABINHO apontando para o
+/// ícone. Comparado lado a lado com uma foto do balão real ("Lixo"): cantos
+/// menos redondos que uma cápsula, texto 13 semibold e a setinha embaixo.
 struct DockLabel: View {
     let text: String
 
     var body: some View {
         Text(text)
-            .font(.system(size: 12, weight: .medium))
+            .font(.system(size: 13, weight: .semibold))
             // cores semânticas: o rótulo precisa virar escuro-sobre-claro
             // quando a bandeja está em Tom claro
             .foregroundStyle(Color(nsColor: .labelColor))
-            .padding(.horizontal, 11)
-            .padding(.vertical, 5)
-            .background(Capsule().fill(Color(nsColor: .controlBackgroundColor).opacity(0.92)))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+            .padding(.bottom, BalaoComRabinho.rabinhoAltura)   // área do rabinho
+            .background(BalaoComRabinho()
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.94)))
             .fixedSize()
+    }
+}
+
+/// Retângulo arredondado + triângulo central embaixo, num caminho só
+/// (mesma cor, sem emenda visível).
+struct BalaoComRabinho: Shape {
+    static let rabinhoAltura: CGFloat = 7
+    static let rabinhoLargura: CGFloat = 16
+
+    func path(in rect: CGRect) -> Path {
+        let corpo = CGRect(x: 0, y: 0,
+                           width: rect.width,
+                           height: rect.height - Self.rabinhoAltura)
+        var p = Path(roundedRect: corpo, cornerRadius: 9, style: .continuous)
+        let cx = rect.midX
+        p.move(to: CGPoint(x: cx - Self.rabinhoLargura / 2, y: corpo.maxY - 0.5))
+        p.addLine(to: CGPoint(x: cx, y: rect.maxY))
+        p.addLine(to: CGPoint(x: cx + Self.rabinhoLargura / 2, y: corpo.maxY - 0.5))
+        p.closeSubpath()
+        return p
     }
 }

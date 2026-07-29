@@ -26,6 +26,54 @@ public enum Magnification {
     /// 35% e o terceiro já em repouso, que é o relevo do Dock da Apple.
     public static let defaultMaxRange: CGFloat = 140
 
+    /// Alcance efetivo numa fileira curta: limitado a ~metade da fileira.
+    /// Sem isso, um alcance grande cobre TODOS os ícones, tudo incha junto e o
+    /// vidro muda de largura — o Dock real só mexe nos vizinhos do cursor.
+    public static func cappedRange(count: Int, size: CGFloat, gap: CGFloat,
+                                   maxRange: CGFloat) -> CGFloat {
+        let fileira = CGFloat(count) * size + CGFloat(max(0, count - 1)) * gap
+        return min(maxRange, max(size * 1.4, fileira * 0.45))
+    }
+
+    /// Piso da redistribuição: nenhum ícone encolhe além disto.
+    public static let minScale: CGFloat = 0.78
+
+    /// Escalas com SOMA CONSTANTE: o apontado cresce e os distantes cedem na
+    /// mesma medida, então a largura total da fileira não muda — e o vidro fica
+    /// parado. Era a reclamação central ("o fundo do dock está se mexendo
+    /// muito"): crescer a barra 25% da própria largura chama atenção; o Dock
+    /// real varia ~6% porque a fileira dele é longa. Numa fileira curta, o
+    /// equivalente honesto é a redistribuição do Dock clássico em barra fixa.
+    public static func zeroSumScales(pointer: CGFloat?, count: Int,
+                                     size: CGFloat, gap: CGFloat, padding: CGFloat,
+                                     maxScale: CGFloat, maxRange: CGFloat) -> [CGFloat] {
+        guard count > 0 else { return [] }
+        guard let pointer, maxScale > 1, size > 0 else {
+            return Array(repeating: 1, count: count)
+        }
+        let alcance = cappedRange(count: count, size: size, gap: gap, maxRange: maxRange)
+        let boosts = (0..<count).map { i -> CGFloat in
+            let c = restingCenter(index: i, size: size, gap: gap, padding: padding)
+            return scale(pointer: pointer, itemCenter: c, itemSize: size,
+                         maxRange: alcance, maxScale: maxScale) - 1
+        }
+        let media = boosts.reduce(0, +) / CGFloat(count)
+        var out = boosts.map { max(minScale, 1 + $0 - media) }
+
+        // O piso quebra a soma: quando um distante bate no mínimo, o desconto
+        // dele não é absorvido e a fileira alargaria. Redistribui o resíduo
+        // entre os ícones que ainda têm folga até a soma fechar.
+        for _ in 0..<4 {
+            let residuo = out.reduce(0, +) - CGFloat(count)
+            if abs(residuo) < 0.002 { break }
+            let livres = out.indices.filter { out[$0] > minScale + 0.001 }
+            guard !livres.isEmpty else { break }
+            let quota = residuo / CGFloat(livres.count)
+            for i in livres { out[i] = max(minScale, out[i] - quota) }
+        }
+        return out
+    }
+
     /// Deslocamento horizontal que mantém PARADO o ponto sob o cursor quando a
     /// fileira (um HStack centralizado no painel) muda de largura com a ampliação.
     ///
