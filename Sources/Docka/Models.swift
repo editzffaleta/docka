@@ -134,6 +134,7 @@ final class DockaStore: ObservableObject {
         static let appearance = "docka.appearance"
         static let atalhoTecla = "docka.hotkey.keyCode"
         static let atalhoMods = "docka.hotkey.modifiers"
+        static let atalhos = "docka.hotkeys"
     }
 
     private let defaults = UserDefaults.standard
@@ -278,36 +279,88 @@ final class DockaStore: ObservableObject {
         glassTint = GlassTint.systemNeutral
     }
 
-    // MARK: - Atalho global
+    // MARK: - Atalhos globais
 
-    @Published private(set) var shortcut: Shortcut = .padrao
-    /// Mensagem quando o macOS recusa a combinação escolhida.
-    @Published private(set) var shortcutError: String?
+    /// Um atalho por ação: cada bandeja, o brilho, o volume e os ajustes.
+    ///
+    /// Era um atalho só, que agia na PRIMEIRA bandeja — com mais de uma
+    /// configurada, as outras não tinham como ser chamadas pelo teclado. O
+    /// valor antigo vira o atalho da primeira bandeja na migração, para quem já
+    /// usava ⇧⌘D não perder o hábito.
+    @Published private(set) var atalhos: [String: Shortcut] = [:]
+    /// Mensagem por ação quando o macOS recusa a combinação escolhida.
+    @Published private(set) var atalhoErros: [String: String] = [:]
 
-    /// Registra o atalho no sistema e persiste se der certo.
-    /// Um atalho recusado não é gravado — senão o app subiria sem atalho nenhum
-    /// na próxima vez, sem explicar por quê.
-    func setShortcut(_ novo: Shortcut) {
-        if let falha = HotKeyManager.shared.apply(novo) {
-            shortcutError = falha.mensagem
-            HotKeyManager.shared.apply(shortcut)   // volta para o que funcionava
+    func atalho(de acao: AcaoDeAtalho) -> Shortcut? { atalhos[acao.id] }
+    func erroDoAtalho(_ acao: AcaoDeAtalho) -> String? { atalhoErros[acao.id] }
+
+    /// Define (ou remove, com `nil`) o atalho de uma ação.
+    ///
+    /// Um atalho recusado não é gravado — senão o app subiria sem ele na
+    /// próxima vez, sem explicar por quê.
+    func definirAtalho(_ novo: Shortcut?, para acao: AcaoDeAtalho) {
+        let anterior = atalhos
+        var mapa = atalhos
+
+        if let novo {
+            guard novo.isValid else {
+                atalhoErros[acao.id] = HotKeyManager.Falha.invalido.mensagem
+                return
+            }
+            if let outra = Atalhos.jaUsadaPor(novo, em: mapa, ignorando: acao.id) {
+                atalhoErros[acao.id] = "Essa combinação já é do atalho \(nomeDaAcao(outra))."
+                return
+            }
+            mapa[acao.id] = novo
+        } else {
+            mapa.removeValue(forKey: acao.id)
+        }
+
+        let falhas = HotKeyManager.shared.aplicar(mapa)
+        if let falha = falhas[acao.id] {
+            atalhoErros[acao.id] = falha.mensagem
+            HotKeyManager.shared.aplicar(anterior)   // volta para o que funcionava
             return
         }
-        shortcut = novo
-        shortcutError = nil
-        defaults.set(Int(novo.keyCode), forKey: Key.atalhoTecla)
-        defaults.set(Int(novo.modifiers.rawValue), forKey: Key.atalhoMods)
+        atalhos = mapa
+        atalhoErros = atalhoErros.filter { falhas[$0.key] != nil }
+        for (chave, falha) in falhas { atalhoErros[chave] = falha.mensagem }
+        gravarAtalhos()
     }
 
-    func resetShortcut() {
-        setShortcut(.padrao)
-    }
-
-    /// Chamado uma vez na inicialização do app.
-    func activateShortcut() {
-        if let falha = HotKeyManager.shared.apply(shortcut) {
-            shortcutError = falha.mensagem
+    /// Nome legível de uma ação, para as mensagens e para os ajustes.
+    func nomeDaAcao(_ id: String) -> String {
+        guard let acao = AcaoDeAtalho(id: id) else { return id }
+        switch acao {
+        case .brilho:  return "Controle de brilho"
+        case .volume:  return "Controle de volume"
+        case .ajustes: return "Abrir os ajustes"
+        case .bandeja(let uuid):
+            guard let i = docks.firstIndex(where: { $0.id == uuid }) else { return "Bandeja" }
+            let d = docks[i]
+            return "Bandeja \(i + 1) — \(d.edge.titulo), \(d.alignment.titulo(for: d.edge).lowercased())"
         }
+    }
+
+    private func gravarAtalhos() {
+        if let dados = try? JSONEncoder().encode(atalhos) {
+            defaults.set(dados, forKey: Key.atalhos)
+        }
+    }
+
+    /// Chamado na inicialização e sempre que as bandejas mudam.
+    func ativarAtalhos() {
+        // bandeja apagada não pode deixar o atalho registrado no sistema
+        let limpo = Atalhos.limpar(atalhos, bandejasExistentes: Set(docks.map(\.id)))
+        if limpo.count != atalhos.count { atalhos = limpo }
+        // grava sempre, e não só quando limpou: o conjunto pode ter acabado de
+        // nascer da migração do atalho único, e sem isto ele só existiria na
+        // memória — a migração rodaria de novo a cada início
+        gravarAtalhos()
+        let falhas = HotKeyManager.shared.aplicar(atalhos)
+        let novos = falhas.mapValues(\.mensagem)
+        // publicar sem mudança acordaria quem observa o store à toa
+        if novos != atalhoErros { atalhoErros = novos }
     }
 
     // MARK: - Abrir no login
@@ -443,10 +496,17 @@ final class DockaStore: ObservableObject {
             }
         }
 
-        let gravado = Shortcut(keyCode: UInt16(defaults.integer(forKey: Key.atalhoTecla)),
-                               modifiers: .init(rawValue: UInt32(defaults.integer(forKey: Key.atalhoMods))))
-        // um valor corrompido no plist não pode deixar o app sem atalho
-        shortcut = gravado.isValid ? gravado : .padrao
+        if let dados = defaults.data(forKey: Key.atalhos),
+           let mapa = try? JSONDecoder().decode([String: Shortcut].self, from: dados) {
+            atalhos = mapa
+        } else {
+            // migração do atalho único: ele passa a ser o da primeira bandeja,
+            // que é exatamente a que ele já controlava
+            let gravado = Shortcut(keyCode: UInt16(defaults.integer(forKey: Key.atalhoTecla)),
+                                   modifiers: .init(rawValue: UInt32(defaults.integer(forKey: Key.atalhoMods))))
+            let herdado = gravado.isValid ? gravado : .padrao
+            if let primeira = docks.first { atalhos = [AcaoDeAtalho.bandeja(primeira.id).id: herdado] }
+        }
 
         refreshLaunchAtLogin()
     }

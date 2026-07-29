@@ -24,7 +24,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .bandeja:   return "Bandeja"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
-        case .atalho:    return "Atalho"
+        case .atalho:    return "Atalhos"
         case .sobre:     return "Sobre"
         }
     }
@@ -782,7 +782,7 @@ private struct DeslizadorView: View {
     }
 }
 
-// MARK: - Atalho
+// MARK: - Atalhos
 
 private struct AtalhoView: View {
     @EnvironmentObject var store: DockaStore
@@ -790,21 +790,59 @@ private struct AtalhoView: View {
     var body: some View {
         Form {
             Section {
-                LabeledContent {
-                    ShortcutRecorder()
-                } label: {
-                    Text("Atalho global")
-                    Text("Fixa a bandeja aberta e a esconde no segundo toque.")
+                ForEach(Array(store.docks.enumerated()), id: \.element.id) { i, d in
+                    linha(.bandeja(d.id),
+                          titulo: "Bandeja \(i + 1)",
+                          detalhe: "\(d.edge.titulo), \(d.alignment.titulo(for: d.edge).lowercased()) — \(d.apps.count) \(d.apps.count == 1 ? "app" : "apps")")
                 }
-                if let erro = store.shortcutError {
-                    Label(erro, systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                }
+            } header: {
+                Text("Bandejas")
             } footer: {
-                Text("A combinação precisa incluir ⌘, ⌥ ou ⌃.")
+                Text(store.docks.count > 1
+                     ? "Cada bandeja tem o seu atalho: ele fixa aquela bandeja aberta e a esconde no segundo toque."
+                     : "O atalho fixa a bandeja aberta e a esconde no segundo toque.")
+            }
+
+            if store.brightnessControl || store.volumeControl {
+                Section {
+                    if store.brightnessControl {
+                        linha(.brilho, titulo: "Controle de brilho",
+                              detalhe: "Abre a régua fixada, sem precisar encostar na borda")
+                    }
+                    if store.volumeControl {
+                        linha(.volume, titulo: "Controle de volume",
+                              detalhe: "Abre a régua fixada, sem precisar encostar na borda")
+                    }
+                } header: {
+                    Text("Controles de borda")
+                }
+            }
+
+            Section {
+                linha(.ajustes, titulo: "Abrir os ajustes",
+                      detalhe: "Esta janela, de qualquer lugar")
+            } header: {
+                Text("Aplicativo")
+            } footer: {
+                Text("A combinação precisa incluir ⌘, ⌥ ou ⌃ — sem um deles, a tecla seria engolida no sistema inteiro. O ✕ remove o atalho: uma ação pode ficar sem nenhum.")
             }
         }
         .formStyle(.grouped)
+    }
+
+    @ViewBuilder
+    private func linha(_ acao: AcaoDeAtalho, titulo: String, detalhe: String) -> some View {
+        LabeledContent {
+            ShortcutRecorder(acao: acao)
+        } label: {
+            Text(titulo)
+            Text(detalhe)
+        }
+        if let erro = store.erroDoAtalho(acao) {
+            Label(erro, systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .font(.callout)
+        }
     }
 }
 

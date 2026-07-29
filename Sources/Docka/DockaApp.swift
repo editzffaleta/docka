@@ -1,4 +1,5 @@
 import SwiftUI
+import DockaCore
 
 // MARK: - Janela de configurações
 
@@ -77,8 +78,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         TrayManager.shared.start()
-        HotKeyManager.shared.onPress = { TrayManager.shared.toggleFromHotKey() }
-        DockaStore.shared.activateShortcut()
+        HotKeyManager.shared.onPress = { acao in
+            guard let acao = AcaoDeAtalho(id: acao) else { return }
+            TrayManager.shared.executar(acao)
+        }
+        DockaStore.shared.ativarAtalhos()
 
         if DockaStore.shared.onboarded {
             // já configurado: nasce direto na barra de menus, sem piscar janela

@@ -196,6 +196,7 @@ final class TrayManager {
     static let shared = TrayManager()
 
     private var controllers: [UUID: TrayController] = [:]
+    private var bandejasRegistradas: Set<UUID>?
     private var brilho: DeslizanteController?
     private var volume: DeslizanteController?
     private var timer: Timer?
@@ -260,12 +261,27 @@ final class TrayManager {
         // o layout do brilho vem antes: o do volume consulta o quadro dele
         brilho?.layout()
         volume?.layout()
+
+        // Só quando o conjunto de bandejas muda, e não a cada mexida no store:
+        // `ativarAtalhos` publica, publicar chama `sincronizar`, e chamar de
+        // volta aqui fecharia um laço que re-registra os atalhos sem parar.
+        if bandejasRegistradas != atuais {
+            bandejasRegistradas = atuais
+            store.ativarAtalhos()
+        }
     }
 
     /// O atalho global age na bandeja principal.
-    func toggleFromHotKey() {
-        guard let id = store.docks.first?.id else { return }
-        controllers[id]?.toggleFromHotKey()
+    /// Executa o que o atalho pediu. Cada bandeja e cada controle de borda tem
+    /// o seu — antes havia um atalho só, que servia a primeira bandeja e
+    /// deixava as outras sem.
+    func executar(_ acao: AcaoDeAtalho) {
+        switch acao {
+        case .bandeja(let id): controllers[id]?.toggleFromHotKey()
+        case .brilho:          brilho?.toggleFromHotKey()
+        case .volume:          volume?.toggleFromHotKey()
+        case .ajustes:         SettingsWindowController.shared.show()
+        }
     }
 
     func startDemo() {

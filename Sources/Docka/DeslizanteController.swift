@@ -101,7 +101,8 @@ final class DeslizanteController {
                                          pressureZone: store.pressureZone) {
                 reveal()
             }
-        } else if state.demoMode || TrayGeometry.isInsideTray(cursor: loc, trayFrame: f, edge: edge) {
+        } else if state.demoMode || state.pinned
+                    || TrayGeometry.isInsideTray(cursor: loc, trayFrame: f, edge: edge) {
             hideDelay = 0
         } else {
             hideDelay += 0.05
@@ -122,6 +123,24 @@ final class DeslizanteController {
         withAnimation(reduceMotion ? .easeOut(duration: 0.18)
                                    : .spring(duration: 0.42, bounce: 0.28)) {
             state.visible = true
+        }
+    }
+
+    /// Fixa o painel aberto pelo atalho, e o esconde no segundo toque.
+    ///
+    /// Fixado ele não some quando o cursor sai — é o que diferencia o atalho de
+    /// simplesmente encostar na borda.
+    func toggleFromHotKey() {
+        if state.visible {
+            state.pinned = false
+            hide()
+        } else {
+            currentScreen = NSScreen.screens.first {
+                NSMouseInRect(NSEvent.mouseLocation, $0.frame, false)
+            } ?? NSScreen.main
+            layout()
+            state.pinned = true
+            reveal()
         }
     }
 

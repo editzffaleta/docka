@@ -5,9 +5,9 @@ import Foundation
 /// Guarda o **código virtual** da tecla — o mesmo número que o Carbon e o
 /// `NSEvent` usam — e não o caractere. É o que o `RegisterEventHotKey` espera, e
 /// é o que continua funcionando quando o usuário troca o layout do teclado.
-public struct Shortcut: Equatable, Sendable {
+public struct Shortcut: Equatable, Sendable, Codable {
 
-    public struct Modifiers: OptionSet, Equatable, Sendable {
+    public struct Modifiers: OptionSet, Equatable, Sendable, Codable {
         public let rawValue: UInt32
         public init(rawValue: UInt32) { self.rawValue = rawValue }
 

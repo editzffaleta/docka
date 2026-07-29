@@ -55,7 +55,7 @@ Perfeita para quem mantém o Dock enxuto mas quer um segundo escalão de apps se
 | **Arrastar arquivos** | Solte arquivos do Finder sobre um ícone para abri-los com aquele app |
 | **Reordenar** | Arraste um ícone sobre outro para trocar a ordem |
 | **Clique-direito** | Menu com Abrir, Mostrar no Finder e Remover do Docka |
-| **Atalho global ⇧⌘D** | Fixa a bandeja aberta (não some com o mouse) e esconde no segundo toque — a combinação é configurável |
+| **Atalhos globais** | Uma combinação para cada bandeja, para o brilho, para o volume e para abrir os ajustes — todas configuráveis, e o ⇧⌘D de sempre continua sendo o da primeira bandeja. O atalho fixa o painel aberto (não some com o mouse) e o esconde no segundo toque |
 | **Multi-monitor** | A bandeja aparece na tela onde o cursor está |
 
 ### Controles de borda

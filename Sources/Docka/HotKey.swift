@@ -2,11 +2,16 @@ import AppKit
 import Carbon.HIToolbox
 import DockaCore
 
-/// Atalho global para mostrar/esconder a bandeja.
+/// Os atalhos globais do Docka.
 ///
 /// Usa `RegisterEventHotKey` (Carbon): funciona sem permissão de Acessibilidade.
-/// O handler de evento é instalado uma única vez; só o registro do atalho troca
-/// quando o usuário escolhe outra combinação.
+/// O handler é instalado uma única vez; só os registros trocam quando o usuário
+/// muda alguma combinação.
+///
+/// Já foi um atalho só. Com mais de uma bandeja isso não dava conta — o atalho
+/// servia a primeira e as outras ficavam sem —, então agora são vários, cada um
+/// com sua ação. O handler descobre qual disparou pelo `EventHotKeyID` que vem
+/// no próprio evento.
 final class HotKeyManager {
     static let shared = HotKeyManager()
 
@@ -24,46 +29,77 @@ final class HotKeyManager {
         }
     }
 
-    private var hotKeyRef: EventHotKeyRef?
-    private var handlerInstalled = false
-    var onPress: (() -> Void)?
-
-    /// Troca o atalho ativo. Devolve `nil` em caso de sucesso.
-    @discardableResult
-    func apply(_ shortcut: Shortcut) -> Falha? {
-        installHandlerIfNeeded()
-        unregister()
-
-        guard shortcut.isValid else { return .invalido }
-
-        let id = EventHotKeyID(signature: OSType(0x444F_4B41) /* "DOKA" */, id: 1)
-        let status = RegisterEventHotKey(UInt32(shortcut.keyCode),
-                                         carbonModifiers(shortcut.modifiers),
-                                         id,
-                                         GetApplicationEventTarget(),
-                                         0,
-                                         &hotKeyRef)
-        guard status == noErr else {
-            // o ponteiro fica indefinido quando o registro falha
-            hotKeyRef = nil
-            return status == OSStatus(eventHotKeyExistsErr) ? .jaEmUso : .desconhecida(status)
-        }
-        return nil
+    private struct Registro {
+        let acao: String
+        let ref: EventHotKeyRef
     }
 
-    /// Sem isto o atalho antigo continuava registrado no sistema para sempre.
-    func unregister() {
-        guard let ref = hotKeyRef else { return }
-        UnregisterEventHotKey(ref)
-        hotKeyRef = nil
+    /// Por número do Carbon — é ele que volta no evento.
+    private var registros: [UInt32: Registro] = [:]
+    private var handlerInstalled = false
+
+    /// Recebe o id da ação que disparou.
+    var onPress: ((String) -> Void)?
+
+    /// Troca TODOS os registros de uma vez. Devolve as falhas por ação.
+    ///
+    /// Substituir o conjunto inteiro, em vez de mexer de um em um, evita o
+    /// estado intermediário em que uma combinação recém-liberada ainda consta
+    /// registrada e o novo dono é recusado por "já em uso".
+    @discardableResult
+    func aplicar(_ atalhos: [String: Shortcut]) -> [String: Falha] {
+        installHandlerIfNeeded()
+        desregistrarTudo()
+
+        var falhas: [String: Falha] = [:]
+        // numeração de 1 a N a cada aplicação, e não um contador que só cresce:
+        // como tudo foi desregistrado logo acima, reaproveitar os números é
+        // seguro e mantém o espaço pequeno e legível no diagnóstico
+        for (numero, par) in atalhos.sorted(by: { $0.key < $1.key }).enumerated() {
+            let (acao, atalho) = par
+            guard atalho.isValid else { falhas[acao] = .invalido; continue }
+            let numero = UInt32(numero + 1)
+            var ref: EventHotKeyRef?
+            let status = RegisterEventHotKey(
+                UInt32(atalho.keyCode),
+                carbonModifiers(atalho.modifiers),
+                EventHotKeyID(signature: OSType(0x444F_4B41) /* "DOKA" */, id: numero),
+                GetApplicationEventTarget(), 0, &ref)
+            guard status == noErr, let ref else {
+                // o ponteiro fica indefinido quando o registro falha
+                falhas[acao] = status == OSStatus(eventHotKeyExistsErr)
+                    ? .jaEmUso : .desconhecida(status)
+                continue
+            }
+            registros[numero] = Registro(acao: acao, ref: ref)
+        }
+        return falhas
+    }
+
+    /// Sem isto os atalhos antigos continuariam registrados no sistema.
+    func desregistrarTudo() {
+        registros.values.forEach { UnregisterEventHotKey($0.ref) }
+        registros.removeAll()
+    }
+
+    private func disparou(numero: UInt32) {
+        guard let r = registros[numero] else { return }
+        onPress?(r.acao)
     }
 
     private func installHandlerIfNeeded() {
         guard !handlerInstalled else { return }
         var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard),
                                       eventKind: UInt32(kEventHotKeyPressed))
-        let status = InstallEventHandler(GetApplicationEventTarget(), { _, _, _ -> OSStatus in
-            DispatchQueue.main.async { HotKeyManager.shared.onPress?() }
+        let status = InstallEventHandler(GetApplicationEventTarget(), { _, evento, _ -> OSStatus in
+            // qual das combinações foi: o número vem no próprio evento
+            var id = EventHotKeyID()
+            let st = GetEventParameter(evento, EventParamName(kEventParamDirectObject),
+                                       EventParamType(typeEventHotKeyID), nil,
+                                       MemoryLayout<EventHotKeyID>.size, nil, &id)
+            guard st == noErr else { return noErr }
+            let numero = id.id
+            DispatchQueue.main.async { HotKeyManager.shared.disparou(numero: numero) }
             return noErr
         }, 1, &eventType, nil, nil)
         handlerInstalled = (status == noErr)
