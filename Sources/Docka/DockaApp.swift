@@ -87,6 +87,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             SettingsWindowController.shared.show()
         }
 
+        if CommandLine.arguments.contains("--brightness-selftest") {
+            // verificação no contexto REAL do app, sem permissões herdadas
+            let saida = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"]
+                ?? "/tmp/docka-brightness-selftest.txt"
+            print("brilho: \(BrightnessBackend.autoteste(paraArquivo: saida))")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
         if CommandLine.arguments.contains("--demo") {
             TrayManager.shared.startDemo()
         }

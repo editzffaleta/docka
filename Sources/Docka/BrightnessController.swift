@@ -96,6 +96,7 @@ final class BrightnessController {
         hideDelay = 0
         retirada?.cancel(); retirada = nil
         panel.orderFrontRegardless()
+        store.sincronizarBrilho()   // pode ter mudado pelo teclado enquanto sumido
         withAnimation(reduceMotion ? .easeOut(duration: 0.18)
                                    : .spring(duration: 0.42, bounce: 0.28)) {
             state.visible = true

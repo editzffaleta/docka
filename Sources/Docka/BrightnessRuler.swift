@@ -26,7 +26,7 @@ struct BrightnessRuler: View {
                         arrastando = true
                         // a régua cresce de baixo para cima
                         let fracao = 1 - g.location.y / geo.size.height
-                        aplicar(Brightness.levelFromDrag(fraction: Double(fracao)))
+                        aplicar(Brightness.clamp(Double(fracao)))
                     }
                     .onEnded { _ in arrastando = false }
             )
@@ -41,7 +41,7 @@ struct BrightnessRuler: View {
         .accessibilityLabel("Brilho da tela")
         .accessibilityValue("\(Int(level * 100)) por cento")
         .accessibilityAdjustableAction { direcao in
-            aplicar(Brightness.applying(direcao == .increment ? 1 : -1, to: level))
+            aplicar(level + (direcao == .increment ? Brightness.stepSize : -Brightness.stepSize))
         }
     }
 
@@ -56,12 +56,11 @@ struct BrightnessRuler: View {
                    height: graude ? 2.5 : 1.5)
     }
 
-    /// Fala com o sistema em PASSOS e só então move o modelo — assim o que a
-    /// régua mostra é exatamente o que foi mandado para a tela.
+    /// Escreve o valor no sistema e relê: a régua mostra o brilho REAL, não uma
+    /// estimativa. Ler é justamente o que a tecla de mídia não permitia.
     private func aplicar(_ novo: Double) {
-        let passos = Brightness.stepsBetween(from: level, to: novo)
-        guard passos != 0 else { return }
-        BrightnessKeys.nudge(passos)
-        level = Brightness.applying(passos, to: level)
+        guard abs(novo - level) > 0.0001 else { return }
+        BrightnessBackend.escrever(novo)
+        level = BrightnessBackend.ler() ?? novo
     }
 }

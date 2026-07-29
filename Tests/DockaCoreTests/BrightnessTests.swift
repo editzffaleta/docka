@@ -69,12 +69,10 @@ struct BrightnessTests {
         #expect(Brightness.edge(persisted: "xxx") == .right)
     }
 
-    @Test("O arrasto na régua vira nível já encaixado na grade")
+    @Test("O arrasto fora da faixa não escapa de 0…1")
     func arrasto() {
-        #expect(Brightness.levelFromDrag(fraction: 0) == 0)
-        #expect(Brightness.levelFromDrag(fraction: 1) == 1)
-        #expect(Brightness.levelFromDrag(fraction: 0.51) == 0.5)
-        // fora da faixa não quebra
-        #expect(Brightness.levelFromDrag(fraction: 2) == 1)
+        #expect(Brightness.clamp(-2) == 0)
+        #expect(Brightness.clamp(2) == 1)
+        #expect(Brightness.clamp(0.37) == 0.37)   // contínuo: o sistema aceita
     }
 }

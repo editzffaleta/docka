@@ -209,11 +209,7 @@ final class DockaStore: ObservableObject {
 
     /// Mostra o controle de brilho.
     @Published var brightnessControl: Bool { didSet { defaults.set(brightnessControl, forKey: Key.brilho) } }
-    /// Nível de brilho que o Docka acredita ter mandado para a tela.
-    ///
-    /// É estimativa, não leitura: não há API pública para LER o brilho em Apple
-    /// Silicon. Se o usuário mexer pelo teclado, o modelo desencontra — daí o
-    /// botão de recalibrar na régua.
+    /// Brilho da tela, lido do sistema.
     @Published var brightnessLevel: Double { didSet { defaults.set(brightnessLevel, forKey: Key.brilhoNivel) } }
 
     /// Tonalização do vidro (0 = transparente, 1 = tonalizado), como o slider
@@ -240,12 +236,10 @@ final class DockaStore: ObservableObject {
     }
 
     /// Volta o vidro para o material do sistema, sem nada por cima.
-    /// Reencontra o zero: manda passos suficientes para baixar até o mínimo,
-    /// que é o único nível que o Docka pode CONHECER sem ler do sistema.
-    /// Depois disso o modelo e a tela voltam a concordar.
-    func recalibrarBrilho() {
-        BrightnessKeys.nudge(-Brightness.steps)
-        brightnessLevel = 0
+    /// Relê o brilho da tela. Chamado quando o controle aparece: o usuário pode
+    /// ter mexido pelo teclado enquanto ele estava escondido.
+    func sincronizarBrilho() {
+        if let real = BrightnessBackend.ler() { brightnessLevel = real }
     }
 
     func matchSystemGlassTint() {
@@ -382,7 +376,7 @@ final class DockaStore: ObservableObject {
         bounceOnLaunch = defaults.bool(forKey: Key.bounceOnLaunch)
         position = defaults.string(forKey: Key.position) ?? "right"
         brightnessControl = defaults.bool(forKey: Key.brilho)
-        brightnessLevel = Brightness.quantize(defaults.double(forKey: Key.brilhoNivel))
+        brightnessLevel = BrightnessBackend.ler() ?? defaults.double(forKey: Key.brilhoNivel)
         brightnessEdge = defaults.string(forKey: Key.brilhoBorda) ?? TrayEdge.right.rawValue
         brightnessAlignment = defaults.string(forKey: Key.brilhoAlinhamento) ?? TrayAlignment.center.rawValue
         glassTint = defaults.double(forKey: Key.glassTint)

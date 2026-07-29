@@ -675,6 +675,14 @@ private struct BrilhoView: View {
 
     var body: some View {
         Form {
+            if !BrightnessBackend.disponivel {
+                Section {
+                    Label("Este Mac não expõe o controle de brilho para apps.",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                }
+            }
+
             Section {
                 Toggle(isOn: $store.brightnessControl) {
                     Text("Controle de brilho")
@@ -682,7 +690,7 @@ private struct BrilhoView: View {
                 }
             }
 
-            if store.brightnessControl {
+            if store.brightnessControl && BrightnessBackend.disponivel {
                 Section {
                     Picker("Lateral", selection: $store.brightnessEdge) {
                         ForEach(Brightness.bordasPermitidas, id: \.self) {
@@ -706,16 +714,14 @@ private struct BrilhoView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("\(Int(store.brightnessLevel * 100))%")
                                     .font(.title3).monospacedDigit()
-                                Button("Está diferente da tela?") {
-                                    store.recalibrarBrilho()
-                                }
-                                .controlSize(.small)
+                                Button("Reler da tela") { store.sincronizarBrilho() }
+                                    .controlSize(.small)
                             }
                         }
                         .padding(.vertical, 4)
                     }
                 } footer: {
-                    Text("O ajuste usa a tecla de brilho do sistema, em passos de 1/16 — sem pedir permissão. O macOS não expõe leitura do brilho para apps, então este nível é o que o Docka mandou para a tela: se você mudar o brilho pelo teclado, use o botão acima para levar os dois ao mínimo e reencontrar o zero.")
+                    Text("O nível é lido da tela de verdade, e o controle não pede permissão nenhuma. Isso usa uma API do sistema não documentada: se uma atualização do macOS removê-la, o Docka esconde o controle em vez de fingir que funciona.")
                 }
             }
         }
