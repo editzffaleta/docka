@@ -27,22 +27,19 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     private func build() {
-        let root = RootView()
-            .environmentObject(DockaStore.shared)
-            .preferredColorScheme(.dark)
+        let root = RootView().environmentObject(DockaStore.shared)
 
-        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 640),
-                         styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+        // Janela padrão do sistema: barra de título normal, sem transparência e
+        // sem forçar tema. É o que faz o gerenciador parecer um painel nativo —
+        // e o que deixa Tom claro/escuro funcionar sozinho.
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 620),
+                         styleMask: [.titled, .closable, .miniaturizable, .resizable],
                          backing: .buffered, defer: false)
         w.title = "Docka"
-        // equivalente ao .windowStyle(.hiddenTitleBar) que a cena usava
-        w.titlebarAppearsTransparent = true
-        w.titleVisibility = .hidden
-        w.isMovableByWindowBackground = true
-        w.minSize = NSSize(width: 780, height: 600)
+        w.minSize = NSSize(width: 720, height: 540)
         w.contentView = NSHostingView(rootView: root)
         w.delegate = self
-        w.setFrameAutosaveName("DockaSettings")
+        w.setFrameAutosaveName("DockaSettings2")
         w.center()
         window = w
     }
@@ -62,10 +59,10 @@ private struct RootView: View {
             if store.onboarded {
                 SettingsWindowView()
             } else {
-                OnboardingView()
+                // a configuração inicial tem visual próprio, sempre escuro
+                OnboardingView().preferredColorScheme(.dark)
             }
         }
-        .frame(minWidth: 780, minHeight: 600)
     }
 }
 

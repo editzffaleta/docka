@@ -172,15 +172,16 @@ struct AppPickerGrid: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.white.opacity(0.45))
-                TextField("Buscar apps...", text: $query)
+                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                TextField("Buscar apps…", text: $query)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 13))
             }
-            .padding(.horizontal, 14).padding(.vertical, 9)
-            .background(RoundedRectangle(cornerRadius: 11).fill(.black.opacity(0.25)))
-            .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(.white.opacity(0.1), lineWidth: 1))
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 10).padding(.vertical, 7)
+            .background(RoundedRectangle(cornerRadius: 8)
+                .fill(Color(nsColor: .textBackgroundColor).opacity(0.6)))
+            .overlay(RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1))
+            .padding(.horizontal, 16)
 
             ScrollView(showsIndicators: false) {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 5),
@@ -193,7 +194,7 @@ struct AppPickerGrid: View {
                         }
                     }
                 }
-                .padding(.horizontal, 40)
+                .padding(.horizontal, 16)
                 .padding(.vertical, 6)
             }
             .frame(maxHeight: 320)
@@ -216,25 +217,25 @@ struct AppPickCell: View {
                     .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
                 Text(app.name)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(selected ? 1 : 0.7))
+                    .foregroundStyle(selected ? Color.primary : .secondary)
                     .lineLimit(1)
             }
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .fill(selected ? Theme.accent.opacity(0.2)
-                          : hovering ? Color.white.opacity(0.06) : .clear)
+                    .fill(selected ? Color.accentColor.opacity(0.18)
+                          : hovering ? Color.primary.opacity(0.06) : .clear)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .strokeBorder(selected ? Theme.accent : .clear, lineWidth: 1.5)
+                    .strokeBorder(selected ? Color.accentColor : .clear, lineWidth: 1.5)
             )
             .overlay(alignment: .topTrailing) {
                 if selected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(Theme.accent)
+                        .foregroundStyle(Color.accentColor)
                         .padding(5)
                         .transition(.scale)
                 }

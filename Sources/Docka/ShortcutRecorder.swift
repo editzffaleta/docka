@@ -15,19 +15,11 @@ struct ShortcutRecorder: View {
         HStack(spacing: 10) {
             Button { gravando ? parar() : gravar() } label: {
                 Text(gravando ? "Pressione a combinação…" : store.shortcut.display)
-                    .font(.system(size: 13, weight: .semibold,
-                                  design: gravando ? .default : .rounded))
-                    .foregroundStyle(gravando ? Theme.accent : .white)
-                    .frame(minWidth: 150)
-                    .padding(.horizontal, 14).padding(.vertical, 8)
-                    .background(RoundedRectangle(cornerRadius: 10)
-                        .fill(.black.opacity(gravando ? 0.4 : 0.25)))
-                    .overlay(RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(gravando ? Theme.accent : .white.opacity(0.12),
-                                      lineWidth: gravando ? 1.5 : 1))
-                    .contentShape(Rectangle())
+                    .monospacedDigit()
+                    .frame(minWidth: 140)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.bordered)
+            .tint(gravando ? .accentColor : nil)
             .accessibilityLabel("Atalho global do Docka")
             .accessibilityValue(gravando ? "Gravando" : store.shortcut.spokenDescription)
             .accessibilityHint(gravando
@@ -36,9 +28,6 @@ struct ShortcutRecorder: View {
 
             if store.shortcut != .padrao && !gravando {
                 Button("Restaurar padrão") { store.resetShortcut() }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 11.5, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
             }
         }
         // sair da aba com o monitor ativo deixaria o teclado sequestrado
