@@ -36,6 +36,19 @@ public enum Brightness {
 
     public static func clamp(_ v: Double) -> Double { min(max(v, 0), 1) }
 
+    /// O controle só existe nas laterais: a régua é vertical por natureza, e
+    /// deitada na borda inferior ela viraria outra coisa.
+    public static let bordasPermitidas: [TrayEdge] = [.left, .right]
+
+    public static func edge(persisted: String) -> TrayEdge {
+        let e = TrayEdge(persisted: persisted)
+        return bordasPermitidas.contains(e) ? e : .right
+    }
+
+    /// Tamanho do painel do controle: régua + botão de sol ao lado.
+    public static let panelExtent: CGFloat = 300     // ao longo da borda
+    public static let panelThickness: CGFloat = 130  // perpendicular
+
     // MARK: régua
 
     /// Quantidade de traços da régua. Múltiplo dos passos para cada toque de

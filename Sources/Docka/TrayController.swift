@@ -193,6 +193,7 @@ final class TrayManager {
     static let shared = TrayManager()
 
     private var controllers: [UUID: TrayController] = [:]
+    private var brilho: BrightnessController?
     private var timer: Timer?
     private var cancellable: Any?
     private var screenObserver: NSObjectProtocol?
@@ -211,10 +212,12 @@ final class TrayManager {
             object: nil, queue: .main
         ) { [weak self] _ in
             self?.controllers.values.forEach { $0.layout() }
+            self?.brilho?.layout()
         }
         // um timer só para todas as bandejas: N timers a 20 Hz seria desperdício
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
             self?.controllers.values.forEach { $0.tick() }
+            self?.brilho?.tick()
         }
         RunLoop.main.add(timer!, forMode: .common)
     }
@@ -229,6 +232,15 @@ final class TrayManager {
             controllers[d.id] = TrayController(dockID: d.id)
         }
         controllers.values.forEach { $0.layout() }
+
+        // o controle de brilho tem painel próprio: não é item de bandeja
+        if store.brightnessControl {
+            if brilho == nil { brilho = BrightnessController() }
+            brilho?.layout()
+        } else if brilho != nil {
+            brilho?.encerrar()
+            brilho = nil
+        }
     }
 
     /// O atalho global age na bandeja principal.
@@ -238,8 +250,8 @@ final class TrayManager {
     }
 
     func startDemo() {
-        guard let id = store.docks.first?.id else { return }
-        controllers[id]?.startDemo()
+        if let id = store.docks.first?.id { controllers[id]?.startDemo() }
+        brilho?.startDemo()
     }
 }
 
@@ -290,7 +302,6 @@ struct TrayView: View {
     @State private var tamanhoAoIniciarArrasto: Double? = nil
     /// Força do efeito (0…1), atenuada pela distância perpendicular do cursor.
     @State private var forca: CGFloat = 1
-    @State private var reguaAberta = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var dock: DockConfig { store.dock(dockID) ?? DockConfig() }
@@ -357,9 +368,7 @@ struct TrayView: View {
         }
         .ignoresSafeArea()
         .onAppear { refreshRunning() }
-        .onChange(of: state.visible) { _, v in
-            if v { refreshRunning() } else { reguaAberta = false }
-        }
+        .onChange(of: state.visible) { _, v in if v { refreshRunning() } }
         .onReceive(NSWorkspace.shared.notificationCenter
             .publisher(for: NSWorkspace.didLaunchApplicationNotification)) { _ in refreshRunning() }
         .onReceive(NSWorkspace.shared.notificationCenter
@@ -445,8 +454,6 @@ struct TrayView: View {
                     }
                 }
             }
-
-            if store.brightnessControl { solDoBrilho }
         }
         .padding(edge.isVertical ? .vertical : .horizontal, TrayGeometry.padding(size: size))
         // O vidro é a alça: arrastar redimensiona os ícones e o clique-direito
@@ -465,42 +472,6 @@ struct TrayView: View {
                        height: edge.isVertical ? nil : TrayGeometry.glassHeight(size: size))
                 .dockGlass(cornerRadius: TrayGeometry.cornerRadius(size: size),
                            tint: store.glassTint)
-        }
-    }
-
-    /// O botão de sol e, quando aberto, a régua flutuando ao lado dele.
-    private var solDoBrilho: some View {
-        Button { withAnimation(.smooth(duration: 0.2)) { reguaAberta.toggle() } } label: {
-            Image(systemName: "sun.max.fill")
-                .font(.system(size: size * 0.46))
-                .foregroundStyle(reguaAberta ? Color.accentColor
-                                             : Color(nsColor: .secondaryLabelColor))
-                .frame(width: size, height: size)
-                .background(Circle().fill(Color(nsColor: .labelColor).opacity(0.10)))
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .padding(bordaInterna, TrayGeometry.indicatorRow(size: size)
-                             + TrayGeometry.paddingBottom(size: size))
-        .accessibilityLabel("Controle de brilho")
-        .overlay(alignment: alinhamentoDaRegua) {
-            if reguaAberta {
-                BrightnessRuler(level: Binding(get: { store.brightnessLevel },
-                                               set: { store.brightnessLevel = $0 }),
-                                comprimento: 230, espessura: size * 1.25)
-                    .offset(x: edge == .left ? size * 1.9 : (edge == .right ? -size * 1.9 : 0),
-                            y: edge == .bottom ? -(size * 1.9) : 0)
-                    .transition(.opacity)
-            }
-        }
-    }
-
-    /// A régua sai para dentro da tela, na direção oposta à borda.
-    private var alinhamentoDaRegua: Alignment {
-        switch edge {
-        case .bottom: return .bottom
-        case .left:   return .leading
-        case .right:  return .trailing
         }
     }
 

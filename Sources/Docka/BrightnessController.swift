@@ -1,0 +1,168 @@
+import SwiftUI
+import AppKit
+import DockaCore
+
+/// Painel próprio do controle de brilho — não é um item da bandeja.
+///
+/// Vive numa lateral e aparece do mesmo jeito que a bandeja: encostando o
+/// cursor na borda. Só laterais porque a régua é vertical.
+final class BrightnessController {
+    let state = TrayState()
+
+    private var panel: NSPanel!
+    private let store = DockaStore.shared
+    private var hideDelay: TimeInterval = 0
+    private var retirada: DispatchWorkItem?
+    private var currentScreen: NSScreen? = NSScreen.main
+
+    init() { buildPanel() }
+
+    private var edge: TrayEdge { Brightness.edge(persisted: store.brightnessEdge) }
+
+    private func buildPanel() {
+        panel = NSPanel(contentRect: .zero,
+                        styleMask: [.borderless, .nonactivatingPanel],
+                        backing: .buffered, defer: false)
+        panel.level = .mainMenu
+        panel.backgroundColor = .clear
+        panel.isOpaque = false
+        panel.hasShadow = false
+        panel.hidesOnDeactivate = false
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        panel.isFloatingPanel = true
+        panel.contentView = NSHostingView(
+            rootView: BrightnessPanelView()
+                .environmentObject(store)
+                .environmentObject(state))
+        layout()
+    }
+
+    func encerrar() {
+        retirada?.cancel()
+        panel.orderOut(nil)
+        panel.contentView = nil
+    }
+
+    func layout() {
+        guard let screen = currentScreen else { return }
+        switch TrayAppearance(persisted: store.appearance) {
+        case .automatico: panel.appearance = nil
+        case .claro:      panel.appearance = NSAppearance(named: .aqua)
+        case .escuro:     panel.appearance = NSAppearance(named: .darkAqua)
+        }
+        panel.setFrame(
+            TrayGeometry.frame(screenFrame: screen.frame,
+                               visibleFrame: screen.visibleFrame,
+                               edge: edge,
+                               alignment: TrayAlignment(persisted: store.brightnessAlignment),
+                               offset: 24,
+                               followDock: store.followDock,
+                               extent: Brightness.panelExtent,
+                               thickness: Brightness.panelThickness),
+            display: true)
+    }
+
+    func tick() {
+        guard store.onboarded, store.brightnessControl else { return }
+        let loc = NSEvent.mouseLocation
+        if !state.visible,
+           let s = NSScreen.screens.first(where: { NSMouseInRect(loc, $0.frame, false) }),
+           s != currentScreen {
+            currentScreen = s
+            layout()
+        }
+        guard let screen = currentScreen else { return }
+        let f = panel.frame
+
+        if !state.visible {
+            if TrayGeometry.shouldReveal(cursor: loc, trayFrame: f,
+                                         screenFrame: screen.frame, edge: edge,
+                                         pressureZone: store.pressureZone) {
+                reveal()
+            }
+        } else if state.demoMode || TrayGeometry.isInsideTray(cursor: loc, trayFrame: f, edge: edge) {
+            hideDelay = 0
+        } else {
+            hideDelay += 0.05
+            if hideDelay > 0.35 { hide() }
+        }
+    }
+
+    private var reduceMotion: Bool {
+        NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    }
+
+    private func reveal() {
+        hideDelay = 0
+        retirada?.cancel(); retirada = nil
+        panel.orderFrontRegardless()
+        withAnimation(reduceMotion ? .easeOut(duration: 0.18)
+                                   : .spring(duration: 0.42, bounce: 0.28)) {
+            state.visible = true
+        }
+    }
+
+    /// Modo demo: deixa o controle aberto, para capturas.
+    func startDemo() {
+        state.demoMode = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [self] in reveal() }
+    }
+
+    private func hide() {
+        withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.32)) {
+            state.visible = false
+        }
+        let item = DispatchWorkItem { [weak self] in
+            guard let self, !self.state.visible else { return }
+            self.panel.orderOut(nil)
+        }
+        retirada = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: item)
+    }
+}
+
+/// A régua e o botão de sol, como no controle de referência.
+struct BrightnessPanelView: View {
+    @EnvironmentObject var store: DockaStore
+    @EnvironmentObject var state: TrayState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var edge: TrayEdge { Brightness.edge(persisted: store.brightnessEdge) }
+
+    var body: some View {
+        conteudo
+            .offset(x: state.visible || reduceMotion ? 0
+                     : (edge == .left ? -160 : 160))
+            .opacity(state.visible ? 1 : 0)
+            .frame(maxWidth: .infinity, maxHeight: .infinity,
+                   alignment: edge == .left ? .leading : .trailing)
+            .padding(edge == .left ? .leading : .trailing, 10)
+            .ignoresSafeArea()
+    }
+
+    /// O sol fica do lado de DENTRO da tela, para não sair pela borda.
+    @ViewBuilder
+    private var conteudo: some View {
+        let regua = BrightnessRuler(
+            level: Binding(get: { store.brightnessLevel },
+                           set: { store.brightnessLevel = $0 }),
+            comprimento: 250, espessura: 54)
+        HStack(spacing: 14) {
+            if edge == .left { regua; sol } else { sol; regua }
+        }
+    }
+
+    private var sol: some View {
+        Button { SettingsWindowController.shared.show() } label: {
+            Image(systemName: "sun.max.fill")
+                .font(.system(size: 17))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 40, height: 40)
+                .background(Circle().fill(Color(nsColor: .black).opacity(0.82)))
+                .overlay(Circle().strokeBorder(Color.accentColor.opacity(0.45), lineWidth: 1))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Ajustes de brilho")
+    }
+}

@@ -677,12 +677,27 @@ private struct BrilhoView: View {
         Form {
             Section {
                 Toggle(isOn: $store.brightnessControl) {
-                    Text("Controle de brilho na bandeja")
-                    Text("Adiciona um botão de sol que abre uma régua para ajustar o brilho da tela.")
+                    Text("Controle de brilho")
+                    Text("Uma régua própria numa lateral da tela. Encoste o cursor na borda para revelá-la.")
                 }
             }
 
             if store.brightnessControl {
+                Section {
+                    Picker("Lateral", selection: $store.brightnessEdge) {
+                        ForEach(Brightness.bordasPermitidas, id: \.self) {
+                            Text($0.titulo).tag($0.rawValue)
+                        }
+                    }
+                    Picker("Posição", selection: $store.brightnessAlignment) {
+                        ForEach(TrayAlignment.allCases, id: \.self) {
+                            Text($0.titulo(for: .left)).tag($0.rawValue)
+                        }
+                    }
+                } footer: {
+                    Text("Só laterais: a régua é vertical, e deitada na borda inferior viraria outra coisa.")
+                }
+
                 Section {
                     LabeledContent("Nível") {
                         HStack(spacing: 14) {

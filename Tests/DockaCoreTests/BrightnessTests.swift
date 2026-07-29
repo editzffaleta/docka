@@ -59,6 +59,16 @@ struct BrightnessTests {
         #expect(Brightness.tickHighlight(Brightness.tickCount - 1, level: nivel) == 0)
     }
 
+    @Test("O controle só aceita as laterais")
+    func sóLaterais() {
+        // a régua é vertical: deitada na borda inferior viraria outra coisa
+        #expect(Brightness.bordasPermitidas == [.left, .right])
+        #expect(Brightness.edge(persisted: "left") == .left)
+        #expect(Brightness.edge(persisted: "right") == .right)
+        #expect(Brightness.edge(persisted: "bottom") == .right)   // recai no padrão
+        #expect(Brightness.edge(persisted: "xxx") == .right)
+    }
+
     @Test("O arrasto na régua vira nível já encaixado na grade")
     func arrasto() {
         #expect(Brightness.levelFromDrag(fraction: 0) == 0)

@@ -112,6 +112,8 @@ final class DockaStore: ObservableObject {
         static let position = "docka.position"
         static let brilho = "docka.brightnessControl"
         static let brilhoNivel = "docka.brightnessLevel"
+        static let brilhoBorda = "docka.brightnessEdge"
+        static let brilhoAlinhamento = "docka.brightnessAlignment"
         static let glassTint = "docka.glassTint"
         static let appearance = "docka.appearance"
         static let atalhoTecla = "docka.hotkey.keyCode"
@@ -201,7 +203,11 @@ final class DockaStore: ObservableObject {
     @Published var bounceOnLaunch: Bool { didSet { defaults.set(bounceOnLaunch, forKey: Key.bounceOnLaunch) } }
     @Published var position: String { didSet { defaults.set(position, forKey: Key.position) } }
 
-    /// Mostra o controle de brilho na bandeja.
+    /// Borda onde o controle de brilho mora — só laterais.
+    @Published var brightnessEdge: String { didSet { defaults.set(brightnessEdge, forKey: Key.brilhoBorda) } }
+    @Published var brightnessAlignment: String { didSet { defaults.set(brightnessAlignment, forKey: Key.brilhoAlinhamento) } }
+
+    /// Mostra o controle de brilho.
     @Published var brightnessControl: Bool { didSet { defaults.set(brightnessControl, forKey: Key.brilho) } }
     /// Nível de brilho que o Docka acredita ter mandado para a tela.
     ///
@@ -356,6 +362,8 @@ final class DockaStore: ObservableObject {
             Key.position: "right",      // left | center | right
             Key.brilho: false,
             Key.brilhoNivel: 0.5,
+            Key.brilhoBorda: TrayEdge.right.rawValue,
+            Key.brilhoAlinhamento: TrayAlignment.center.rawValue,
             Key.glassTint: GlassTint.systemNeutral,   // nasce translúcido, como o Dock
             Key.appearance: TrayAppearance.automatico.rawValue,
             Key.atalhoTecla: Int(Shortcut.padrao.keyCode),
@@ -375,6 +383,8 @@ final class DockaStore: ObservableObject {
         position = defaults.string(forKey: Key.position) ?? "right"
         brightnessControl = defaults.bool(forKey: Key.brilho)
         brightnessLevel = Brightness.quantize(defaults.double(forKey: Key.brilhoNivel))
+        brightnessEdge = defaults.string(forKey: Key.brilhoBorda) ?? TrayEdge.right.rawValue
+        brightnessAlignment = defaults.string(forKey: Key.brilhoAlinhamento) ?? TrayAlignment.center.rawValue
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 
