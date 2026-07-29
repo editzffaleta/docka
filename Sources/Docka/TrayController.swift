@@ -442,11 +442,16 @@ struct TrayView: View {
                     }
                 }
             }
-
-            separador
-            engrenagem
         }
         .padding(edge.isVertical ? .vertical : .horizontal, TrayGeometry.padding(size: size))
+        // O vidro é a alça: arrastar redimensiona os ícones e o clique-direito
+        // abre o menu da bandeja. Antes isso morava no traço separador, que só
+        // existia para dividir os apps da engrenagem — sem ela, o traço ficava
+        // pendurado no fim da fileira sem dividir nada.
+        .contentShape(Rectangle())
+        .overlay(CursorDeRedimensionar(vertical: !edge.isVertical).allowsHitTesting(false))
+        .gesture(redimensionarPelaAlca)
+        .contextMenu { menuDaBandeja }
         // O vidro é desenhado à parte, ancorado na borda e com a espessura de
         // REPOUSO: o ícone ampliado sai para fora dele, como no Dock.
         .background(alignment: alinhamentoDoVidro) {
@@ -456,42 +461,6 @@ struct TrayView: View {
                 .dockGlass(cornerRadius: TrayGeometry.cornerRadius(size: size),
                            tint: store.glassTint)
         }
-    }
-
-    /// O traço do Dock: discreto — e uma ALÇA. Arrastar redimensiona os ícones
-    /// ao vivo, e o clique-direito abre o menu da bandeja.
-    private var separador: some View {
-        RoundedRectangle(cornerRadius: 0.5)
-            .fill(Color(nsColor: .separatorColor))
-            .frame(width: edge.isVertical ? size * 0.9 : 1,
-                   height: edge.isVertical ? 1 : size * 0.9)
-            .padding(edge.isVertical ? .vertical : .horizontal,
-                     TrayGeometry.gap(size: size) + 3)
-            .padding(bordaInterna, TrayGeometry.indicatorRow(size: size)
-                                 + TrayGeometry.paddingBottom(size: size))
-            .contentShape(Rectangle())
-            .overlay(CursorDeRedimensionar(vertical: !edge.isVertical))
-            .gesture(redimensionarPelaAlca)
-            .contextMenu { menuDaBandeja }
-            .accessibilityLabel("Tamanho dos ícones")
-            .accessibilityValue("\(Int(size)) pontos")
-            .accessibilityHint("Arraste para redimensionar")
-    }
-
-    private var engrenagem: some View {
-        Button {
-            SettingsWindowController.shared.show()
-        } label: {
-            Image(systemName: "gearshape.fill")
-                .font(.system(size: size * 0.5))
-                .foregroundStyle(Color(nsColor: .secondaryLabelColor))
-                .frame(width: size, height: size)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .padding(bordaInterna, TrayGeometry.indicatorRow(size: size)
-                             + TrayGeometry.paddingBottom(size: size))
-        .accessibilityLabel("Configurações do Docka")
     }
 
     @ViewBuilder
