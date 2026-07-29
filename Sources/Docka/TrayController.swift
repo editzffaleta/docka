@@ -366,6 +366,7 @@ struct TrayView: View {
                        alignment: alinhamentoDoVidro)
                 .onContinuousHover { fase in atualizarHover(fase, painel: geo.size) }
         }
+        .modifier(EsquemaEscolhido(appearance: TrayAppearance(persisted: store.appearance)))
         .ignoresSafeArea()
         .onAppear { refreshRunning() }
         .onChange(of: state.visible) { _, v in if v { refreshRunning() } }

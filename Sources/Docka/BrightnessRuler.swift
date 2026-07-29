@@ -53,9 +53,10 @@ struct BrightnessRuler: View {
         let destaque = Brightness.tickHighlight(i, level: level)
         let graude = Brightness.isMajorTick(i)
         return Capsule()
+            // semântica, não branco fixo: em Tom claro o branco sumiria no vidro
             .fill(destaque > 0
                   ? Color.accentColor.opacity(0.35 + 0.65 * destaque)
-                  : Color.white.opacity(graude ? 0.32 : 0.16))
+                  : Color(nsColor: .labelColor).opacity(graude ? 0.55 : 0.30))
             .frame(width: espessura * (graude ? 0.62 : 0.40) + destaque * espessura * 0.16,
                    height: graude ? 2.5 : 1.5)
     }

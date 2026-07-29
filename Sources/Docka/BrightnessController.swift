@@ -137,6 +137,9 @@ struct BrightnessPanelView: View {
 
     var body: some View {
         conteudo
+            // o Tom escolhido vale também para as cores semânticas de dentro,
+            // não só para o material do painel
+            .modifier(EsquemaEscolhido(appearance: TrayAppearance(persisted: store.appearance)))
             .offset(x: state.visible || reduceMotion ? 0
                      : (edge == .left ? -160 : 160))
             .opacity(state.visible ? 1 : 0)
@@ -237,4 +240,16 @@ private struct CursorDeMao: NSViewRepresentable {
     }
     func makeNSView(context: Context) -> NSView { V() }
     func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+/// Aplica o Tom escolhido ao ambiente; automático segue o sistema.
+struct EsquemaEscolhido: ViewModifier {
+    let appearance: TrayAppearance
+    func body(content: Content) -> some View {
+        switch appearance {
+        case .automatico: content
+        case .claro:      content.environment(\.colorScheme, .light)
+        case .escuro:     content.environment(\.colorScheme, .dark)
+        }
+    }
 }
