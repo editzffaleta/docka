@@ -432,6 +432,14 @@ struct TrayView: View {
                 .contextMenu {
                     Button("Abrir") { app.launch() }
                     Button("Mostrar no Finder") { app.revealInFinder() }
+                    // Só para app aberto, como no Dock. `running` puro, e não o
+                    // isRunning passado ao ícone: aquele já vem multiplicado
+                    // pela preferência da bolinha, e desligar o indicador não
+                    // pode fazer o Encerrar sumir.
+                    if running.contains(app.path) {
+                        Divider()
+                        Button("Encerrar") { app.encerrar() }
+                    }
                     Divider()
                     Button("Remover desta bandeja", role: .destructive) {
                         withAnimation(.spring(duration: 0.35)) {

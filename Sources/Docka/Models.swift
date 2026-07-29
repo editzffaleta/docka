@@ -79,6 +79,18 @@ struct PinnedApp: Identifiable, Hashable {
                                            configuration: .init(), completionHandler: nil)
     }
 
+    /// As instâncias abertas deste app, se houver.
+    var emExecucao: [NSRunningApplication] {
+        NSWorkspace.shared.runningApplications.filter { $0.bundleURL?.path == path }
+    }
+
+    /// Pede o encerramento, como o "Encerrar" do Dock: é um pedido educado, não
+    /// um `kill`. Um app com trabalho não salvo mostra o próprio diálogo e pode
+    /// recusar — e é assim que tem de ser.
+    func encerrar() {
+        emExecucao.forEach { $0.terminate() }
+    }
+
     func revealInFinder() {
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
     }
