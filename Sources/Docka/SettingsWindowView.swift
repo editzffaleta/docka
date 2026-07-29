@@ -115,27 +115,27 @@ struct SettingsWindowView: View {
                 settingRow(icon: "cursorarrow.motionlines",
                            title: "Pressure Zone",
                            desc: "Só revela quando você empurra o cursor contra o canto de propósito.",
-                           on: Binding(get: { store.pressureZone }, set: { store.pressureZone = $0 }))
+                           on: $store.pressureZone)
 
                 settingRow(icon: "speaker.wave.2",
                            title: "Sons",
                            desc: "Toca um som ao revelar a bandeja e ao abrir um app.",
-                           on: Binding(get: { store.soundsEnabled }, set: { store.soundsEnabled = $0 }))
+                           on: $store.soundsEnabled)
 
                 settingRow(icon: "dock.rectangle",
                            title: "Seguir mudanças do Dock",
-                           desc: "Mantém o Docka alinhado quando o Dock muda de tamanho.",
-                           on: Binding(get: { store.followDock }, set: { store.followDock = $0 }))
+                           desc: "Assenta a bandeja em cima do Dock e realinha quando ele muda de tamanho ou de lado.",
+                           on: $store.followDock)
 
                 settingRow(icon: "arrow.up.circle",
                            title: "Animar abertura de aplicativos",
                            desc: "O ícone quica duas vezes enquanto o app abre.",
-                           on: Binding(get: { store.bounceOnLaunch }, set: { store.bounceOnLaunch = $0 }))
+                           on: $store.bounceOnLaunch)
 
                 settingRow(icon: "smallcircle.filled.circle",
                            title: "Mostrar indicadores para aplicativos abertos",
                            desc: "Bolinha branca sob cada app em execução.",
-                           on: Binding(get: { store.showIndicators }, set: { store.showIndicators = $0 }))
+                           on: $store.showIndicators)
 
                 // calibração
                 VStack(alignment: .leading, spacing: 14) {
@@ -151,8 +151,7 @@ struct SettingsWindowView: View {
                             .foregroundStyle(Theme.accent)
                             .contentTransition(.numericText())
                     }
-                    Slider(value: Binding(get: { store.offsetX }, set: { store.offsetX = $0 }),
-                           in: 0...400).tint(Theme.accent)
+                    Slider(value: $store.offsetX, in: 0...400).tint(Theme.accent)
 
                     HStack {
                         Text("Tamanho dos ícones")
@@ -163,8 +162,7 @@ struct SettingsWindowView: View {
                             .foregroundStyle(Theme.accent)
                             .contentTransition(.numericText())
                     }
-                    Slider(value: Binding(get: { store.iconSize }, set: { store.iconSize = $0 }),
-                           in: 32...64, step: 4).tint(Theme.accent)
+                    Slider(value: $store.iconSize, in: 32...64, step: 4).tint(Theme.accent)
 
                     HStack {
                         Text("Ampliação")
@@ -175,15 +173,13 @@ struct SettingsWindowView: View {
                             .foregroundStyle(Theme.accent)
                             .contentTransition(.numericText())
                     }
-                    Slider(value: Binding(get: { store.magnification }, set: { store.magnification = $0 }),
-                           in: 0...1).tint(Theme.accent)
+                    Slider(value: $store.magnification, in: 0...1).tint(Theme.accent)
 
                     HStack {
                         Text("Posição da bandeja na tela")
                             .font(.system(size: 12.5)).foregroundStyle(.white.opacity(0.75))
                         Spacer()
-                        Picker("", selection: Binding(get: { store.position },
-                                                      set: { store.position = $0 })) {
+                        Picker("", selection: $store.position) {
                             Text("Esquerda").tag("left")
                             Text("Centro").tag("center")
                             Text("Direita").tag("right")
