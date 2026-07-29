@@ -1,4 +1,5 @@
 import SwiftUI
+import DockaCore
 
 /// O vidro do painel.
 ///
@@ -11,13 +12,22 @@ import SwiftUI
 /// Abaixo do 26 cai no material antigo, que é o melhor disponível lá.
 struct DockGlass: ViewModifier {
     let cornerRadius: CGFloat
+    /// 0 = transparente, 1 = tonalizado — o mesmo eixo do slider do sistema.
+    var tint: Double = 0.5
 
     func body(content: Content) -> some View {
         if #available(macOS 26.0, *) {
-            // .regular é o vidro de chrome do sistema. O .clear existe para vidro
-            // sobre mídia (fotos, vídeo) e some demais sobre conteúdo claro.
-            content.glassEffect(.regular,
-                                in: .rect(cornerRadius: cornerRadius, style: .continuous))
+            // Duas alavancas para um só slider: a ponta transparente usa a
+            // variante .clear; do limiar para cima é .regular (o vidro de chrome
+            // do sistema) com tint preto crescente.
+            if GlassTint.usesClearGlass(tint) {
+                content.glassEffect(.clear,
+                                    in: .rect(cornerRadius: cornerRadius, style: .continuous))
+            } else {
+                content.glassEffect(
+                    .regular.tint(.black.opacity(GlassTint.overlayOpacity(tint))),
+                    in: .rect(cornerRadius: cornerRadius, style: .continuous))
+            }
         } else {
             content.background(legado)
         }
@@ -35,8 +45,8 @@ struct DockGlass: ViewModifier {
 }
 
 extension View {
-    func dockGlass(cornerRadius: CGFloat) -> some View {
-        modifier(DockGlass(cornerRadius: cornerRadius))
+    func dockGlass(cornerRadius: CGFloat, tint: Double) -> some View {
+        modifier(DockGlass(cornerRadius: cornerRadius, tint: tint))
     }
 }
 
@@ -52,10 +62,12 @@ struct DockLabel: View {
     var body: some View {
         Text(text)
             .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(.white)
+            // cores semânticas: o rótulo precisa virar escuro-sobre-claro
+            // quando a bandeja está em Tom claro
+            .foregroundStyle(Color(nsColor: .labelColor))
             .padding(.horizontal, 11)
             .padding(.vertical, 5)
-            .background(Capsule().fill(.black.opacity(0.78)))
+            .background(Capsule().fill(Color(nsColor: .controlBackgroundColor).opacity(0.92)))
             .fixedSize()
     }
 }

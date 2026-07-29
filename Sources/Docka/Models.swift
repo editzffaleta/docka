@@ -99,6 +99,8 @@ final class DockaStore: ObservableObject {
         static let showIndicators = "docka.showIndicators"
         static let bounceOnLaunch = "docka.bounceOnLaunch"
         static let position = "docka.position"
+        static let glassTint = "docka.glassTint"
+        static let appearance = "docka.appearance"
         static let atalhoTecla = "docka.hotkey.keyCode"
         static let atalhoMods = "docka.hotkey.modifiers"
     }
@@ -134,6 +136,33 @@ final class DockaStore: ObservableObject {
     @Published var showIndicators: Bool { didSet { defaults.set(showIndicators, forKey: Key.showIndicators) } }
     @Published var bounceOnLaunch: Bool { didSet { defaults.set(bounceOnLaunch, forKey: Key.bounceOnLaunch) } }
     @Published var position: String { didSet { defaults.set(position, forKey: Key.position) } }
+
+    /// Tonalização do vidro (0 = transparente, 1 = tonalizado), como o slider
+    /// Liquid Glass das Configurações do Sistema.
+    @Published var glassTint: Double { didSet { defaults.set(glassTint, forKey: Key.glassTint) } }
+    /// Aparência da bandeja: automático, claro ou escuro.
+    @Published var appearance: String { didSet { defaults.set(appearance, forKey: Key.appearance) } }
+
+    /// Valor do slider Liquid Glass do sistema, quando existe.
+    static var systemGlassTint: Double? {
+        UserDefaults.standard.object(forKey: "NSGlassTintAmount") as? Double
+    }
+
+    /// Estilo de ícones escolhido nas Configurações do Sistema (só leitura:
+    /// é o sistema que aplica o tema, e o NSWorkspace já entrega o ícone pronto).
+    static var systemIconStyle: String {
+        switch UserDefaults.standard.string(forKey: "AppleIconAppearanceTheme") {
+        case .some(let v) where v.hasPrefix("Clear"):   return "Translúcido"
+        case .some(let v) where v.hasPrefix("Tinted"):  return "Tonalizado"
+        case .some(let v) where v.hasPrefix("Dark"):    return "Tom escuro"
+        case .none:                                     return "Padrão"
+        case .some(let v):                              return v
+        }
+    }
+
+    func matchSystemGlassTint() {
+        glassTint = Self.systemGlassTint ?? 0.5
+    }
 
     // MARK: - Atalho global
 
@@ -243,6 +272,8 @@ final class DockaStore: ObservableObject {
             Key.showIndicators: true,
             Key.bounceOnLaunch: true,
             Key.position: "right",      // left | center | right
+            Key.glassTint: Self.systemGlassTint ?? 0.5,   // nasce igual ao do sistema
+            Key.appearance: TrayAppearance.automatico.rawValue,
             Key.atalhoTecla: Int(Shortcut.padrao.keyCode),
             Key.atalhoMods: Int(Shortcut.padrao.modifiers.rawValue)
         ])
@@ -258,6 +289,8 @@ final class DockaStore: ObservableObject {
         showIndicators = defaults.bool(forKey: Key.showIndicators)
         bounceOnLaunch = defaults.bool(forKey: Key.bounceOnLaunch)
         position = defaults.string(forKey: Key.position) ?? "right"
+        glassTint = defaults.double(forKey: Key.glassTint)
+        appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 
         apps = (defaults.stringArray(forKey: Key.apps) ?? [])
             .filter { FileManager.default.fileExists(atPath: $0) }

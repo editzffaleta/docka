@@ -62,8 +62,18 @@ final class TrayController {
         return NSScreen.screens.first { NSMouseInRect(loc, $0.frame, false) } ?? NSScreen.main
     }
 
+    /// Aparência da bandeja: nil = automático, e aí o painel segue o sistema.
+    private func applyAppearance() {
+        switch TrayAppearance(persisted: store.appearance) {
+        case .automatico: panel.appearance = nil
+        case .claro:      panel.appearance = NSAppearance(named: .aqua)
+        case .escuro:     panel.appearance = NSAppearance(named: .darkAqua)
+        }
+    }
+
     private func layoutPanel() {
         guard let screen = currentScreen else { return }
+        applyAppearance()
         panel.setFrame(TrayGeometry.frame(screenFrame: screen.frame,
                                           visibleFrame: screen.visibleFrame,
                                           appCount: store.apps.count,
@@ -266,7 +276,7 @@ struct TrayView: View {
             // separador + engrenagem
             // no Dock o traço vai quase da altura do ícone e é bem discreto
             RoundedRectangle(cornerRadius: 0.5)
-                .fill(.white.opacity(0.18))
+                .fill(Color(nsColor: .separatorColor))
                 .frame(width: 1, height: store.iconSize * 0.9)
                 .padding(.horizontal, TrayGeometry.gap(size: store.iconSize) + 3)
                 .padding(.bottom, TrayGeometry.indicatorRow(size: store.iconSize))
@@ -278,7 +288,7 @@ struct TrayView: View {
                 // mesmo tile dos apps, como o Lixo no Dock
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: store.iconSize * 0.5))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(Color(nsColor: .secondaryLabelColor))
                     .frame(width: store.iconSize, height: store.iconSize)
                     .contentShape(Rectangle())
             }
@@ -293,7 +303,8 @@ struct TrayView: View {
         .background(alignment: .bottom) {
             Color.clear
                 .frame(height: TrayGeometry.glassHeight(size: store.iconSize))
-                .dockGlass(cornerRadius: TrayGeometry.cornerRadius(size: store.iconSize))
+                .dockGlass(cornerRadius: TrayGeometry.cornerRadius(size: store.iconSize),
+                           tint: store.glassTint)
         }
         .coordinateSpace(name: "tray")
         .onContinuousHover(coordinateSpace: .named("tray")) { phase in
@@ -356,7 +367,7 @@ struct TrayIcon: View {
                 // bolinha de app em execução, proporcional ao ícone e SEM escalar
                 // com a magnificação — no Dock ela tem tamanho fixo
                 Circle()
-                    .fill(.white.opacity(isRunning ? 0.85 : 0))
+                    .fill(Color(nsColor: .labelColor).opacity(isRunning ? 0.85 : 0))
                     .frame(width: indicatorSize, height: indicatorSize)
             }
             // container de altura fixa alinhado embaixo: o ícone cresce PARA CIMA.

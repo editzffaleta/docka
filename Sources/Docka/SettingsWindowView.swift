@@ -1,4 +1,5 @@
 import SwiftUI
+import DockaCore
 
 // Janela principal pós-onboarding: gerenciar apps e ajustes
 struct SettingsWindowView: View {
@@ -144,6 +145,8 @@ struct SettingsWindowView: View {
                            desc: "Bolinha branca sob cada app em execução.",
                            on: $store.showIndicators)
 
+                aparenciaCard
+
                 // atalho global
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 14) {
@@ -283,6 +286,102 @@ struct SettingsWindowView: View {
         }
         // o usuário pode ter mexido nos Itens de Início de Sessão por fora
         .onAppear { store.refreshLaunchAtLogin() }
+    }
+
+    // MARK: aparência da bandeja (espelha a tela Aparência do sistema)
+
+    private var aparenciaCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("Aparência da bandeja", systemImage: "circle.lefthalf.filled")
+                .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+
+            HStack {
+                Text("Tom")
+                    .font(.system(size: 12.5)).foregroundStyle(.white.opacity(0.75))
+                Spacer()
+                Picker("", selection: $store.appearance) {
+                    ForEach(TrayAppearance.allCases, id: \.rawValue) { modo in
+                        Text(modo.titulo).tag(modo.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .fixedSize()
+                .accessibilityLabel("Tom da bandeja")
+            }
+
+            Divider().overlay(.white.opacity(0.08))
+
+            HStack {
+                Text("Liquid Glass")
+                    .font(.system(size: 12.5)).foregroundStyle(.white.opacity(0.75))
+                Spacer()
+                Text(store.glassTint < GlassTint.clearThreshold
+                     ? "Transparente"
+                     : "\(Int(store.glassTint * 100))%")
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(Theme.accent)
+                    .contentTransition(.numericText())
+            }
+
+            HStack(spacing: 10) {
+                Image(systemName: "square.on.square.dashed")
+                    .font(.system(size: 13)).foregroundStyle(.white.opacity(0.45))
+                    .accessibilityHidden(true)
+                Slider(value: $store.glassTint, in: 0...1).tint(Theme.accent)
+                    .accessibilityLabel("Tonalização do vidro")
+                    .accessibilityValue(store.glassTint < GlassTint.clearThreshold
+                                        ? "Transparente"
+                                        : "\(Int(store.glassTint * 100)) por cento")
+                Image(systemName: "square.filled.on.square")
+                    .font(.system(size: 13)).foregroundStyle(.white.opacity(0.45))
+                    .accessibilityHidden(true)
+            }
+
+            HStack(spacing: 10) {
+                Text("Da transparente à tonalizada, como o controle do sistema.")
+                    .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
+                Spacer()
+                if let sistema = DockaStore.systemGlassTint {
+                    Button("Igualar ao sistema (\(Int(sistema * 100))%)") {
+                        withAnimation(.spring(duration: 0.3)) { store.matchSystemGlassTint() }
+                    }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(Theme.accent)
+                }
+            }
+
+            Divider().overlay(.white.opacity(0.08))
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Estilo dos ícones")
+                        .font(.system(size: 12.5)).foregroundStyle(.white.opacity(0.75))
+                    // Não é ajuste do Docka: quem tematiza os ícones é o macOS, e o
+                    // NSWorkspace já entrega o ícone com o estilo aplicado. Um
+                    // controle nosso aqui faria a bandeja DESTOAR do resto do sistema.
+                    Text("Definido em Configurações do Sistema — a bandeja acompanha.")
+                        .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
+                }
+                Spacer()
+                Text(DockaStore.systemIconStyle)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Capsule().fill(.white.opacity(0.08)))
+                Button("Abrir") {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.Appearance-Settings.extension") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 11.5, weight: .semibold))
+                .foregroundStyle(Theme.accent)
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassCard(hoverLift: false)
     }
 
     // Linha própria porque, além do toggle, ela precisa explicar quando o macOS
