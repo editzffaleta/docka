@@ -171,7 +171,7 @@ final class TrayController {
             // que o hover real usa
             let sweepWidth = TrayGeometry.restingContentWidth(appCount: store.apps.count,
                                                               size: store.iconSize)
-                + 2 * TrayGeometry.padding
+                + 2 * TrayGeometry.padding(size: store.iconSize)
             Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { _ in
                 let t = Date().timeIntervalSince(start)
                 let phase = 0.5 + 0.5 * sin(t * 2.0 * .pi / 3.0)   // ciclo de 3 s
@@ -228,15 +228,15 @@ struct TrayView: View {
     }
 
     private var tray: some View {
-        HStack(alignment: .bottom, spacing: TrayGeometry.gap) {
+        HStack(alignment: .bottom, spacing: TrayGeometry.gap(size: store.iconSize)) {
             ForEach(Array(store.apps.enumerated()), id: \.element.id) { index, app in
                 TrayIcon(app: app,
                          // o centro vem da posição EM REPOUSO, calculada pelo índice:
                          // medir o centro já ampliado realimentaria a conta
                          center: Magnification.restingCenter(index: index,
                                                              size: store.iconSize,
-                                                             gap: TrayGeometry.gap,
-                                                             padding: TrayGeometry.padding),
+                                                             gap: TrayGeometry.gap(size: store.iconSize),
+                                                             padding: TrayGeometry.padding(size: store.iconSize)),
                          hoverX: effectiveHoverX,
                          size: store.iconSize,
                          maxScale: store.maxScale,
@@ -285,12 +285,15 @@ struct TrayView: View {
             .padding(.bottom, 10)
             .accessibilityLabel("Configurações do Docka")
         }
-        .padding(.horizontal, TrayGeometry.padding)
-        .padding(.vertical, TrayGeometry.verticalPadding)
-        // o raio acompanha a altura do vidro, como no Dock: um raio fixo fica
-        // quadrado com ícones pequenos e arredondado demais com ícones grandes
-        .dockGlass(cornerRadius: TrayGeometry.cornerRadius(size: store.iconSize,
-                                                           maxScale: store.maxScale))
+        .padding(.horizontal, TrayGeometry.padding(size: store.iconSize))
+        // O vidro é desenhado à parte, ancorado embaixo e com a altura de
+        // REPOUSO: assim o ícone ampliado sobe para fora dele, como no Dock,
+        // em vez de esticar o painel.
+        .background(alignment: .bottom) {
+            Color.clear
+                .frame(height: TrayGeometry.glassHeight(size: store.iconSize))
+                .dockGlass(cornerRadius: TrayGeometry.cornerRadius(size: store.iconSize))
+        }
         .coordinateSpace(name: "tray")
         .onContinuousHover(coordinateSpace: .named("tray")) { phase in
             switch phase {
@@ -328,7 +331,7 @@ struct TrayIcon: View {
     /// Só o ícone apontado mostra o nome, como no Dock.
     private var magnified: Bool {
         Magnification.isHovered(pointer: hoverX, itemCenter: center,
-                                size: size, gap: TrayGeometry.gap)
+                                size: size, gap: TrayGeometry.gap(size: size))
     }
 
     /// A bolinha do Dock é pequena e proporcional ao tile.
@@ -339,7 +342,7 @@ struct TrayIcon: View {
             action()
             launchBounce()
         } label: {
-            VStack(spacing: TrayGeometry.indicatorSpacing) {
+            VStack(spacing: TrayGeometry.indicatorSpacing(size: size)) {
                 Image(nsImage: app.icon)
                     .resizable()
                     .interpolation(.high)
@@ -358,7 +361,8 @@ struct TrayIcon: View {
             // container de altura fixa alinhado embaixo: o ícone cresce PARA CIMA.
             // A largura acompanha a escala — é ela que empurra os vizinhos.
             .frame(width: size * scale,
-                   height: size * maxScale + TrayGeometry.indicatorRow(size: size),
+                   height: size * maxScale + TrayGeometry.indicatorRow(size: size)
+                          + TrayGeometry.paddingBottom(size: size),
                    alignment: .bottom)
             .contentShape(Rectangle())
         }

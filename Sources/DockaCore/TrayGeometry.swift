@@ -25,48 +25,61 @@ public enum TrayGeometry {
     // Nomes iguais aos da especificação do dockbar, para a conta bater com o
     // desenho: `size` é o ícone, `gap` o vão entre eles, `padding` o vidro em volta.
 
-    // Os três números abaixo saíram de medir uma captura do Dock real desta
-    // máquina (tilesize 32), não de estimativa.
+    // As proporções abaixo saíram de medir uma captura do Dock real desta máquina
+    // (tilesize 32) e são expressas como FRAÇÃO do ícone: no Dock a barra inteira
+    // escala junto com o tile, e não só os ícones dentro de uma moldura fixa.
 
-    /// Vão entre ícones em repouso: no Dock os tiles quase se encostam.
-    public static let gap: CGFloat = 5
+    /// Vão entre tiles: no Dock é ZERO.
+    ///
+    /// O respiro que se vê entre os ícones do Dock é a margem transparente da
+    /// própria arte do ícone, não espaçamento de layout — medindo o passo entre
+    /// tiles na captura, ele é exatamente o tamanho do tile. Como o Docka desenha
+    /// a mesma arte (com a mesma margem) preenchendo `size`, o resultado visual
+    /// bate sem precisar somar nada.
+    public static func gap(size: CGFloat) -> CGFloat { size * 0.03 }
     /// Vidro à esquerda e à direita da faixa de ícones.
-    public static let padding: CGFloat = 13
-    /// Vidro acima e abaixo da faixa de ícones.
-    public static let verticalPadding: CGFloat = 7
+    public static func padding(size: CGFloat) -> CGFloat { size * 0.123 }
+    /// Vidro acima do tile.
+    public static func paddingTop(size: CGFloat) -> CGFloat { size * 0.108 }
+    /// Vidro abaixo da bolinha de execução, que quase encosta na borda.
+    public static func paddingBottom(size: CGFloat) -> CGFloat { size * 0.055 }
     /// Separador + engrenagem no fim da bandeja.
     public static let trailingWidth: CGFloat = 44
 
-    /// Altura do vidro: o ícone no tamanho máximo, a faixa da bolinha e o vidro em volta.
-    public static func glassHeight(size: CGFloat, maxScale: CGFloat) -> CGFloat {
-        size * max(1, maxScale) + indicatorRow(size: size) + 2 * verticalPadding
+    /// Altura do vidro — calculada com o ícone **em repouso**, de propósito.
+    ///
+    /// No Dock o vidro não cresce quando um ícone é ampliado: o ícone é que sobe
+    /// para fora dele. Dimensionar o vidro pelo tamanho máximo, como estava aqui,
+    /// deixava a bandeja alta e vazia enquanto ninguém aponta nada.
+    public static func glassHeight(size: CGFloat) -> CGFloat {
+        paddingTop(size: size) + size + indicatorRow(size: size) + paddingBottom(size: size)
     }
 
     /// Diâmetro da bolinha de app em execução — proporcional ao ícone, como no Dock.
     public static func indicatorSize(size: CGFloat) -> CGFloat {
-        max(3, size * 0.1)
+        max(2.5, size * 0.077)
     }
 
     /// Faixa abaixo do ícone reservada à bolinha.
     ///
-    /// Era uma folga fixa de 10 pt herdada do código original, sem relação com
-    /// nada: sobrava espaço ACIMA do ícone, que no Dock é justo.
+    /// Substituiu uma folga fixa de 10 pt herdada do código original, que não
+    /// tinha relação com nada e sobrava acima do ícone.
     public static func indicatorRow(size: CGFloat) -> CGFloat {
-        indicatorSpacing + indicatorSize(size: size)
+        indicatorSpacing(size: size) + indicatorSize(size: size)
     }
 
     /// Respiro entre o ícone e a bolinha.
-    public static let indicatorSpacing: CGFloat = 3
+    public static func indicatorSpacing(size: CGFloat) -> CGFloat { size * 0.068 }
 
     /// Raio do canto proporcional à altura, como no Dock. Um raio fixo deixa a
     /// bandeja quadrada com ícones pequenos e arredondada demais com ícones grandes.
-    public static func cornerRadius(size: CGFloat, maxScale: CGFloat) -> CGFloat {
-        glassHeight(size: size, maxScale: maxScale) * 0.30
+    public static func cornerRadius(size: CGFloat) -> CGFloat {
+        glassHeight(size: size) * 0.25
     }
 
     public static func restingContentWidth(appCount: Int, size: CGFloat) -> CGFloat {
         let n = max(1, appCount)
-        return CGFloat(n) * size + CGFloat(n - 1) * gap
+        return CGFloat(n) * size + CGFloat(n - 1) * gap(size: size)
     }
 
     /// Largura da faixa de ícones no pior caso de ampliação.
@@ -79,7 +92,7 @@ public enum TrayGeometry {
                                              maxScale: CGFloat,
                                              maxRange: CGFloat) -> CGFloat {
         let n = max(1, appCount)
-        let gaps = CGFloat(n - 1) * gap
+        let gaps = CGFloat(n - 1) * gap(size: size)
         let span = restingContentWidth(appCount: n, size: size)
         guard maxScale > 1, maxRange > 0 else { return span }
 
@@ -89,7 +102,7 @@ public enum TrayGeometry {
             var soma: CGFloat = 0
             for i in 0..<n {
                 let centro = Magnification.restingCenter(index: i, size: size,
-                                                         gap: gap, padding: 0)
+                                                         gap: gap(size: size), padding: 0)
                 soma += size * Magnification.scale(pointer: pointer, itemCenter: centro,
                                                    itemSize: size, maxRange: maxRange,
                                                    maxScale: maxScale)
@@ -107,7 +120,7 @@ public enum TrayGeometry {
                                  maxRange: CGFloat) -> CGFloat {
         magnifiedContentWidth(appCount: appCount, size: size,
                               maxScale: maxScale, maxRange: maxRange)
-            + 2 * padding + trailingWidth
+            + 2 * padding(size: size) + trailingWidth
     }
 
     /// Linha de base da bandeja.

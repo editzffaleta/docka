@@ -18,7 +18,7 @@ struct TrayGeometryTests {
         let tres = TrayGeometry.restingContentWidth(appCount: 3, size: 48)
         // o esperado vai num local tipado: dentro do #expect o literal seria
         // inferido como Int e a comparação não sobrevive à expansão do macro
-        let esperado: CGFloat = 3 * 48 + 2 * TrayGeometry.gap
+        let esperado: CGFloat = 3 * 48 + 2 * TrayGeometry.gap(size: 48)
         #expect(tres == esperado)
         #expect(TrayGeometry.restingContentWidth(appCount: 4, size: 48) > tres)
         #expect(TrayGeometry.restingContentWidth(appCount: 3, size: 64) > tres)
@@ -51,6 +51,33 @@ struct TrayGeometryTests {
         // deixaria com frame degenerado
         #expect(TrayGeometry.trayWidth(appCount: 0, size: 48, maxScale: 1.75, maxRange: 200)
                 == TrayGeometry.trayWidth(appCount: 1, size: 48, maxScale: 1.75, maxRange: 200))
+    }
+
+    // MARK: proporções do vidro (calibradas contra o Dock real)
+
+    @Test("O vidro tem 1,32× a altura do tile, como no Dock")
+    func proporcaoDoVidro() {
+        // medido numa captura do Dock desta máquina: vidro 86px sobre tile 65px.
+        // A proporção vale para qualquer tamanho porque a barra escala junto.
+        for tamanho in [CGFloat(32), 48, 64] {
+            let razao = TrayGeometry.glassHeight(size: tamanho) / tamanho
+            #expect(razao > 1.28 && razao < 1.36)
+        }
+    }
+
+    @Test("O vidro é dimensionado pelo tile em repouso, não pelo ampliado")
+    func vidroIgnoraAmpliacao() {
+        // no Dock o ícone ampliado sobe para FORA do vidro. Se a altura levasse
+        // maxScale em conta, a bandeja ficaria alta e vazia enquanto ninguém
+        // aponta nada — por isso glassHeight nem recebe esse parâmetro.
+        let tile: CGFloat = 48
+        #expect(TrayGeometry.glassHeight(size: tile) < tile * 1.75)
+    }
+
+    @Test("Há mais vidro acima dos ícones que abaixo")
+    func vidroAssimetrico() {
+        // no Dock a bolinha quase encosta na borda de baixo
+        #expect(TrayGeometry.paddingTop(size: 32) > TrayGeometry.paddingBottom(size: 32))
     }
 
     // MARK: posição horizontal
