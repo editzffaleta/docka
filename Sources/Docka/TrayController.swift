@@ -530,14 +530,15 @@ struct TrayIcon: View {
         // deslocamento fixo ele flutuava alto sobre os ícones em repouso.
         .overlay(alignment: .bottom) {
             if magnified {
+                // sem transição: no Dock real o rótulo troca SECO ao passar de um
+                // ícone ao outro — o crossfade deixava dois balões na tela
                 DockLabel(text: app.name)
                     .offset(y: -(size * scale) - 16)
-                    .transition(.opacity)
+                    .transition(.identity)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)   // o nome já vai no rótulo do botão
             }
         }
-        .animation(.spring(duration: 0.25), value: magnified)
         .zIndex(magnified ? 1 : 0)
     }
 
