@@ -88,6 +88,44 @@ struct BrightnessTests {
         #expect(Brightness.knobLabel(level: 0) == "0")
     }
 
+    @Test("O arrasto parte do nível do INÍCIO, sem realimentar")
+    func arrastoNaoRealimenta() {
+        // O defeito relatado: calcular a partir do valor corrente fazia o brilho
+        // disparar. Aqui o alvo depende só do início e do deslocamento, então
+        // repetir o mesmo evento CONVERGE em vez de escapar.
+        let inicio = 0.5, span: CGFloat = 250
+        var atual = inicio
+        for _ in 0..<40 {
+            atual = Brightness.dragStep(inicio: inicio, translation: -25,
+                                        atual: atual, span: span)
+        }
+        // -25 pt em 250 = +10%
+        #expect(abs(atual - 0.6) < 0.001)
+    }
+
+    @Test("A suavização aproxima do alvo sem passar dele")
+    func suavizacaoConverge() {
+        let inicio = 0.2, span: CGFloat = 250
+        var atual = inicio
+        var anterior = -1.0
+        for _ in 0..<30 {
+            atual = Brightness.dragStep(inicio: inicio, translation: -125,
+                                        atual: atual, span: span)
+            #expect(atual > anterior)      // sempre avança
+            #expect(atual <= 0.7001)       // nunca ultrapassa o alvo (0,2 + 50%)
+            anterior = atual
+        }
+        #expect(abs(atual - 0.7) < 0.01)
+    }
+
+    @Test("Um evento sozinho não salta o caminho inteiro")
+    func umEventoNaoSalta() {
+        // é o que tira o solavanco: o primeiro evento anda só uma fração
+        let um = Brightness.dragStep(inicio: 0.5, translation: -250,
+                                     atual: 0.5, span: 250)
+        #expect(um > 0.5 && um < 0.7)
+    }
+
     @Test("Esfregar para cima aumenta, para baixo diminui")
     func esfregar() {
         // translation.height é NEGATIVO ao arrastar para cima

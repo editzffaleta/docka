@@ -130,6 +130,7 @@ struct BrightnessPanelView: View {
     @EnvironmentObject var state: TrayState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var esfregando = false
+    @State private var nivelAoIniciar: Double?
 
     private var edge: TrayEdge { Brightness.edge(persisted: store.brightnessEdge) }
     private let comprimento: CGFloat = 250
@@ -179,21 +180,27 @@ struct BrightnessPanelView: View {
         // acompanha o nível ao longo da régua
         .offset(y: Brightness.knobOffset(level: store.brightnessLevel,
                                          rulerLength: comprimento))
-        .animation(esfregando ? nil : .smooth(duration: 0.2), value: store.brightnessLevel)
+        .animation(.smooth(duration: 0.12), value: store.brightnessLevel)
         .contentShape(Circle())
         .overlay(CursorDeMao().allowsHitTesting(false))
         .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { g in
-                    // posicional: o botão fica SOB o cursor em vez de escorregar
+                    // A referência é o nível do INÍCIO do gesto. Calcular a
+                    // partir do corrente realimentava: o botão se movia, o
+                    // cursor ficava noutra posição relativa a ele e o brilho
+                    // disparava — o "muito rápido" relatado.
+                    if nivelAoIniciar == nil { nivelAoIniciar = store.brightnessLevel }
                     esfregando = true
-                    let alvo = g.location.y - 22        // centro do botão
-                    aplicar(Brightness.levelFromKnob(
-                        offset: Brightness.knobOffset(level: store.brightnessLevel,
-                                                      rulerLength: comprimento) + alvo,
-                        rulerLength: comprimento))
+                    aplicar(Brightness.dragStep(inicio: nivelAoIniciar ?? store.brightnessLevel,
+                                                translation: g.translation.height,
+                                                atual: store.brightnessLevel,
+                                                span: comprimento))
                 }
-                .onEnded { _ in esfregando = false }
+                .onEnded { _ in
+                    nivelAoIniciar = nil
+                    esfregando = false
+                }
         )
         .frame(height: comprimento + 44, alignment: .center)
         .accessibilityLabel("Brilho")

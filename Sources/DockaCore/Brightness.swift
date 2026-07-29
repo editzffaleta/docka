@@ -68,12 +68,30 @@ public enum Brightness {
         (0.5 - clamp(level)) * rulerLength
     }
 
-    /// Nível a partir da posição do botão — o inverso do de cima, para o
-    /// arrasto no botão ser posicional, e não relativo: o botão fica sob o
-    /// cursor em vez de escorregar dele.
+    /// Nível a partir da posição do botão — o inverso do de cima.
     public static func levelFromKnob(offset: CGFloat, rulerLength: CGFloat) -> Double {
         guard rulerLength > 0 else { return 0.5 }
         return clamp(0.5 - Double(offset / rulerLength))
+    }
+
+    /// Suavização do arrasto: o nível caminha esta fração da distância até o
+    /// alvo em cada evento, em vez de saltar direto.
+    ///
+    /// Sem isso o controle fica nervoso — cada micro-movimento do mouse vira um
+    /// degrau de brilho. Com 0,35 o valor persegue o cursor em ~3 quadros, o que
+    /// some para o olho e tira o solavanco.
+    public static let dragSmoothing: Double = 0.35
+
+    /// Um passo do arrasto suavizado, a partir do nível do INÍCIO do gesto.
+    ///
+    /// A referência é o início, não o valor corrente: calcular a partir do
+    /// corrente realimenta a conta — o botão se move, o cursor passa a estar
+    /// noutra posição relativa a ele, e o brilho dispara. Foi exatamente o
+    /// defeito relatado.
+    public static func dragStep(inicio: Double, translation: CGFloat,
+                                atual: Double, span: CGFloat) -> Double {
+        let alvo = clamp(inicio - Double(translation / max(span, 1)))
+        return clamp(atual + (alvo - atual) * dragSmoothing)
     }
 
     /// O que o botão mostra: o sol em repouso, a porcentagem enquanto arrasta.

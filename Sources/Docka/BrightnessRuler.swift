@@ -24,9 +24,12 @@ struct BrightnessRuler: View {
                 DragGesture(minimumDistance: 0)
                     .onChanged { g in
                         arrastando = true
-                        // a régua cresce de baixo para cima
-                        let fracao = 1 - g.location.y / geo.size.height
-                        aplicar(Brightness.clamp(Double(fracao)))
+                        // a régua cresce de baixo para cima. Aqui a posição do
+                        // cursor é absoluta na régua (que não se move), então
+                        // não há realimentação — só a suavização, para o valor
+                        // não pular a cada micro-movimento.
+                        let alvo = Brightness.clamp(Double(1 - g.location.y / geo.size.height))
+                        aplicar(level + (alvo - level) * Brightness.dragSmoothing)
                     }
                     .onEnded { _ in arrastando = false }
             )
