@@ -210,8 +210,14 @@ struct TrayView: View {
                 store.iconSize = TrayGeometry.iconSizeDragged(
                     from: tamanhoAoIniciarArrasto ?? store.iconSize,
                     verticalTranslation: g.translation.height)
+                // o cursor sai da alça durante o arrasto e o hover termina —
+                // sem isto a seta vertical viraria seta comum no meio do gesto
+                NSCursor.resizeUpDown.set()
             }
-            .onEnded { _ in tamanhoAoIniciarArrasto = nil }
+            .onEnded { _ in
+                tamanhoAoIniciarArrasto = nil
+                NSCursor.arrow.set()
+            }
     }
 
     var body: some View {
@@ -298,8 +304,15 @@ struct TrayView: View {
                 .padding(.horizontal, TrayGeometry.gap(size: store.iconSize) + 3)
                 .padding(.bottom, TrayGeometry.indicatorRow(size: store.iconSize))
                 .contentShape(Rectangle())          // pegada maior que o traço de 1 pt
-                .onHover { dentro in
-                    if dentro { NSCursor.resizeUpDown.push() } else { NSCursor.pop() }
+                // O cursor precisa ser REAFIRMADO a cada movimento: num painel
+                // não-ativante o AppKit reseta o cursor sozinho, e um push/pop
+                // único se perde. onContinuousHover dispara por movimento, então
+                // o set() ganha a disputa — é como o Dock se comporta no traço.
+                .onContinuousHover { fase in
+                    switch fase {
+                    case .active: NSCursor.resizeUpDown.set()
+                    case .ended:  NSCursor.arrow.set()
+                    }
                 }
                 .gesture(redimensionarPeloSeparador)
                 .contextMenu {
