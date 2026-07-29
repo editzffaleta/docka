@@ -62,6 +62,25 @@ public enum Brightness {
         clamp(inicio - Double(translation / dragSpan))
     }
 
+    /// Deslocamento do botão ao longo da régua para um nível.
+    /// 0 no meio; negativo sobe (o eixo do SwiftUI cresce para baixo).
+    public static func knobOffset(level: Double, rulerLength: CGFloat) -> CGFloat {
+        (0.5 - clamp(level)) * rulerLength
+    }
+
+    /// Nível a partir da posição do botão — o inverso do de cima, para o
+    /// arrasto no botão ser posicional, e não relativo: o botão fica sob o
+    /// cursor em vez de escorregar dele.
+    public static func levelFromKnob(offset: CGFloat, rulerLength: CGFloat) -> Double {
+        guard rulerLength > 0 else { return 0.5 }
+        return clamp(0.5 - Double(offset / rulerLength))
+    }
+
+    /// O que o botão mostra: o sol em repouso, a porcentagem enquanto arrasta.
+    public static func knobLabel(level: Double) -> String {
+        "\(Int((clamp(level) * 100).rounded()))"
+    }
+
     // MARK: régua
 
     /// Quantidade de traços da régua. Múltiplo dos passos para cada toque de

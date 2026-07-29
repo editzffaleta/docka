@@ -122,15 +122,17 @@ final class BrightnessController {
     }
 }
 
-/// A régua e o botão de sol, como no controle de referência.
+/// A régua e o botão, como no controle de referência: o botão acompanha o
+/// nível ao longo da régua e, enquanto se arrasta, troca o sol pela
+/// porcentagem.
 struct BrightnessPanelView: View {
     @EnvironmentObject var store: DockaStore
     @EnvironmentObject var state: TrayState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var nivelAoIniciar: Double?
     @State private var esfregando = false
 
     private var edge: TrayEdge { Brightness.edge(persisted: store.brightnessEdge) }
+    private let comprimento: CGFloat = 250
 
     var body: some View {
         conteudo
@@ -143,58 +145,64 @@ struct BrightnessPanelView: View {
             .ignoresSafeArea()
     }
 
-    /// O sol fica do lado de DENTRO da tela, para não sair pela borda.
+    /// O botão fica do lado de DENTRO da tela, para não sair pela borda.
     @ViewBuilder
     private var conteudo: some View {
         let regua = BrightnessRuler(
             level: Binding(get: { store.brightnessLevel },
                            set: { store.brightnessLevel = $0 }),
-            comprimento: 250, espessura: 54)
+            comprimento: comprimento, espessura: 54)
         HStack(spacing: 14) {
-            if edge == .left { regua; sol } else { sol; regua }
+            if edge == .left { regua; botao } else { botao; regua }
         }
     }
 
-    /// O sol é botão E alça: clique curto abre os ajustes, clique-e-arraste
-    /// esfrega o brilho. Um `Button` não serve — ele consome o arrasto.
-    private var sol: some View {
-        Image(systemName: "sun.max.fill")
-            .font(.system(size: 17))
-            .foregroundStyle(Color.accentColor)
-            .frame(width: 40, height: 40)
-            .background(Circle().fill(Color(nsColor: .black).opacity(0.82)))
-            .overlay(Circle().strokeBorder(
-                Color.accentColor.opacity(esfregando ? 0.95 : 0.45),
-                lineWidth: esfregando ? 2 : 1))
-            .scaleEffect(esfregando ? 1.12 : 1)
-            .animation(.smooth(duration: 0.15), value: esfregando)
-            .contentShape(Circle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { g in
-                        // o nível de referência é o do INÍCIO do gesto: acumular
-                        // sobre o corrente faria o brilho acelerar sozinho
-                        if nivelAoIniciar == nil { nivelAoIniciar = store.brightnessLevel }
-                        guard abs(g.translation.height) > Brightness.dragThreshold else { return }
-                        esfregando = true
-                        aplicar(Brightness.scrub(from: nivelAoIniciar ?? store.brightnessLevel,
-                                                 translation: g.translation.height))
-                    }
-                    .onEnded { g in
-                        let arrastou = abs(g.translation.height) > Brightness.dragThreshold
-                        nivelAoIniciar = nil
-                        esfregando = false
-                        // sem movimento, foi clique
-                        if !arrastou { SettingsWindowController.shared.show() }
-                    }
-            )
-            .accessibilityLabel("Brilho")
-            .accessibilityValue("\(Int(store.brightnessLevel * 100)) por cento")
-            .accessibilityHint("Arraste para cima ou para baixo para ajustar; toque para abrir os ajustes")
-            .accessibilityAdjustableAction { direcao in
-                aplicar(store.brightnessLevel
-                        + (direcao == .increment ? Brightness.stepSize : -Brightness.stepSize))
+    /// Botão-alça: mostra o sol parado e a porcentagem enquanto arrasta, e
+    /// desliza ao longo da régua acompanhando o nível.
+    private var botao: some View {
+        ZStack {
+            Circle().fill(Color(nsColor: .black).opacity(0.82))
+            Circle().strokeBorder(Color.accentColor.opacity(esfregando ? 0.95 : 0.45),
+                                  lineWidth: esfregando ? 2 : 1)
+            if esfregando {
+                Text(Brightness.knobLabel(level: store.brightnessLevel))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .monospacedDigit()
+            } else {
+                Image(systemName: "sun.max.fill")
+                    .font(.system(size: 17))
+                    .foregroundStyle(Color.accentColor)
             }
+        }
+        .frame(width: 44, height: 44)
+        // acompanha o nível ao longo da régua
+        .offset(y: Brightness.knobOffset(level: store.brightnessLevel,
+                                         rulerLength: comprimento))
+        .animation(esfregando ? nil : .smooth(duration: 0.2), value: store.brightnessLevel)
+        .contentShape(Circle())
+        .overlay(CursorDeMao().allowsHitTesting(false))
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { g in
+                    // posicional: o botão fica SOB o cursor em vez de escorregar
+                    esfregando = true
+                    let alvo = g.location.y - 22        // centro do botão
+                    aplicar(Brightness.levelFromKnob(
+                        offset: Brightness.knobOffset(level: store.brightnessLevel,
+                                                      rulerLength: comprimento) + alvo,
+                        rulerLength: comprimento))
+                }
+                .onEnded { _ in esfregando = false }
+        )
+        .frame(height: comprimento + 44, alignment: .center)
+        .accessibilityLabel("Brilho")
+        .accessibilityValue("\(Brightness.knobLabel(level: store.brightnessLevel)) por cento")
+        .accessibilityHint("Arraste para cima ou para baixo para ajustar")
+        .accessibilityAdjustableAction { direcao in
+            aplicar(store.brightnessLevel
+                    + (direcao == .increment ? Brightness.stepSize : -Brightness.stepSize))
+        }
     }
 
     private func aplicar(_ novo: Double) {
@@ -202,4 +210,22 @@ struct BrightnessPanelView: View {
         BrightnessBackend.escrever(novo)
         store.brightnessLevel = BrightnessBackend.ler() ?? novo
     }
+}
+
+/// Mãozinha sobre o botão. Mesmo motivo do cursor da alça da bandeja: um app
+/// inativo não consegue impor cursor com set(); quem responde é o cursorUpdate.
+private struct CursorDeMao: NSViewRepresentable {
+    final class V: NSView {
+        override func updateTrackingAreas() {
+            super.updateTrackingAreas()
+            trackingAreas.forEach(removeTrackingArea)
+            addTrackingArea(NSTrackingArea(rect: .zero,
+                                           options: [.cursorUpdate, .activeAlways, .inVisibleRect],
+                                           owner: self))
+        }
+        override func cursorUpdate(with event: NSEvent) { NSCursor.openHand.set() }
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    }
+    func makeNSView(context: Context) -> NSView { V() }
+    func updateNSView(_ nsView: NSView, context: Context) {}
 }

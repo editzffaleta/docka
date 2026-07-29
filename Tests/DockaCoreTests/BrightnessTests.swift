@@ -1,4 +1,5 @@
 import Testing
+import CoreGraphics
 @testable import DockaCore
 
 @Suite("Controle de brilho")
@@ -57,6 +58,34 @@ struct BrightnessTests {
         #expect(Brightness.tickHighlight(meio + 1, level: nivel) > 0)
         #expect(Brightness.tickHighlight(0, level: nivel) == 0)
         #expect(Brightness.tickHighlight(Brightness.tickCount - 1, level: nivel) == 0)
+    }
+
+    @Test("O botão fica na altura do nível ao longo da régua")
+    func botaoSegueONivel() {
+        let L: CGFloat = 250
+        #expect(Brightness.knobOffset(level: 0.5, rulerLength: L) == 0)      // meio
+        #expect(Brightness.knobOffset(level: 1, rulerLength: L) == -L / 2)   // topo
+        #expect(Brightness.knobOffset(level: 0, rulerLength: L) == L / 2)    // base
+    }
+
+    @Test("Arrastar o botão é posicional: ele não escorrega do cursor")
+    func botaoPosicional() {
+        let L: CGFloat = 250
+        for nivel in stride(from: 0.0, through: 1.0, by: 0.1) {
+            let off = Brightness.knobOffset(level: nivel, rulerLength: L)
+            #expect(abs(Brightness.levelFromKnob(offset: off, rulerLength: L) - nivel) < 0.0001)
+        }
+        // além das pontas, trava
+        #expect(Brightness.levelFromKnob(offset: -999, rulerLength: L) == 1)
+        #expect(Brightness.levelFromKnob(offset: 999, rulerLength: L) == 0)
+    }
+
+    @Test("O rótulo do botão é a porcentagem inteira")
+    func rotuloDoBotao() {
+        #expect(Brightness.knobLabel(level: 0.99) == "99")
+        #expect(Brightness.knobLabel(level: 0.094) == "9")
+        #expect(Brightness.knobLabel(level: 1) == "100")
+        #expect(Brightness.knobLabel(level: 0) == "0")
     }
 
     @Test("Esfregar para cima aumenta, para baixo diminui")
