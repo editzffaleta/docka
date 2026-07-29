@@ -199,6 +199,9 @@ final class TrayManager {
     private var bandejasRegistradas: Set<UUID>?
     private var brilho: DeslizanteController?
     private var volume: DeslizanteController?
+    private var orbita: OrbitaController?
+    /// Evita reabrir sem parar enquanto o cursor fica parado na quina.
+    private var cantoArmado = true
     private var timer: Timer?
     private var cancellable: Any?
     private var screenObserver: NSObjectProtocol?
@@ -225,6 +228,8 @@ final class TrayManager {
             self?.controllers.values.forEach { $0.tick() }
             self?.brilho?.tick()
             self?.volume?.tick()
+            self?.orbita?.tick()
+            self?.verificarCanto()
         }
         RunLoop.main.add(timer!, forMode: .common)
     }
@@ -246,6 +251,12 @@ final class TrayManager {
         } else if brilho != nil {
             brilho?.encerrar()
             brilho = nil
+        }
+        if store.orbitaControl {
+            if orbita == nil { orbita = OrbitaController() }
+        } else if orbita != nil {
+            orbita?.encerrar()
+            orbita = nil
         }
         if store.volumeControl {
             if volume == nil { volume = DeslizanteController(.volume) }
@@ -271,6 +282,25 @@ final class TrayManager {
         }
     }
 
+    /// Abre a órbita quando o cursor crava na quina escolhida.
+    ///
+    /// O gesto de mouse global da referência exigiria Monitoramento de Entrada.
+    /// O canto sai da mesma leitura de posição que já revela a bandeja, e não
+    /// pede permissão nenhuma.
+    private func verificarCanto() {
+        guard let orbita, store.orbitaControl,
+              let canto = CantoDaTela(rawValue: store.orbitaCanto) else { cantoArmado = true; return }
+        let loc = NSEvent.mouseLocation
+        guard let tela = NSScreen.screens.first(where: { NSMouseInRect(loc, $0.frame, false) })?.frame
+        else { return }
+        if Orbita.noCanto(canto, cursor: loc, tela: tela) {
+            // só dispara na CHEGADA: parado na quina, o anel piscaria sem parar
+            if cantoArmado { cantoArmado = false; orbita.abrir() }
+        } else {
+            cantoArmado = true
+        }
+    }
+
     /// O atalho global age na bandeja principal.
     /// Executa o que o atalho pediu. Cada bandeja e cada controle de borda tem
     /// o seu — antes havia um atalho só, que servia a primeira bandeja e
@@ -281,6 +311,7 @@ final class TrayManager {
         case .brilho:          brilho?.toggleFromHotKey()
         case .volume:          volume?.toggleFromHotKey()
         case .ajustes:         SettingsWindowController.shared.show()
+        case .orbita:          orbita?.alternar()
         }
     }
 

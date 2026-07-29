@@ -10,11 +10,11 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, brilho, volume, atalho, sobre
+    case geral, apps, aparencia, bandeja, orbita, brilho, volume, atalho, sobre
     var id: String { rawValue }
 
     /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .brilho, .volume, .atalho], [.sobre]]
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .brilho, .volume, .atalho], [.sobre]]
 
     var titulo: String {
         switch self {
@@ -22,6 +22,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .apps:      return "Apps"
         case .aparencia: return "Aparência"
         case .bandeja:   return "Bandeja"
+        case .orbita:    return "Órbita"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
         case .atalho:    return "Atalhos"
@@ -35,6 +36,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .apps:      return "square.grid.2x2.fill"
         case .aparencia: return "circle.lefthalf.filled"
         case .bandeja:   return "dock.rectangle"
+        case .orbita:    return "circle.circle.fill"
         case .brilho:    return "sun.max.fill"
         case .volume:    return "speaker.wave.2.fill"
         case .atalho:    return "keyboard.fill"
@@ -49,6 +51,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .apps:      return .blue
         case .aparencia: return .indigo
         case .bandeja:   return .teal
+        case .orbita:    return .purple
         case .brilho:    return .yellow
         case .volume:    return .pink
         case .atalho:    return .orange
@@ -167,6 +170,7 @@ struct SettingsWindowView: View {
         case .apps:      AppsView()
         case .aparencia: AparenciaView()
         case .bandeja:   BandejaView()
+        case .orbita:    OrbitaSettingsView()
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
         case .atalho:    AtalhoView()
@@ -672,6 +676,62 @@ private struct LinhaSlider: View {
     }
 }
 
+// MARK: - Órbita
+
+private struct OrbitaSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+
+    private var bandejaEscolhida: DockConfig? {
+        store.docks.first { $0.id.uuidString == store.orbitaBandeja } ?? store.docks.first
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.orbitaControl) {
+                    Text("Órbita")
+                    Text("Um anel com seus apps em volta do cursor. Aponte na direção de um e clique para abrir.")
+                }
+            }
+
+            if store.orbitaControl {
+                Section {
+                    Picker("Apps da", selection: $store.orbitaBandeja) {
+                        ForEach(Array(store.docks.enumerated()), id: \.element.id) { i, d in
+                            Text("Bandeja \(i + 1) — \(d.apps.count) \(d.apps.count == 1 ? "app" : "apps")")
+                                .tag(d.id.uuidString)
+                        }
+                    }
+                } footer: {
+                    Text("A órbita mostra os apps de uma bandeja que você já organizou, em vez de pedir uma segunda lista para manter.")
+                }
+
+                Section {
+                    Picker("Canto da tela", selection: $store.orbitaCanto) {
+                        Text("Nenhum").tag("")
+                        ForEach(CantoDaTela.allCases, id: \.self) {
+                            Text($0.titulo).tag($0.rawValue)
+                        }
+                    }
+                } header: {
+                    Text("Como abrir")
+                } footer: {
+                    Text("Cravar o cursor na quina abre a órbita ali mesmo. O atalho global faz o mesmo e abre onde o cursor estiver — configure na aba Atalhos.\n\nO gesto de mouse em qualquer lugar da tela, como fazem apps parecidos, exigiria a permissão de Monitoramento de Entrada. O Docka não pede permissão nenhuma, então o gatilho é a quina ou o atalho.")
+                }
+
+                if let d = bandejaEscolhida, d.apps.isEmpty {
+                    Section {
+                        Label("Essa bandeja está sem apps — a órbita não tem o que mostrar.",
+                              systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
 // MARK: - Brilho e volume
 
 /// A mesma página para os dois controles de borda: o que muda entre eles cabe
@@ -803,7 +863,7 @@ private struct AtalhoView: View {
                      : "O atalho fixa a bandeja aberta e a esconde no segundo toque.")
             }
 
-            if store.brightnessControl || store.volumeControl {
+            if store.brightnessControl || store.volumeControl || store.orbitaControl {
                 Section {
                     if store.brightnessControl {
                         linha(.brilho, titulo: "Controle de brilho",
@@ -812,6 +872,10 @@ private struct AtalhoView: View {
                     if store.volumeControl {
                         linha(.volume, titulo: "Controle de volume",
                               detalhe: "Abre a régua fixada, sem precisar encostar na borda")
+                    }
+                    if store.orbitaControl {
+                        linha(.orbita, titulo: "Órbita",
+                              detalhe: "Abre o anel de apps em volta do cursor")
                     }
                 } header: {
                     Text("Controles de borda")

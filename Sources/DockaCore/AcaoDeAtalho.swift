@@ -14,6 +14,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case volume
     /// Abre a janela de ajustes.
     case ajustes
+    /// Abre a órbita no cursor.
+    case orbita
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -22,6 +24,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .brilho:            return "brilho"
         case .volume:            return "volume"
         case .ajustes:           return "ajustes"
+        case .orbita:            return "orbita"
         }
     }
 
@@ -30,6 +33,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "brilho":  self = .brilho
         case "volume":  self = .volume
         case "ajustes": self = .ajustes
+        case "orbita":  self = .orbita
         default:
             guard id.hasPrefix("bandeja:"),
                   let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count)))

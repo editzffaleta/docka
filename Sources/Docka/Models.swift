@@ -135,6 +135,9 @@ final class DockaStore: ObservableObject {
         static let atalhoTecla = "docka.hotkey.keyCode"
         static let atalhoMods = "docka.hotkey.modifiers"
         static let atalhos = "docka.hotkeys"
+        static let orbita = "docka.orbitaControl"
+        static let orbitaBandeja = "docka.orbitaDock"
+        static let orbitaCanto = "docka.orbitaCorner"
     }
 
     private let defaults = UserDefaults.standard
@@ -238,6 +241,13 @@ final class DockaStore: ObservableObject {
     /// Volume da saída de áudio, lido do sistema.
     @Published var volumeLevel: Double { didSet { defaults.set(volumeLevel, forKey: Key.volumeNivel) } }
 
+    /// Mostra a órbita — o anel de apps em volta do cursor.
+    @Published var orbitaControl: Bool { didSet { defaults.set(orbitaControl, forKey: Key.orbita) } }
+    /// Qual bandeja alimenta a órbita (UUID em texto; vazio = a primeira).
+    @Published var orbitaBandeja: String { didSet { defaults.set(orbitaBandeja, forKey: Key.orbitaBandeja) } }
+    /// Canto da tela que abre a órbita; vazio = só pelo atalho.
+    @Published var orbitaCanto: String { didSet { defaults.set(orbitaCanto, forKey: Key.orbitaCanto) } }
+
     /// Tonalização do vidro (0 = transparente, 1 = tonalizado), como o slider
     /// Liquid Glass das Configurações do Sistema.
     @Published var glassTint: Double { didSet { defaults.set(glassTint, forKey: Key.glassTint) } }
@@ -335,6 +345,7 @@ final class DockaStore: ObservableObject {
         case .brilho:  return "Controle de brilho"
         case .volume:  return "Controle de volume"
         case .ajustes: return "Abrir os ajustes"
+        case .orbita:  return "Órbita"
         case .bandeja(let uuid):
             guard let i = docks.firstIndex(where: { $0.id == uuid }) else { return "Bandeja" }
             let d = docks[i]
@@ -447,6 +458,9 @@ final class DockaStore: ObservableObject {
             Key.volumeNivel: 0.5,
             Key.volumeBorda: TrayEdge.left.rawValue,
             Key.volumeAlinhamento: TrayAlignment.center.rawValue,
+            Key.orbita: false,
+            Key.orbitaBandeja: "",
+            Key.orbitaCanto: "",
             Key.glassTint: GlassTint.systemNeutral,   // nasce translúcido, como o Dock
             Key.appearance: TrayAppearance.automatico.rawValue,
             Key.atalhoTecla: Int(Shortcut.padrao.keyCode),
@@ -472,6 +486,9 @@ final class DockaStore: ObservableObject {
         volumeLevel = VolumeBackend.ler() ?? defaults.double(forKey: Key.volumeNivel)
         volumeEdge = defaults.string(forKey: Key.volumeBorda) ?? TrayEdge.left.rawValue
         volumeAlignment = defaults.string(forKey: Key.volumeAlinhamento) ?? TrayAlignment.center.rawValue
+        orbitaControl = defaults.bool(forKey: Key.orbita)
+        orbitaBandeja = defaults.string(forKey: Key.orbitaBandeja) ?? ""
+        orbitaCanto = defaults.string(forKey: Key.orbitaCanto) ?? ""
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 

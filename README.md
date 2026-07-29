@@ -58,6 +58,19 @@ Perfeita para quem mantém o Dock enxuto mas quer um segundo escalão de apps se
 | **Atalhos globais** | Uma combinação para cada bandeja, para o brilho, para o volume e para abrir os ajustes — todas configuráveis, e o ⇧⌘D de sempre continua sendo o da primeira bandeja. O atalho fixa o painel aberto (não some com o mouse) e o esconde no segundo toque |
 | **Multi-monitor** | A bandeja aparece na tela onde o cursor está |
 
+### Órbita
+
+Um anel com seus apps em volta do cursor. Aponte na direção de um e clique — não é preciso acertar o ícone, a direção basta.
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Aponte e solte** | O item do setor para onde o cursor aponta cresce e mostra o nome no miolo; o clique abre. Vale a direção, não a distância |
+| **Zona morta no centro** | O buraco do anel não seleciona nada, então ele nunca nasce com um app já escolhido debaixo do cursor |
+| **Reaproveita uma bandeja** | Mostra os apps de uma bandeja que você já organizou, em vez de pedir uma segunda lista para manter |
+| **Abre pela quina ou pelo atalho** | Cravar o cursor na quina escolhida abre o anel ali; o atalho global abre onde o cursor estiver. Esc fecha |
+
+> Apps parecidos abrem o anel com um gesto de mouse em qualquer ponto da tela. Isso exige a permissão de **Monitoramento de Entrada**, e o Docka não pede permissão nenhuma — daí a quina e o atalho, que a leitura de posição do cursor e o Carbon já permitem sem pedir nada.
+
 ### Controles de borda
 
 Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a bandeja — encostando o cursor na borda. Não são itens da bandeja: cada uma tem painel próprio.
