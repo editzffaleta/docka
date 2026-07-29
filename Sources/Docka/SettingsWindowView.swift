@@ -10,11 +10,11 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, brilho, atalho, sobre
+    case geral, apps, aparencia, bandeja, brilho, volume, atalho, sobre
     var id: String { rawValue }
 
     /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .brilho, .atalho], [.sobre]]
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .brilho, .volume, .atalho], [.sobre]]
 
     var titulo: String {
         switch self {
@@ -23,6 +23,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .aparencia: return "Aparência"
         case .bandeja:   return "Bandeja"
         case .brilho:    return "Brilho"
+        case .volume:    return "Volume"
         case .atalho:    return "Atalho"
         case .sobre:     return "Sobre"
         }
@@ -35,6 +36,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .aparencia: return "circle.lefthalf.filled"
         case .bandeja:   return "dock.rectangle"
         case .brilho:    return "sun.max.fill"
+        case .volume:    return "speaker.wave.2.fill"
         case .atalho:    return "keyboard.fill"
         case .sobre:     return "info"
         }
@@ -48,6 +50,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .aparencia: return .indigo
         case .bandeja:   return .teal
         case .brilho:    return .yellow
+        case .volume:    return .pink
         case .atalho:    return .orange
         case .sobre:     return .secondary
         }
@@ -164,7 +167,8 @@ struct SettingsWindowView: View {
         case .apps:      AppsView()
         case .aparencia: AparenciaView()
         case .bandeja:   BandejaView()
-        case .brilho:    BrilhoView()
+        case .brilho:    DeslizadorView(deslizador: .brilho)
+        case .volume:    DeslizadorView(deslizador: .volume)
         case .atalho:    AtalhoView()
         case .sobre:     SobreView()
         }
@@ -668,64 +672,113 @@ private struct LinhaSlider: View {
     }
 }
 
-// MARK: - Brilho
+// MARK: - Brilho e volume
 
-private struct BrilhoView: View {
+/// A mesma página para os dois controles de borda: o que muda entre eles cabe
+/// no `Deslizador`, então uma página só evita que as duas se desencontrem.
+private struct DeslizadorView: View {
+    let deslizador: Deslizador
     @EnvironmentObject var store: DockaStore
+
+    private var ligado: Bool { store[keyPath: deslizador.ligado] }
+    private var disponivel: Bool { deslizador.disponivel() }
 
     var body: some View {
         Form {
-            if !BrightnessBackend.disponivel {
+            if !disponivel {
                 Section {
-                    Label("Este Mac não expõe o controle de brilho para apps.",
+                    Label(deslizador.avisoIndisponivel,
                           systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
                 }
             }
 
             Section {
-                Toggle(isOn: $store.brightnessControl) {
-                    Text("Controle de brilho")
-                    Text("Uma régua própria numa lateral da tela. Encoste o cursor na borda para revelá-la.")
+                Toggle(isOn: interruptor) {
+                    Text("Controle de \(deslizador.titulo.lowercased())")
+                    Text(deslizador.descricao)
                 }
             }
 
-            if store.brightnessControl && BrightnessBackend.disponivel {
+            if ligado && disponivel {
                 Section {
-                    Picker("Lateral", selection: $store.brightnessEdge) {
-                        ForEach(Brightness.bordasPermitidas, id: \.self) {
+                    Picker("Lateral", selection: escolha(deslizador.borda)) {
+                        ForEach(Deslizante.bordasPermitidas, id: \.self) {
                             Text($0.titulo).tag($0.rawValue)
                         }
                     }
-                    Picker("Posição", selection: $store.brightnessAlignment) {
+                    Picker("Posição", selection: escolha(deslizador.alinhamento)) {
                         ForEach(TrayAlignment.allCases, id: \.self) {
                             Text($0.titulo(for: .left)).tag($0.rawValue)
                         }
                     }
                 } footer: {
-                    Text("Só laterais: a régua é vertical, e deitada na borda inferior viraria outra coisa.")
+                    Text(rodapeDaPosicao)
                 }
 
                 Section {
                     LabeledContent("Nível") {
                         HStack(spacing: 14) {
-                            BrightnessRuler(level: $store.brightnessLevel,
-                                            comprimento: 190, espessura: 46)
+                            ReguaVertical(deslizador: deslizador, level: nivel,
+                                          comprimento: 190, espessura: 46)
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("\(Int(store.brightnessLevel * 100))%")
+                                Text("\(Int(nivel.wrappedValue * 100))%")
                                     .font(.title3).monospacedDigit()
-                                Button("Reler da tela") { store.sincronizarBrilho() }
-                                    .controlSize(.small)
+                                Button("Reler do sistema") {
+                                    if let real = deslizador.ler() {
+                                        store[keyPath: deslizador.nivel] = real
+                                    }
+                                }
+                                .controlSize(.small)
                             }
                         }
                         .padding(.vertical, 4)
                     }
                 } footer: {
-                    Text("O nível é lido da tela de verdade, e o controle não pede permissão nenhuma. Isso usa uma API do sistema não documentada: se uma atualização do macOS removê-la, o Docka esconde o controle em vez de fingir que funciona.")
+                    Text(deslizador.nota)
                 }
             }
         }
         .formStyle(.grouped)
+    }
+
+    /// Avisa quando os dois controles caem na mesma lateral e posição: eles não
+    /// se cobrem (o volume se acomoda ao lado), mas o usuário merece saber por
+    /// que o painel não apareceu onde ele pediu.
+    private var rodapeDaPosicao: String {
+        let base = "Só laterais: a régua é vertical, e deitada na borda inferior viraria outra coisa."
+        let mesmaBorda = store.brightnessEdge == store.volumeEdge
+        let mesmaPosicao = store.brightnessAlignment == store.volumeAlignment
+        guard store.brightnessControl && store.volumeControl && mesmaBorda && mesmaPosicao else {
+            return base
+        }
+        return base + " Brilho e volume estão na mesma lateral e na mesma posição: o volume se acomoda logo ao lado do brilho para os dois caberem."
+    }
+
+    private var nivel: Binding<Double> {
+        Binding(get: { store[keyPath: deslizador.nivel] },
+                set: { store[keyPath: deslizador.nivel] = $0 })
+    }
+
+    private var interruptor: Binding<Bool> {
+        Binding(get: { store[keyPath: deslizador.ligado] },
+                set: { novo in
+                    if deslizador.id == "volume" { store.volumeControl = novo }
+                    else { store.brightnessControl = novo }
+                })
+    }
+
+    private func escolha(_ kp: KeyPath<DockaStore, String>) -> Binding<String> {
+        Binding(get: { store[keyPath: kp] },
+                set: { novo in
+                    switch kp {
+                    case \DockaStore.brightnessEdge:      store.brightnessEdge = novo
+                    case \DockaStore.brightnessAlignment: store.brightnessAlignment = novo
+                    case \DockaStore.volumeEdge:          store.volumeEdge = novo
+                    case \DockaStore.volumeAlignment:     store.volumeAlignment = novo
+                    default: break
+                    }
+                })
     }
 }
 

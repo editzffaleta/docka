@@ -2,12 +2,21 @@ import SwiftUI
 import AppKit
 import DockaCore
 
-/// Painel próprio do controle de brilho — não é um item da bandeja.
+/// O painel de um controle deslizante de borda — brilho ou volume.
 ///
-/// Vive numa lateral e aparece do mesmo jeito que a bandeja: encostando o
-/// cursor na borda. Só laterais porque a régua é vertical.
-final class BrightnessController {
+/// Não é item de bandeja: tem janela própria, mora numa lateral e aparece do
+/// mesmo jeito que a bandeja, encostando o cursor na borda. Só laterais porque
+/// a régua é vertical.
+///
+/// Um controlador por `Deslizador`. Este arquivo já foi `BrightnessController`,
+/// com o brilho embutido; ao chegar o volume, a escolha foi generalizar em vez
+/// de copiar — os dois painéis se comportam igual até no detalhe de esconder.
+final class DeslizanteController {
+    let deslizador: Deslizador
     let state = TrayState()
+
+    /// Quadro de outro controle a evitar, quando os dois dividem a lateral.
+    var evitar: (() -> CGRect?)?
 
     private var panel: NSPanel!
     private let store = DockaStore.shared
@@ -15,9 +24,15 @@ final class BrightnessController {
     private var retirada: DispatchWorkItem?
     private var currentScreen: NSScreen? = NSScreen.main
 
-    init() { buildPanel() }
+    init(_ deslizador: Deslizador) {
+        self.deslizador = deslizador
+        buildPanel()
+    }
 
-    private var edge: TrayEdge { Brightness.edge(persisted: store.brightnessEdge) }
+    /// Onde o painel está agora — o irmão consulta isto para não sentar em cima.
+    var quadro: CGRect { panel.frame }
+
+    private var edge: TrayEdge { deslizador.bordaAtual(store) }
 
     private func buildPanel() {
         panel = NSPanel(contentRect: .zero,
@@ -32,9 +47,9 @@ final class BrightnessController {
         // DEPOIS de isFloatingPanel, de propósito: essa propriedade rebaixa a
         // janela para o nível .floating (3) e sobrescreve o nível pedido antes.
         // Com ela primeiro, o painel ficava ABAIXO do Dock da Apple (nível 20).
-        panel.level = .mainMenu                       // acima de tudo, como o Dock
+        panel.level = .mainMenu
         panel.contentView = NSHostingView(
-            rootView: BrightnessPanelView()
+            rootView: DeslizantePanelView(deslizador: deslizador)
                 .environmentObject(store)
                 .environmentObject(state))
         layout()
@@ -53,20 +68,23 @@ final class BrightnessController {
         case .claro:      panel.appearance = NSAppearance(named: .aqua)
         case .escuro:     panel.appearance = NSAppearance(named: .darkAqua)
         }
-        panel.setFrame(
-            TrayGeometry.frame(screenFrame: screen.frame,
-                               visibleFrame: screen.visibleFrame,
-                               edge: edge,
-                               alignment: TrayAlignment(persisted: store.brightnessAlignment),
-                               offset: 24,
-                               followDock: store.followDock,
-                               extent: Brightness.panelExtent,
-                               thickness: Brightness.panelThickness),
-            display: true)
+        let pedido = TrayGeometry.frame(
+            screenFrame: screen.frame,
+            visibleFrame: screen.visibleFrame,
+            edge: edge,
+            alignment: TrayAlignment(persisted: store[keyPath: deslizador.alinhamento]),
+            offset: 24,
+            followDock: store.followDock,
+            extent: Deslizante.panelExtent,
+            thickness: Deslizante.panelThickness)
+        // brilho e volume podem ser postos na mesma lateral e na mesma posição;
+        // aí o segundo se acomoda em vez de cobrir o primeiro
+        panel.setFrame(Deslizante.desviar(pedido, de: evitar?(), dentro: screen.frame),
+                       display: true)
     }
 
     func tick() {
-        guard store.onboarded, store.brightnessControl else { return }
+        guard store.onboarded, store[keyPath: deslizador.ligado] else { return }
         let loc = NSEvent.mouseLocation
         if !state.visible,
            let s = NSScreen.screens.first(where: { NSMouseInRect(loc, $0.frame, false) }),
@@ -99,7 +117,8 @@ final class BrightnessController {
         hideDelay = 0
         retirada?.cancel(); retirada = nil
         panel.orderFrontRegardless()
-        store.sincronizarBrilho()   // pode ter mudado pelo teclado enquanto sumido
+        // pode ter mudado pelo teclado, ou pela troca de fone, enquanto sumido
+        if let real = deslizador.ler() { store[keyPath: deslizador.nivel] = real }
         withAnimation(reduceMotion ? .easeOut(duration: 0.18)
                                    : .spring(duration: 0.42, bounce: 0.28)) {
             state.visible = true
@@ -126,17 +145,20 @@ final class BrightnessController {
 }
 
 /// A régua e o botão, como no controle de referência: o botão acompanha o
-/// nível ao longo da régua e, enquanto se arrasta, troca o sol pela
+/// nível ao longo da régua e, enquanto se arrasta, troca o ícone pela
 /// porcentagem.
-struct BrightnessPanelView: View {
+struct DeslizantePanelView: View {
+    let deslizador: Deslizador
     @EnvironmentObject var store: DockaStore
     @EnvironmentObject var state: TrayState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var esfregando = false
     @State private var nivelAoIniciar: Double?
 
-    private var edge: TrayEdge { Brightness.edge(persisted: store.brightnessEdge) }
-    private let comprimento = Brightness.rulerLength
+    private var edge: TrayEdge { deslizador.bordaAtual(store) }
+    private let comprimento = Deslizante.rulerLength
+
+    private var nivel: Double { store[keyPath: deslizador.nivel] }
 
     var body: some View {
         conteudo
@@ -157,18 +179,19 @@ struct BrightnessPanelView: View {
     /// O botão fica do lado de DENTRO da tela, para não sair pela borda.
     @ViewBuilder
     private var conteudo: some View {
-        let regua = BrightnessRuler(
-            level: Binding(get: { store.brightnessLevel },
-                           set: { store.brightnessLevel = $0 }),
+        let regua = ReguaVertical(
+            deslizador: deslizador,
+            level: Binding(get: { nivel },
+                           set: { store[keyPath: deslizador.nivel] = $0 }),
             comprimento: comprimento,
-            espessura: Brightness.rulerThickness,
+            espessura: Deslizante.rulerThickness,
             tint: store.glassTint)
         HStack(spacing: 12) {
             if edge == .left { regua; botao } else { botao; regua }
         }
     }
 
-    /// Botão-alça: mostra o sol parado e a porcentagem enquanto arrasta, e
+    /// Botão-alça: mostra o ícone parado e a porcentagem enquanto arrasta, e
     /// desliza ao longo da régua acompanhando o nível.
     private var botao: some View {
         ZStack {
@@ -176,86 +199,61 @@ struct BrightnessPanelView: View {
             Circle().strokeBorder(Color.accentColor.opacity(esfregando ? 0.95 : 0.35),
                                   lineWidth: esfregando ? 2 : 1)
             if esfregando {
-                Text(Brightness.knobLabel(level: store.brightnessLevel))
+                Text(Deslizante.knobLabel(level: nivel))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                     .monospacedDigit()
             } else {
-                Image(systemName: "sun.max.fill")
+                Image(systemName: deslizador.simbolo(nivel))
                     .font(.system(size: 14))
                     .foregroundStyle(Color.accentColor)
             }
         }
-        .frame(width: Brightness.knobSize, height: Brightness.knobSize)
+        .frame(width: Deslizante.knobSize, height: Deslizante.knobSize)
         .contentShape(Circle())
         // A área de arrasto entra ANTES do .offset, de propósito: `.offset`
         // desloca só o desenho, e um overlay aplicado depois fica no frame de
-        // layout, parado no centro. Era esse o defeito — o sol subia com o
+        // layout, parado no centro. Era esse o defeito — o ícone subia com o
         // nível e a área clicável ficava para trás; só em 50% os dois
         // coincidiam. Aplicado aqui, os dois deslocam juntos.
         .overlay(
             ArrastoAppKit(
                 aoArrastar: { d in
-                    if nivelAoIniciar == nil { nivelAoIniciar = store.brightnessLevel }
-                    // até o limiar ainda pode ser clique: não mexe no brilho
-                    guard !Brightness.isTap(translation: d.height) else { return }
+                    if nivelAoIniciar == nil { nivelAoIniciar = nivel }
+                    // até o limiar ainda pode ser clique: não mexe no valor
+                    guard !Deslizante.isTap(translation: d.height) else { return }
                     esfregando = true
-                    aplicar(Brightness.dragStep(inicio: nivelAoIniciar ?? store.brightnessLevel,
+                    aplicar(Deslizante.dragStep(inicio: nivelAoIniciar ?? nivel,
                                                 translation: d.height,
-                                                atual: store.brightnessLevel,
+                                                atual: nivel,
                                                 span: comprimento))
                 },
                 aoSoltar: { d in
                     nivelAoIniciar = nil
                     esfregando = false
-                    if Brightness.isTap(translation: d.height) {
+                    if Deslizante.isTap(translation: d.height) {
                         SettingsWindowController.shared.show()
                     }
                 },
                 cursor: .openHand)
         )
         // acompanha o nível ao longo da régua — desenho E área de toque
-        .offset(y: Brightness.knobOffset(level: store.brightnessLevel,
-                                         rulerLength: comprimento))
+        .offset(y: Deslizante.knobOffset(level: nivel, rulerLength: comprimento))
         // mola curta: o botão persegue o valor sem parecer preso a um trilho
-        .animation(.spring(response: 0.22, dampingFraction: 0.82),
-                   value: store.brightnessLevel)
-        .frame(height: comprimento + Brightness.knobSize, alignment: .center)
-        .accessibilityLabel("Brilho")
-        .accessibilityValue("\(Brightness.knobLabel(level: store.brightnessLevel)) por cento")
-        .accessibilityHint("Arraste para ajustar o brilho; toque para abrir os ajustes")
+        .animation(.spring(response: 0.22, dampingFraction: 0.82), value: nivel)
+        .frame(height: comprimento + Deslizante.knobSize, alignment: .center)
+        .accessibilityLabel(deslizador.titulo)
+        .accessibilityValue("\(Deslizante.knobLabel(level: nivel)) por cento")
+        .accessibilityHint(deslizador.dica)
         .accessibilityAdjustableAction { direcao in
-            aplicar(store.brightnessLevel
-                    + (direcao == .increment ? Brightness.stepSize : -Brightness.stepSize))
+            aplicar(nivel + (direcao == .increment ? Deslizante.stepSize : -Deslizante.stepSize))
         }
     }
 
     private func aplicar(_ novo: Double) {
-        let antes = store.brightnessLevel
-        guard abs(novo - antes) > 0.0001 else { return }
-        BrightnessBackend.escrever(novo)
-        let depois = BrightnessBackend.ler() ?? novo
-        store.brightnessLevel = depois
-        if Brightness.crossedStep(from: antes, to: depois) { store.tiqueDeBrilho() }
+        store[keyPath: deslizador.nivel] =
+            NivelDoSistema.aplicar(novo, atual: nivel, com: deslizador)
     }
-}
-
-/// Mãozinha sobre o botão. Mesmo motivo do cursor da alça da bandeja: um app
-/// inativo não consegue impor cursor com set(); quem responde é o cursorUpdate.
-private struct CursorDeMao: NSViewRepresentable {
-    final class V: NSView {
-        override func updateTrackingAreas() {
-            super.updateTrackingAreas()
-            trackingAreas.forEach(removeTrackingArea)
-            addTrackingArea(NSTrackingArea(rect: .zero,
-                                           options: [.cursorUpdate, .activeAlways, .inVisibleRect],
-                                           owner: self))
-        }
-        override func cursorUpdate(with event: NSEvent) { NSCursor.openHand.set() }
-        override func hitTest(_ point: NSPoint) -> NSView? { nil }
-    }
-    func makeNSView(context: Context) -> NSView { V() }
-    func updateNSView(_ nsView: NSView, context: Context) {}
 }
 
 /// Aplica o Tom escolhido ao ambiente; automático segue o sistema.

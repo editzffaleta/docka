@@ -196,7 +196,8 @@ final class TrayManager {
     static let shared = TrayManager()
 
     private var controllers: [UUID: TrayController] = [:]
-    private var brilho: BrightnessController?
+    private var brilho: DeslizanteController?
+    private var volume: DeslizanteController?
     private var timer: Timer?
     private var cancellable: Any?
     private var screenObserver: NSObjectProtocol?
@@ -216,11 +217,13 @@ final class TrayManager {
         ) { [weak self] _ in
             self?.controllers.values.forEach { $0.layout() }
             self?.brilho?.layout()
+            self?.volume?.layout()
         }
         // um timer só para todas as bandejas: N timers a 20 Hz seria desperdício
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
             self?.controllers.values.forEach { $0.tick() }
             self?.brilho?.tick()
+            self?.volume?.tick()
         }
         RunLoop.main.add(timer!, forMode: .common)
     }
@@ -236,14 +239,27 @@ final class TrayManager {
         }
         controllers.values.forEach { $0.layout() }
 
-        // o controle de brilho tem painel próprio: não é item de bandeja
+        // brilho e volume têm painel próprio: não são itens de bandeja
         if store.brightnessControl {
-            if brilho == nil { brilho = BrightnessController() }
-            brilho?.layout()
+            if brilho == nil { brilho = DeslizanteController(.brilho) }
         } else if brilho != nil {
             brilho?.encerrar()
             brilho = nil
         }
+        if store.volumeControl {
+            if volume == nil { volume = DeslizanteController(.volume) }
+            // o volume é quem cede lugar quando os dois caem na mesma lateral:
+            // o brilho chegou primeiro e é o que o usuário já tinha posicionado
+            volume?.evitar = { [weak self] in
+                self?.brilho.flatMap { $0.quadro }
+            }
+        } else if volume != nil {
+            volume?.encerrar()
+            volume = nil
+        }
+        // o layout do brilho vem antes: o do volume consulta o quadro dele
+        brilho?.layout()
+        volume?.layout()
     }
 
     /// O atalho global age na bandeja principal.
@@ -255,6 +271,7 @@ final class TrayManager {
     func startDemo() {
         if let id = store.docks.first?.id { controllers[id]?.startDemo() }
         brilho?.startDemo()
+        volume?.startDemo()
     }
 }
 

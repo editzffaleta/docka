@@ -114,6 +114,10 @@ final class DockaStore: ObservableObject {
         static let brilhoNivel = "docka.brightnessLevel"
         static let brilhoBorda = "docka.brightnessEdge"
         static let brilhoAlinhamento = "docka.brightnessAlignment"
+        static let volume = "docka.volumeControl"
+        static let volumeNivel = "docka.volumeLevel"
+        static let volumeBorda = "docka.volumeEdge"
+        static let volumeAlinhamento = "docka.volumeAlignment"
         static let glassTint = "docka.glassTint"
         static let appearance = "docka.appearance"
         static let atalhoTecla = "docka.hotkey.keyCode"
@@ -212,6 +216,15 @@ final class DockaStore: ObservableObject {
     /// Brilho da tela, lido do sistema.
     @Published var brightnessLevel: Double { didSet { defaults.set(brightnessLevel, forKey: Key.brilhoNivel) } }
 
+    /// Borda onde o controle de volume mora — só laterais, como o de brilho.
+    @Published var volumeEdge: String { didSet { defaults.set(volumeEdge, forKey: Key.volumeBorda) } }
+    @Published var volumeAlignment: String { didSet { defaults.set(volumeAlignment, forKey: Key.volumeAlinhamento) } }
+
+    /// Mostra o controle de volume.
+    @Published var volumeControl: Bool { didSet { defaults.set(volumeControl, forKey: Key.volume) } }
+    /// Volume da saída de áudio, lido do sistema.
+    @Published var volumeLevel: Double { didSet { defaults.set(volumeLevel, forKey: Key.volumeNivel) } }
+
     /// Tonalização do vidro (0 = transparente, 1 = tonalizado), como o slider
     /// Liquid Glass das Configurações do Sistema.
     @Published var glassTint: Double { didSet { defaults.set(glassTint, forKey: Key.glassTint) } }
@@ -240,6 +253,13 @@ final class DockaStore: ObservableObject {
     /// ter mexido pelo teclado enquanto ele estava escondido.
     func sincronizarBrilho() {
         if let real = BrightnessBackend.ler() { brightnessLevel = real }
+    }
+
+    /// Relê o volume da saída. Além do teclado, ele muda sozinho quando o
+    /// usuário troca de fone: o "padrão" passa a ser outro aparelho, com outro
+    /// nível.
+    func sincronizarVolume() {
+        if let real = VolumeBackend.ler() { volumeLevel = real }
     }
 
     func matchSystemGlassTint() {
@@ -358,6 +378,10 @@ final class DockaStore: ObservableObject {
             Key.brilhoNivel: 0.5,
             Key.brilhoBorda: TrayEdge.right.rawValue,
             Key.brilhoAlinhamento: TrayAlignment.center.rawValue,
+            Key.volume: false,
+            Key.volumeNivel: 0.5,
+            Key.volumeBorda: TrayEdge.left.rawValue,
+            Key.volumeAlinhamento: TrayAlignment.center.rawValue,
             Key.glassTint: GlassTint.systemNeutral,   // nasce translúcido, como o Dock
             Key.appearance: TrayAppearance.automatico.rawValue,
             Key.atalhoTecla: Int(Shortcut.padrao.keyCode),
@@ -379,6 +403,10 @@ final class DockaStore: ObservableObject {
         brightnessLevel = BrightnessBackend.ler() ?? defaults.double(forKey: Key.brilhoNivel)
         brightnessEdge = defaults.string(forKey: Key.brilhoBorda) ?? TrayEdge.right.rawValue
         brightnessAlignment = defaults.string(forKey: Key.brilhoAlinhamento) ?? TrayAlignment.center.rawValue
+        volumeControl = defaults.bool(forKey: Key.volume)
+        volumeLevel = VolumeBackend.ler() ?? defaults.double(forKey: Key.volumeNivel)
+        volumeEdge = defaults.string(forKey: Key.volumeBorda) ?? TrayEdge.left.rawValue
+        volumeAlignment = defaults.string(forKey: Key.volumeAlinhamento) ?? TrayAlignment.center.rawValue
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 
@@ -438,4 +466,9 @@ final class DockaStore: ObservableObject {
     /// Tique do brilho: baixo de propósito. No volume cheio, dezesseis deles
     /// num arrasto viram barulho em vez de retorno.
     func tiqueDeBrilho() { playSound("Tink", volume: 0.22) }
+
+    /// Tique do volume: o mesmo do brilho, mas um tom acima e mais discreto.
+    /// Ele soa POR CIMA do que se está ajustando — um tique alto no volume alto
+    /// vira estouro, e no volume baixo nem se ouve.
+    func tiqueDeVolume() { playSound("Pop", volume: 0.18) }
 }

@@ -1,24 +1,28 @@
 import SwiftUI
 import DockaCore
 
-/// A régua de brilho: barra escura com traços, faixa acesa no nível atual.
-struct BrightnessRuler: View {
+/// A régua: barra de vidro com traços e uma faixa acesa no nível atual.
+///
+/// Serve brilho e volume — quem manda no comportamento é o `Deslizador`
+/// recebido. Antes isto era `BrightnessRuler`, com o backend de brilho fixo por
+/// dentro; ao chegar o volume, generalizar custou menos do que ter duas réguas
+/// idênticas se desencontrando com o tempo.
+struct ReguaVertical: View {
+    let deslizador: Deslizador
     @Binding var level: Double
     /// Comprimento da régua no eixo em que ela cresce.
-    var comprimento: CGFloat = Brightness.rulerLength
-    var espessura: CGFloat = Brightness.rulerThickness
+    var comprimento: CGFloat = Deslizante.rulerLength
+    var espessura: CGFloat = Deslizante.rulerThickness
     /// Tonalização do vidro, a mesma da bandeja.
     var tint: Double = 0.5
-
-    @State private var arrastando = false
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                ForEach(0..<Brightness.tickCount, id: \.self) { i in
+                ForEach(0..<Deslizante.tickCount, id: \.self) { i in
                     traco(i)
                         .position(x: geo.size.width / 2,
-                                  y: geo.size.height * (1 - Brightness.tickLevel(i)))
+                                  y: geo.size.height * (1 - Deslizante.tickLevel(i)))
                 }
                 // a faixa acesa desliza junto com o valor em vez de saltar de
                 // traço em traço
@@ -28,15 +32,13 @@ struct BrightnessRuler: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { g in
-                        arrastando = true
                         // a régua cresce de baixo para cima. Aqui a posição do
                         // cursor é absoluta na régua (que não se move), então
                         // não há realimentação — só a suavização, para o valor
                         // não pular a cada micro-movimento.
-                        let alvo = Brightness.clamp(Double(1 - g.location.y / geo.size.height))
-                        aplicar(level + (alvo - level) * Brightness.dragSmoothing)
+                        let alvo = Deslizante.clamp(Double(1 - g.location.y / geo.size.height))
+                        aplicar(level + (alvo - level) * Deslizante.dragSmoothing)
                     }
-                    .onEnded { _ in arrastando = false }
             )
         }
         .frame(width: espessura, height: comprimento)
@@ -45,16 +47,16 @@ struct BrightnessRuler: View {
         // desktop. O preto sólido de antes não reagia ao fundo.
         .dockGlass(cornerRadius: espessura * 0.46, tint: tint)
         .accessibilityElement()
-        .accessibilityLabel("Brilho da tela")
+        .accessibilityLabel(deslizador.rotulo)
         .accessibilityValue("\(Int(level * 100)) por cento")
         .accessibilityAdjustableAction { direcao in
-            aplicar(level + (direcao == .increment ? Brightness.stepSize : -Brightness.stepSize))
+            aplicar(level + (direcao == .increment ? Deslizante.stepSize : -Deslizante.stepSize))
         }
     }
 
     private func traco(_ i: Int) -> some View {
-        let destaque = Brightness.tickHighlight(i, level: level)
-        let graude = Brightness.isMajorTick(i)
+        let destaque = Deslizante.tickHighlight(i, level: level)
+        let graude = Deslizante.isMajorTick(i)
         return Capsule()
             // semântica, não branco fixo: em Tom claro o branco sumiria no vidro
             .fill(destaque > 0
@@ -64,16 +66,7 @@ struct BrightnessRuler: View {
                    height: graude ? 2.5 : 1.5)
     }
 
-    /// Escreve o valor no sistema e relê: a régua mostra o brilho REAL, não uma
-    /// estimativa. Ler é justamente o que a tecla de mídia não permitia.
     private func aplicar(_ novo: Double) {
-        let antes = level
-        guard abs(novo - antes) > 0.0001 else { return }
-        BrightnessBackend.escrever(novo)
-        let depois = BrightnessBackend.ler() ?? novo
-        level = depois
-        if Brightness.crossedStep(from: antes, to: depois) {
-            DockaStore.shared.tiqueDeBrilho()
-        }
+        level = NivelDoSistema.aplicar(novo, atual: level, com: deslizador)
     }
 }

@@ -97,6 +97,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--volume-selftest") {
+            let saida = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"]
+                ?? "/tmp/docka-volume-selftest.txt"
+            print("volume: \(VolumeBackend.autoteste(paraArquivo: saida))")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
         if CommandLine.arguments.contains("--demo") {
             TrayManager.shared.startDemo()
         }

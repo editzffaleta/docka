@@ -1,18 +1,18 @@
 import Foundation
 import CoreGraphics
 
-/// O controle de brilho.
+/// O controle de volume — o irmão do brilho.
 ///
-/// A matemática — geometria da régua, curva do arrasto, degraus, tique — é a
-/// mesma do volume e mora em `Deslizante`. Aqui ficam só os nomes de brilho e
-/// o que é dele: a lateral padrão e o texto do botão.
+/// Mesma régua, mesmo botão, mesma curva de arrasto: tudo isso vem de
+/// `Deslizante`. O que muda é o que ele mexe (a saída de áudio, pelo CoreAudio)
+/// e a lateral padrão, que é a oposta à do brilho para os dois não nascerem um
+/// em cima do outro.
 ///
-/// **Sobre ler o brilho:** não há API pública para isso em Apple Silicon, e por
-/// um tempo este arquivo modelou o nível por conta própria, contando os passos
-/// que mandava pela tecla de mídia. Hoje `BrightnessBackend` lê e escreve pelo
-/// DisplayServices, então o nível guardado é sempre o real; os passos continuam
-/// aqui porque a grade de 1/16 do sistema ainda governa o tique e a régua.
-public enum Brightness {
+/// **Diferença que importa em relação ao brilho:** aqui a API é PÚBLICA. O
+/// brilho depende do DisplayServices, não documentado, e por isso o controle
+/// some se o símbolo sumir. O volume usa CoreAudio, que é documentado e
+/// estável — não há esse risco.
+public enum Volume {
 
     public static let steps = Deslizante.steps
     public static var stepSize: Double { Deslizante.stepSize }
@@ -20,20 +20,13 @@ public enum Brightness {
     public static func clamp(_ v: Double) -> Double { Deslizante.clamp(v) }
     public static func quantize(_ level: Double) -> Double { Deslizante.quantize(level) }
 
-    public static func stepsBetween(from: Double, to: Double) -> Int {
-        Deslizante.stepsBetween(from: from, to: to)
-    }
-
-    public static func applying(_ n: Int, to level: Double) -> Double {
-        Deslizante.applying(n, to: level)
-    }
-
-    /// O controle só existe nas laterais: a régua é vertical por natureza, e
-    /// deitada na borda inferior ela viraria outra coisa.
+    /// Também só nas laterais, pelo mesmo motivo do brilho.
     public static let bordasPermitidas = Deslizante.bordasPermitidas
 
+    /// Padrão à esquerda: o brilho nasce à direita, e assim os dois cabem sem
+    /// se cobrir quando o usuário liga o segundo sem mexer em posição.
     public static func edge(persisted: String) -> TrayEdge {
-        Deslizante.edge(persisted: persisted, padrao: .right)
+        Deslizante.edge(persisted: persisted, padrao: .left)
     }
 
     // MARK: geometria
@@ -49,19 +42,10 @@ public enum Brightness {
         Deslizante.knobOffset(level: level, rulerLength: rulerLength)
     }
 
-    public static func levelFromKnob(offset: CGFloat, rulerLength: CGFloat) -> Double {
-        Deslizante.levelFromKnob(offset: offset, rulerLength: rulerLength)
-    }
-
     // MARK: gesto
 
     public static let dragSpan = Deslizante.dragSpan
-    public static let dragThreshold = Deslizante.dragThreshold
     public static let dragSmoothing = Deslizante.dragSmoothing
-
-    public static func scrub(from inicio: Double, translation: CGFloat) -> Double {
-        Deslizante.scrub(from: inicio, translation: translation)
-    }
 
     public static func isTap(translation: CGFloat) -> Bool {
         Deslizante.isTap(translation: translation)
@@ -93,7 +77,22 @@ public enum Brightness {
 
     public static func isMajorTick(_ i: Int) -> Bool { Deslizante.isMajorTick(i) }
 
-    public static func levelFromDrag(fraction: Double) -> Double {
-        Deslizante.levelFromDrag(fraction: fraction)
+    // MARK: o ícone
+
+    /// Símbolo SF que representa o nível, como o macOS faz no menu de som:
+    /// as ondas vão aparecendo conforme o volume sobe, e no zero vira mudo.
+    ///
+    /// É o equivalente do sol do brilho — só que aqui o ícone também informa,
+    /// porque volume zero e volume baixo são estados que o usuário confunde.
+    public static func simbolo(level: Double) -> String {
+        switch clamp(level) {
+        case 0:              return "speaker.slash.fill"
+        case ..<0.34:        return "speaker.wave.1.fill"
+        case ..<0.67:        return "speaker.wave.2.fill"
+        default:             return "speaker.wave.3.fill"
+        }
     }
+
+    /// Está mudo? Serve para o texto de acessibilidade e para o ícone.
+    public static func mudo(level: Double) -> Bool { clamp(level) == 0 }
 }

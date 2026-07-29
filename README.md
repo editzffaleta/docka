@@ -58,6 +58,19 @@ Perfeita para quem mantém o Dock enxuto mas quer um segundo escalão de apps se
 | **Atalho global ⇧⌘D** | Fixa a bandeja aberta (não some com o mouse) e esconde no segundo toque — a combinação é configurável |
 | **Multi-monitor** | A bandeja aparece na tela onde o cursor está |
 
+### Controles de borda
+
+Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a bandeja — encostando o cursor na borda. Não são itens da bandeja: cada uma tem painel próprio.
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Brilho da tela** | Régua com traços e um botão-sol que corre junto com o nível. Arraste o botão ou a régua; o valor é lido da tela de verdade, não estimado |
+| **Volume da saída** | A mesma régua para o áudio, pelo CoreAudio — API pública, sem permissão. O ícone acompanha o nível como no menu de som, zero silencia de fato e subir a régua tira do mudo |
+| **Onde ficam** | Lateral esquerda ou direita, alinhadas ao topo, ao centro ou à base. Só laterais: a régua é vertical, e deitada na borda inferior viraria outra coisa |
+| **Convivência** | Postos na mesma lateral e na mesma posição, o volume se acomoda ao lado do brilho em vez de cobri-lo |
+
+> O controle de brilho depende de uma API do sistema não documentada — a única forma de ler o brilho em Apple Silicon sem pedir Acessibilidade. Se uma atualização do macOS removê-la, o Docka esconde o controle em vez de fingir que funciona. O de volume não tem esse risco.
+
 ### Modos e ajustes
 
 | Recurso | Descrição |
