@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-e-testes:
+    name: Build e testes
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Versão do Swift
+        run: swift --version
+
+      - name: Compilar (debug)
+        run: swift build
+
+      - name: Testes do DockaCore
+        run: swift test
+
+      - name: Compilar (release)
+        run: swift build -c release
+
+      # Monta o .app e o DMG de verdade: pega quebra no Info.plist, na geração
+      # do ícone e na assinatura, que o swift build sozinho não vê.
+      - name: Montar o .app e o DMG
+        run: ./scripts/make_dmg.sh 0.0.0-ci
+
+      - name: Conferir o bundle gerado
+        run: |
+          plist="dist/Docka.app/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$plist"
+          /usr/libexec/PlistBuddy -c "Print :LSUIElement" "$plist"
+          codesign --verify --verbose dist/Docka.app

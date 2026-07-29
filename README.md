@@ -10,6 +10,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/editzffaleta/docka/actions/workflows/ci.yml"><img src="https://github.com/editzffaleta/docka/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/editzffaleta/docka/releases/latest"><img src="https://img.shields.io/github/v/release/editzffaleta/docka?style=flat-square&color=14b8a6&label=download" alt="Download" /></a>
   <a href="https://github.com/editzffaleta/docka/stargazers"><img src="https://img.shields.io/github/stars/editzffaleta/docka?style=flat-square&color=gold" alt="Estrelas no GitHub" /></a>
   <img src="https://img.shields.io/badge/plataforma-macOS%2014%2B-blue?style=flat-square" alt="macOS 14+" />
@@ -81,16 +82,28 @@ Pressure Zone, sons e calibração ao vivo) e **Sobre**.
 ## Arquitetura
 
 ```
-Sources/Docka/
-├── DockaApp.swift           — @main, MenuBarExtra, janela principal, atalho global
-├── Models.swift             — DockaStore (estado + preferências), PinnedApp
-├── TrayController.swift     — NSPanel da bandeja, magnificação, polling do cursor
+Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o que os testes cobrem)
+├── TrayGeometry.swift       — onde a bandeja fica e quando revelar/esconder
+├── Magnification.swift      — a curva gaussiana de ampliação
+└── AppScanner.swift         — varredura de /Applications, nome do app, reordenação
+
+Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
+├── DockaApp.swift           — @main, MenuBarExtra, janela de configurações, abrir no login
+├── Models.swift             — DockaStore (estado + preferências), PinnedApp, cache de ícones
+├── TrayController.swift     — NSPanel da bandeja, polling do cursor
 ├── HotKey.swift             — atalho global ⌘⇧D (Carbon, sem permissões)
 ├── OnboardingView.swift     — fluxo de boas-vindas em 3 passos
 ├── SettingsWindowView.swift — abas Apps / Comportamento / Sobre
 ├── Effects.swift            — glass cards, fundo aurora, partículas, botões
 └── Assets/                  — logo (gerada por código em scripts/make_logo.swift)
+
+Tests/DockaCoreTests/        — swift-testing (@Test/#expect)
 ```
+
+A separação existe por um motivo prático: geometria de tela e varredura de disco
+são exatamente as partes que quebram sem avisar, e nenhuma delas precisa de uma
+janela para ser exercitada. O `TrayController` cuida do `NSPanel`; as contas
+moram no `DockaCore`, onde `swift test` alcança.
 
 ### Tecnologias
 
@@ -103,7 +116,9 @@ Sources/Docka/
 | Ícones | `NSWorkspace.shared.icon(forFile:)` em representação de 256 px |
 | Atalho global | `RegisterEventHotKey` (Carbon) — funciona sem permissões |
 | Arrastar e soltar | `Transferable` (`.draggable`/`.dropDestination`) com payload de URL |
-| Persistência | `UserDefaults` + `@AppStorage` (caminhos dos apps e preferências) |
+| Persistência | `UserDefaults` publicado via `@Published` (caminhos dos apps e preferências) |
+| Abrir no login | `SMAppService.mainApp` — sem helper e sem permissão |
+| Testes | swift-testing (`@Test`/`#expect`) sobre o alvo `DockaCore` |
 
 ### Por que nenhuma permissão?
 
@@ -128,6 +143,7 @@ Requisitos: macOS 14+ e as Command Line Tools do Xcode.
 ```bash
 git clone https://github.com/editzffaleta/docka.git
 cd docka
+swift test   # opcional: 40 testes do DockaCore
 swift run
 ```
 

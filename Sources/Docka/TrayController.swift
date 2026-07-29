@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import DockaCore
 
 // Painel flutuante que vive na borda inferior da tela, ao lado do Dock.
 // Aparece quando o cursor encosta na borda (ou empurra o canto, no modo Pressure Zone).
@@ -61,26 +62,16 @@ final class TrayController {
         return NSScreen.screens.first { NSMouseInRect(loc, $0.frame, false) } ?? NSScreen.main
     }
 
-    // Linha de base da bandeja. Com "Seguir mudanças do Dock" ligado usamos
-    // visibleFrame, que já desconta o Dock — assim a bandeja assenta em cima dele
-    // em vez de ficar por baixo, e se realinha quando o Dock muda de tamanho.
-    private func baseY(of screen: NSScreen) -> CGFloat {
-        store.followDock ? screen.visibleFrame.minY : screen.frame.minY
-    }
-
     private func layoutPanel() {
         guard let screen = currentScreen else { return }
-        let count = max(1, store.apps.count)
-        let icon = store.iconSize
-        // largura: ícones + espaçamentos + padding do vidro + margem p/ magnificação
-        let width = CGFloat(count) * (icon + 14) + 150
-        let x: CGFloat
-        switch store.position {
-        case "left":   x = screen.frame.minX + store.offsetX
-        case "center": x = screen.frame.midX - width / 2
-        default:       x = screen.frame.maxX - width - store.offsetX
-        }
-        panel.setFrame(NSRect(x: x, y: baseY(of: screen), width: width, height: trayHeight),
+        panel.setFrame(TrayGeometry.frame(screenFrame: screen.frame,
+                                          visibleFrame: screen.visibleFrame,
+                                          appCount: store.apps.count,
+                                          iconSize: store.iconSize,
+                                          position: .init(persisted: store.position),
+                                          offsetX: store.offsetX,
+                                          followDock: store.followDock,
+                                          height: trayHeight),
                        display: true)
     }
 
@@ -100,21 +91,14 @@ final class TrayController {
         let bottomY = screen.frame.minY
 
         if !store.trayVisible {
-            let inZoneX = loc.x >= f.minX - 8 && loc.x <= f.maxX + 8
-            let shouldReveal: Bool
-            if store.pressureZone {
-                // só quando o cursor é EMPURRADO contra a borda, dentro da zona
-                shouldReveal = loc.y <= bottomY + 1 && inZoneX
-            } else {
-                shouldReveal = loc.y <= bottomY + 2 && inZoneX
+            if TrayGeometry.shouldReveal(cursor: loc, trayFrame: f,
+                                         screenBottomY: bottomY,
+                                         pressureZone: store.pressureZone) {
+                reveal()
             }
-            if shouldReveal { reveal() }
         } else if !store.pinnedOpen {
-            // esconde quando o cursor sai da região da bandeja (exceto se fixada por atalho).
-            // f.maxY, e não a borda da tela: a bandeja pode estar assentada em cima do Dock.
-            let inside = loc.x >= f.minX - 30 && loc.x <= f.maxX + 30
-                && loc.y <= f.maxY + 30
-            if inside {
+            // esconde quando o cursor sai da região da bandeja (exceto se fixada por atalho)
+            if TrayGeometry.isInsideTray(cursor: loc, trayFrame: f) {
                 hideDelay = 0
             } else {
                 hideDelay += 0.05
@@ -300,15 +284,12 @@ struct TrayIcon: View {
     @State private var bounce: CGFloat = 0     // deslocamento Y do quique
 
     private var scale: CGFloat {
-        guard maxBoost > 0, let hx = hoverX, frameX > 0 else { return 1 }
-        let d = abs(hx - frameX)
-        let sigma: CGFloat = 64
-        let boost = exp(-(d * d) / (2 * sigma * sigma))   // curva gaussiana 0…1
-        return 1 + maxBoost * boost
+        guard let hx = hoverX, frameX > 0 else { return 1 }
+        return Magnification.scale(distance: abs(hx - frameX), maxBoost: maxBoost)
     }
 
     private var magnified: Bool {
-        maxBoost > 0 && scale > 1 + maxBoost * 0.72
+        Magnification.isMagnified(scale: scale, maxBoost: maxBoost)
     }
 
     var body: some View {

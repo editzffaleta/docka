@@ -19,8 +19,13 @@ Requisitos: macOS 14+ e as Command Line Tools do Xcode (`xcode-select --install`
 git clone https://github.com/editzffaleta/docka.git
 cd docka
 swift build          # compila
+swift test           # testes do DockaCore
 swift run            # roda (onboarding na primeira vez)
 ```
+
+Lógica nova que dê para testar sem janela — geometria da bandeja, curva de
+ampliação, varredura de apps — vai em `Sources/DockaCore/`, com teste em
+`Tests/DockaCoreTests/`. O `Sources/Docka/` fica para SwiftUI e AppKit.
 
 Iteração rápida durante o desenvolvimento:
 
@@ -76,6 +81,7 @@ Modo demo (bandeja fixa com hover simulado, útil para testar visual e capturas)
    (primeira linha ≤ 72 caracteres, imperativo: "Adiciona…", "Corrige…").
 3. Antes de abrir o PR, confirme:
    - [ ] `swift build` limpo, sem warnings novos
+   - [ ] `swift test` verde (e teste novo para bug corrigido no `DockaCore`)
    - [ ] App roda e a bandeja funciona (revelar, magnificar, abrir app, esconder)
    - [ ] Nenhuma dependência ou permissão nova
    - [ ] Mudanças visuais seguem o design system (e inclua um screenshot no PR)

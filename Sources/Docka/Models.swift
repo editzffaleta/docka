@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import ServiceManagement
+import DockaCore
 
 // Identidade do app lida do bundle, para não repetir a versão no código
 enum AppInfo {
@@ -54,8 +55,7 @@ struct PinnedApp: Identifiable, Hashable {
         self.path = path
         // displayName respeita o nome localizado do app e a preferência de mostrar
         // extensões — daí o corte do sufixo só quando ele realmente vem no fim.
-        let display = FileManager.default.displayName(atPath: path)
-        self.name = display.hasSuffix(".app") ? String(display.dropLast(4)) : display
+        self.name = AppNaming.trimmingAppSuffix(FileManager.default.displayName(atPath: path))
     }
 
     var icon: NSImage { IconCache.shared.icon(forPath: path) }
@@ -212,11 +212,8 @@ final class DockaStore: ObservableObject {
 
     func move(_ path: String, before target: String) {
         guard let from = apps.firstIndex(where: { $0.path == path }),
-              let to = apps.firstIndex(where: { $0.path == target }),
-              from != to else { return }
-        let app = apps.remove(at: from)
-        // após remover, o alvo desloca 1 posição p/ trás quando vinha depois do arrastado
-        apps.insert(app, at: from < to ? to - 1 : to)
+              let to = apps.firstIndex(where: { $0.path == target }) else { return }
+        apps = Reorder.move(apps, from: from, to: to)
     }
 
     func toggle(_ path: String) {
@@ -241,37 +238,11 @@ final class DockaStore: ObservableObject {
     static func installedApps(refresh: Bool = false) -> [PinnedApp] {
         if !refresh, let cached = installedCache { return cached }
 
-        let roots = ["/Applications",
-                     "/System/Applications",
-                     (NSHomeDirectory() as NSString).appendingPathComponent("Applications")]
-        var found: [String: PinnedApp] = [:]      // chaveado pelo caminho: evita duplicatas
-        for root in roots {
-            collectApps(in: URL(fileURLWithPath: root), depth: 2, into: &found)
-        }
-
-        let list = found.values.sorted {
-            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
-        }
+        let list = AppScanner.scan(roots: AppScanner.defaultRoots)
+            .map { PinnedApp(path: $0) }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         installedCache = list
         return list
-    }
-
-    // depth 2 = a pasta raiz + um nível de subpasta (Utilities, Adobe, Microsoft…)
-    private static func collectApps(in dir: URL, depth: Int, into found: inout [String: PinnedApp]) {
-        guard depth > 0,
-              let entries = try? FileManager.default.contentsOfDirectory(
-                at: dir,
-                includingPropertiesForKeys: [.isDirectoryKey],
-                options: [.skipsHiddenFiles, .skipsPackageDescendants])
-        else { return }
-
-        for url in entries {
-            if url.pathExtension == "app" {
-                found[url.path] = PinnedApp(path: url.path)
-            } else if (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
-                collectApps(in: url, depth: depth - 1, into: &found)
-            }
-        }
     }
 
     func playSound(_ name: String) {
