@@ -160,8 +160,9 @@ final class DockaStore: ObservableObject {
         }
     }
 
+    /// Volta o vidro para o material do sistema, sem nada por cima.
     func matchSystemGlassTint() {
-        glassTint = Self.systemGlassTint ?? 0.5
+        glassTint = GlassTint.systemNeutral
     }
 
     // MARK: - Atalho global
@@ -272,7 +273,7 @@ final class DockaStore: ObservableObject {
             Key.showIndicators: true,
             Key.bounceOnLaunch: true,
             Key.position: "right",      // left | center | right
-            Key.glassTint: Self.systemGlassTint ?? 0.5,   // nasce igual ao do sistema
+            Key.glassTint: GlassTint.systemNeutral,   // nasce idêntico ao sistema
             Key.appearance: TrayAppearance.automatico.rawValue,
             Key.atalhoTecla: Int(Shortcut.padrao.keyCode),
             Key.atalhoMods: Int(Shortcut.padrao.modifiers.rawValue)

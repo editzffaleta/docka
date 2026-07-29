@@ -315,9 +315,9 @@ struct SettingsWindowView: View {
                 Text("Liquid Glass")
                     .font(.system(size: 12.5)).foregroundStyle(.white.opacity(0.75))
                 Spacer()
-                Text(store.glassTint < GlassTint.clearThreshold
-                     ? "Transparente"
-                     : "\(Int(store.glassTint * 100))%")
+                Text(GlassTint.usesClearGlass(store.glassTint) ? "Transparente"
+                     : GlassTint.isSystemNeutral(store.glassTint) ? "Como o sistema"
+                     : "Tonalizado \(Int(GlassTint.overlayOpacity(store.glassTint) * 100))%")
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(Theme.accent)
                     .contentTransition(.numericText())
@@ -329,20 +329,20 @@ struct SettingsWindowView: View {
                     .accessibilityHidden(true)
                 Slider(value: $store.glassTint, in: 0...1).tint(Theme.accent)
                     .accessibilityLabel("Tonalização do vidro")
-                    .accessibilityValue(store.glassTint < GlassTint.clearThreshold
-                                        ? "Transparente"
-                                        : "\(Int(store.glassTint * 100)) por cento")
+                    .accessibilityValue(GlassTint.usesClearGlass(store.glassTint) ? "Transparente"
+                                        : GlassTint.isSystemNeutral(store.glassTint) ? "Como o sistema"
+                                        : "Tonalizado")
                 Image(systemName: "square.filled.on.square")
                     .font(.system(size: 13)).foregroundStyle(.white.opacity(0.45))
                     .accessibilityHidden(true)
             }
 
             HStack(spacing: 10) {
-                Text("Da transparente à tonalizada, como o controle do sistema.")
+                Text("O meio é o vidro do sistema, sem nada por cima — ele já obedece ao seu slider do Liquid Glass. Para os lados, desvia dele.")
                     .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
                 Spacer()
-                if let sistema = DockaStore.systemGlassTint {
-                    Button("Igualar ao sistema (\(Int(sistema * 100))%)") {
+                if !GlassTint.isSystemNeutral(store.glassTint) {
+                    Button("Voltar ao do sistema") {
                         withAnimation(.spring(duration: 0.3)) { store.matchSystemGlassTint() }
                     }
                     .buttonStyle(.plain)

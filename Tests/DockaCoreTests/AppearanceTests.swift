@@ -31,21 +31,32 @@ struct GlassTintTests {
         #expect(!GlassTint.usesClearGlass(1))
     }
 
-    @Test("Não há degrau ao cruzar o limiar do vidro transparente")
-    func semDegrauNoLimiar() {
-        // se a tonalização começasse já alta, o vidro daria um salto visível
-        // exatamente no ponto em que o slider troca de variante
-        let logoAcima = GlassTint.overlayOpacity(GlassTint.clearThreshold + 0.001)
-        #expect(logoAcima < 0.01)
+    @Test("O meio do controle não põe NADA por cima do vidro do sistema")
+    func meioNaoTonaliza() {
+        // Este é o conserto: .glassEffect(.regular) já obedece ao slider Liquid
+        // Glass do usuário. Somar tint por cima aplicava a tonalização duas
+        // vezes, fechava o vidro e matava o brilho de borda.
+        #expect(GlassTint.overlayOpacity(GlassTint.systemNeutral) == 0)
+        #expect(GlassTint.overlayOpacity(0.3) == 0)
+        #expect(GlassTint.overlayOpacity(0.5) == 0)
+        #expect(GlassTint.isSystemNeutral(0.5))
+        #expect(GlassTint.isSystemNeutral(0.3))
     }
 
-    @Test("A tonalização cresce com o slider, até o máximo")
-    func cresceAteOMaximo() {
-        let valores = [0.2, 0.4, 0.6, 0.8, 1.0].map { GlassTint.overlayOpacity($0) }
+    @Test("A tonalização só começa depois do meio, e cresce até o teto")
+    func cresceDepoisDoMeio() {
+        let valores = [0.6, 0.7, 0.8, 0.9, 1.0].map { GlassTint.overlayOpacity($0) }
         for (a, b) in zip(valores, valores.dropFirst()) {
             #expect(a < b)
         }
         #expect(abs(GlassTint.overlayOpacity(1) - GlassTint.maxOverlay) < 0.0001)
+    }
+
+    @Test("O teto do tint é baixo o bastante para a borda sobreviver")
+    func tetoPreservaABorda() {
+        // acima de ~0,25 o brilho especular da borda desaparece — foi medido
+        // em captura, comparando com e sem tint
+        #expect(GlassTint.maxOverlay <= 0.25)
     }
 
     @Test("O vidro nunca fecha a ponto de virar um retângulo sólido")
@@ -61,7 +72,7 @@ struct GlassTintTests {
     func foraDaFaixa() {
         // o slider é 0…1, mas o valor vem do UserDefaults e pode estar corrompido
         #expect(GlassTint.overlayOpacity(-3) == 0)
-        #expect(GlassTint.overlayOpacity(9) == GlassTint.maxOverlay)
+        #expect(abs(GlassTint.overlayOpacity(9) - GlassTint.maxOverlay) < 0.0001)
         #expect(GlassTint.usesClearGlass(-1))
     }
 }
