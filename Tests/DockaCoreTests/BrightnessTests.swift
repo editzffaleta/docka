@@ -59,6 +59,27 @@ struct BrightnessTests {
         #expect(Brightness.tickHighlight(Brightness.tickCount - 1, level: nivel) == 0)
     }
 
+    @Test("Esfregar para cima aumenta, para baixo diminui")
+    func esfregar() {
+        // translation.height é NEGATIVO ao arrastar para cima
+        #expect(Brightness.scrub(from: 0.5, translation: -125) > 0.5)
+        #expect(Brightness.scrub(from: 0.5, translation: 125) < 0.5)
+        #expect(Brightness.scrub(from: 0.5, translation: 0) == 0.5)
+    }
+
+    @Test("A faixa inteira cabe num arrasto do tamanho da régua")
+    func esfregarCobreTudo() {
+        // esfregar no sol anda o mesmo que arrastar a régua de ponta a ponta
+        #expect(Brightness.scrub(from: 0, translation: -Brightness.dragSpan) == 1)
+        #expect(Brightness.scrub(from: 1, translation: Brightness.dragSpan) == 0)
+    }
+
+    @Test("Esfregar não escapa de 0…1")
+    func esfregarLimites() {
+        #expect(Brightness.scrub(from: 0.9, translation: -9999) == 1)
+        #expect(Brightness.scrub(from: 0.1, translation: 9999) == 0)
+    }
+
     @Test("O controle só aceita as laterais")
     func sóLaterais() {
         // a régua é vertical: deitada na borda inferior viraria outra coisa

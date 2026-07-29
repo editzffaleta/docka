@@ -127,6 +127,8 @@ struct BrightnessPanelView: View {
     @EnvironmentObject var store: DockaStore
     @EnvironmentObject var state: TrayState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var nivelAoIniciar: Double?
+    @State private var esfregando = false
 
     private var edge: TrayEdge { Brightness.edge(persisted: store.brightnessEdge) }
 
@@ -153,17 +155,51 @@ struct BrightnessPanelView: View {
         }
     }
 
+    /// O sol é botão E alça: clique curto abre os ajustes, clique-e-arraste
+    /// esfrega o brilho. Um `Button` não serve — ele consome o arrasto.
     private var sol: some View {
-        Button { SettingsWindowController.shared.show() } label: {
-            Image(systemName: "sun.max.fill")
-                .font(.system(size: 17))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 40, height: 40)
-                .background(Circle().fill(Color(nsColor: .black).opacity(0.82)))
-                .overlay(Circle().strokeBorder(Color.accentColor.opacity(0.45), lineWidth: 1))
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Ajustes de brilho")
+        Image(systemName: "sun.max.fill")
+            .font(.system(size: 17))
+            .foregroundStyle(Color.accentColor)
+            .frame(width: 40, height: 40)
+            .background(Circle().fill(Color(nsColor: .black).opacity(0.82)))
+            .overlay(Circle().strokeBorder(
+                Color.accentColor.opacity(esfregando ? 0.95 : 0.45),
+                lineWidth: esfregando ? 2 : 1))
+            .scaleEffect(esfregando ? 1.12 : 1)
+            .animation(.smooth(duration: 0.15), value: esfregando)
+            .contentShape(Circle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { g in
+                        // o nível de referência é o do INÍCIO do gesto: acumular
+                        // sobre o corrente faria o brilho acelerar sozinho
+                        if nivelAoIniciar == nil { nivelAoIniciar = store.brightnessLevel }
+                        guard abs(g.translation.height) > Brightness.dragThreshold else { return }
+                        esfregando = true
+                        aplicar(Brightness.scrub(from: nivelAoIniciar ?? store.brightnessLevel,
+                                                 translation: g.translation.height))
+                    }
+                    .onEnded { g in
+                        let arrastou = abs(g.translation.height) > Brightness.dragThreshold
+                        nivelAoIniciar = nil
+                        esfregando = false
+                        // sem movimento, foi clique
+                        if !arrastou { SettingsWindowController.shared.show() }
+                    }
+            )
+            .accessibilityLabel("Brilho")
+            .accessibilityValue("\(Int(store.brightnessLevel * 100)) por cento")
+            .accessibilityHint("Arraste para cima ou para baixo para ajustar; toque para abrir os ajustes")
+            .accessibilityAdjustableAction { direcao in
+                aplicar(store.brightnessLevel
+                        + (direcao == .increment ? Brightness.stepSize : -Brightness.stepSize))
+            }
+    }
+
+    private func aplicar(_ novo: Double) {
+        guard abs(novo - store.brightnessLevel) > 0.0001 else { return }
+        BrightnessBackend.escrever(novo)
+        store.brightnessLevel = BrightnessBackend.ler() ?? novo
     }
 }

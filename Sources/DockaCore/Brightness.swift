@@ -49,6 +49,19 @@ public enum Brightness {
     public static let panelExtent: CGFloat = 300     // ao longo da borda
     public static let panelThickness: CGFloat = 130  // perpendicular
 
+    /// Quantos pontos de arrasto cobrem a faixa inteira de brilho.
+    /// Calibrado pelo comprimento da régua: esfregar no sol anda o mesmo tanto
+    /// que arrastar a régua de ponta a ponta.
+    public static let dragSpan: CGFloat = 250
+
+    /// Distância a partir da qual um toque vira arrasto, e não clique.
+    public static let dragThreshold: CGFloat = 3
+
+    /// Nível ao esfregar: para CIMA aumenta (translation.height é negativo).
+    public static func scrub(from inicio: Double, translation: CGFloat) -> Double {
+        clamp(inicio - Double(translation / dragSpan))
+    }
+
     // MARK: régua
 
     /// Quantidade de traços da régua. Múltiplo dos passos para cada toque de
