@@ -290,6 +290,7 @@ struct TrayView: View {
     @State private var tamanhoAoIniciarArrasto: Double? = nil
     /// Força do efeito (0…1), atenuada pela distância perpendicular do cursor.
     @State private var forca: CGFloat = 1
+    @State private var reguaAberta = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var dock: DockConfig { store.dock(dockID) ?? DockConfig() }
@@ -356,7 +357,9 @@ struct TrayView: View {
         }
         .ignoresSafeArea()
         .onAppear { refreshRunning() }
-        .onChange(of: state.visible) { _, v in if v { refreshRunning() } }
+        .onChange(of: state.visible) { _, v in
+            if v { refreshRunning() } else { reguaAberta = false }
+        }
         .onReceive(NSWorkspace.shared.notificationCenter
             .publisher(for: NSWorkspace.didLaunchApplicationNotification)) { _ in refreshRunning() }
         .onReceive(NSWorkspace.shared.notificationCenter
@@ -442,6 +445,8 @@ struct TrayView: View {
                     }
                 }
             }
+
+            if store.brightnessControl { solDoBrilho }
         }
         .padding(edge.isVertical ? .vertical : .horizontal, TrayGeometry.padding(size: size))
         // O vidro é a alça: arrastar redimensiona os ícones e o clique-direito
@@ -460,6 +465,42 @@ struct TrayView: View {
                        height: edge.isVertical ? nil : TrayGeometry.glassHeight(size: size))
                 .dockGlass(cornerRadius: TrayGeometry.cornerRadius(size: size),
                            tint: store.glassTint)
+        }
+    }
+
+    /// O botão de sol e, quando aberto, a régua flutuando ao lado dele.
+    private var solDoBrilho: some View {
+        Button { withAnimation(.smooth(duration: 0.2)) { reguaAberta.toggle() } } label: {
+            Image(systemName: "sun.max.fill")
+                .font(.system(size: size * 0.46))
+                .foregroundStyle(reguaAberta ? Color.accentColor
+                                             : Color(nsColor: .secondaryLabelColor))
+                .frame(width: size, height: size)
+                .background(Circle().fill(Color(nsColor: .labelColor).opacity(0.10)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .padding(bordaInterna, TrayGeometry.indicatorRow(size: size)
+                             + TrayGeometry.paddingBottom(size: size))
+        .accessibilityLabel("Controle de brilho")
+        .overlay(alignment: alinhamentoDaRegua) {
+            if reguaAberta {
+                BrightnessRuler(level: Binding(get: { store.brightnessLevel },
+                                               set: { store.brightnessLevel = $0 }),
+                                comprimento: 230, espessura: size * 1.25)
+                    .offset(x: edge == .left ? size * 1.9 : (edge == .right ? -size * 1.9 : 0),
+                            y: edge == .bottom ? -(size * 1.9) : 0)
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    /// A régua sai para dentro da tela, na direção oposta à borda.
+    private var alinhamentoDaRegua: Alignment {
+        switch edge {
+        case .bottom: return .bottom
+        case .left:   return .leading
+        case .right:  return .trailing
         }
     }
 

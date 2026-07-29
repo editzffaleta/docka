@@ -10,11 +10,11 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, atalho, sobre
+    case geral, apps, aparencia, bandeja, brilho, atalho, sobre
     var id: String { rawValue }
 
     /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .atalho], [.sobre]]
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .brilho, .atalho], [.sobre]]
 
     var titulo: String {
         switch self {
@@ -22,6 +22,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .apps:      return "Apps"
         case .aparencia: return "Aparência"
         case .bandeja:   return "Bandeja"
+        case .brilho:    return "Brilho"
         case .atalho:    return "Atalho"
         case .sobre:     return "Sobre"
         }
@@ -33,6 +34,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .apps:      return "square.grid.2x2.fill"
         case .aparencia: return "circle.lefthalf.filled"
         case .bandeja:   return "dock.rectangle"
+        case .brilho:    return "sun.max.fill"
         case .atalho:    return "keyboard.fill"
         case .sobre:     return "info"
         }
@@ -45,6 +47,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .apps:      return .blue
         case .aparencia: return .indigo
         case .bandeja:   return .teal
+        case .brilho:    return .yellow
         case .atalho:    return .orange
         case .sobre:     return .secondary
         }
@@ -161,6 +164,7 @@ struct SettingsWindowView: View {
         case .apps:      AppsView()
         case .aparencia: AparenciaView()
         case .bandeja:   BandejaView()
+        case .brilho:    BrilhoView()
         case .atalho:    AtalhoView()
         case .sobre:     SobreView()
         }
@@ -661,6 +665,46 @@ private struct LinhaSlider: View {
         }
         .frame(minWidth: 300)
         .labelsHidden()
+    }
+}
+
+// MARK: - Brilho
+
+private struct BrilhoView: View {
+    @EnvironmentObject var store: DockaStore
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.brightnessControl) {
+                    Text("Controle de brilho na bandeja")
+                    Text("Adiciona um botão de sol que abre uma régua para ajustar o brilho da tela.")
+                }
+            }
+
+            if store.brightnessControl {
+                Section {
+                    LabeledContent("Nível") {
+                        HStack(spacing: 14) {
+                            BrightnessRuler(level: $store.brightnessLevel,
+                                            comprimento: 190, espessura: 46)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("\(Int(store.brightnessLevel * 100))%")
+                                    .font(.title3).monospacedDigit()
+                                Button("Está diferente da tela?") {
+                                    store.recalibrarBrilho()
+                                }
+                                .controlSize(.small)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                } footer: {
+                    Text("O ajuste usa a tecla de brilho do sistema, em passos de 1/16 — sem pedir permissão. O macOS não expõe leitura do brilho para apps, então este nível é o que o Docka mandou para a tela: se você mudar o brilho pelo teclado, use o botão acima para levar os dois ao mínimo e reencontrar o zero.")
+                }
+            }
+        }
+        .formStyle(.grouped)
     }
 }
 

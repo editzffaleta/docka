@@ -110,6 +110,8 @@ final class DockaStore: ObservableObject {
         static let showIndicators = "docka.showIndicators"
         static let bounceOnLaunch = "docka.bounceOnLaunch"
         static let position = "docka.position"
+        static let brilho = "docka.brightnessControl"
+        static let brilhoNivel = "docka.brightnessLevel"
         static let glassTint = "docka.glassTint"
         static let appearance = "docka.appearance"
         static let atalhoTecla = "docka.hotkey.keyCode"
@@ -199,6 +201,15 @@ final class DockaStore: ObservableObject {
     @Published var bounceOnLaunch: Bool { didSet { defaults.set(bounceOnLaunch, forKey: Key.bounceOnLaunch) } }
     @Published var position: String { didSet { defaults.set(position, forKey: Key.position) } }
 
+    /// Mostra o controle de brilho na bandeja.
+    @Published var brightnessControl: Bool { didSet { defaults.set(brightnessControl, forKey: Key.brilho) } }
+    /// Nível de brilho que o Docka acredita ter mandado para a tela.
+    ///
+    /// É estimativa, não leitura: não há API pública para LER o brilho em Apple
+    /// Silicon. Se o usuário mexer pelo teclado, o modelo desencontra — daí o
+    /// botão de recalibrar na régua.
+    @Published var brightnessLevel: Double { didSet { defaults.set(brightnessLevel, forKey: Key.brilhoNivel) } }
+
     /// Tonalização do vidro (0 = transparente, 1 = tonalizado), como o slider
     /// Liquid Glass das Configurações do Sistema.
     @Published var glassTint: Double { didSet { defaults.set(glassTint, forKey: Key.glassTint) } }
@@ -223,6 +234,14 @@ final class DockaStore: ObservableObject {
     }
 
     /// Volta o vidro para o material do sistema, sem nada por cima.
+    /// Reencontra o zero: manda passos suficientes para baixar até o mínimo,
+    /// que é o único nível que o Docka pode CONHECER sem ler do sistema.
+    /// Depois disso o modelo e a tela voltam a concordar.
+    func recalibrarBrilho() {
+        BrightnessKeys.nudge(-Brightness.steps)
+        brightnessLevel = 0
+    }
+
     func matchSystemGlassTint() {
         glassTint = GlassTint.systemNeutral
     }
@@ -335,6 +354,8 @@ final class DockaStore: ObservableObject {
             Key.showIndicators: true,
             Key.bounceOnLaunch: true,
             Key.position: "right",      // left | center | right
+            Key.brilho: false,
+            Key.brilhoNivel: 0.5,
             Key.glassTint: GlassTint.systemNeutral,   // nasce translúcido, como o Dock
             Key.appearance: TrayAppearance.automatico.rawValue,
             Key.atalhoTecla: Int(Shortcut.padrao.keyCode),
@@ -352,6 +373,8 @@ final class DockaStore: ObservableObject {
         showIndicators = defaults.bool(forKey: Key.showIndicators)
         bounceOnLaunch = defaults.bool(forKey: Key.bounceOnLaunch)
         position = defaults.string(forKey: Key.position) ?? "right"
+        brightnessControl = defaults.bool(forKey: Key.brilho)
+        brightnessLevel = Brightness.quantize(defaults.double(forKey: Key.brilhoNivel))
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 
