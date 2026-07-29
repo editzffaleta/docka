@@ -51,7 +51,8 @@ enum Secao: String, CaseIterable, Identifiable {
     }
 }
 
-/// O quadradinho com o símbolo, como na barra lateral das Configurações.
+/// O círculo colorido com o símbolo — no Ajustes do macOS 26+ os ícones da
+/// barra lateral são círculos, não quadradinhos arredondados.
 struct IconeSecao: View {
     let secao: Secao
 
@@ -59,8 +60,8 @@ struct IconeSecao: View {
         Image(systemName: secao.simbolo)
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(.white)
-            .frame(width: 20, height: 20)
-            .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(secao.cor))
+            .frame(width: 22, height: 22)
+            .background(Circle().fill(secao.cor.gradient))
     }
 }
 
@@ -255,12 +256,21 @@ private struct AparenciaView: View {
     var body: some View {
         Form {
             Section {
-                Picker("Tom", selection: $store.appearance) {
-                    ForEach(TrayAppearance.allCases, id: \.rawValue) { modo in
-                        Text(modo.titulo).tag(modo.rawValue)
+                // como no painel Aparência: três miniaturas de janela com o
+                // rótulo embaixo e contorno azul na selecionada
+                LabeledContent("Tom") {
+                    HStack(alignment: .top, spacing: 20) {
+                        OpcaoTom(valor: .claro, selecao: $store.appearance) {
+                            MiniJanela(escura: false)
+                        }
+                        OpcaoTom(valor: .escuro, selecao: $store.appearance) {
+                            MiniJanela(escura: true)
+                        }
+                        OpcaoTom(valor: .automatico, selecao: $store.appearance) {
+                            MiniJanelaAutomatica()
+                        }
                     }
                 }
-                .pickerStyle(.segmented)
             }
 
             Section {
@@ -354,12 +364,12 @@ private struct BandejaView: View {
             }
 
             Section("Posição") {
+                // pop-up, como "Posição do Dock na tela" em Mesa e Dock
                 Picker("Posição na tela", selection: $store.position) {
                     Text("Esquerda").tag("left")
                     Text("Centro").tag("center")
                     Text("Direita").tag("right")
                 }
-                .pickerStyle(.segmented)
 
                 LabeledContent("Distância da borda") {
                     LinhaSlider(valor: $store.offsetX, faixa: 0...400,
@@ -396,6 +406,85 @@ private struct BandejaView: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// Uma opção do seletor de Tom: miniatura de janela + rótulo, com contorno
+/// azul quando selecionada — a anatomia do seletor de Aparência da Apple.
+private struct OpcaoTom<Previa: View>: View {
+    let valor: TrayAppearance
+    @Binding var selecao: String
+    @ViewBuilder let previa: () -> Previa
+
+    private var selecionada: Bool { selecao == valor.rawValue }
+
+    var body: some View {
+        Button { selecao = valor.rawValue } label: {
+            VStack(spacing: 7) {
+                previa()
+                    .frame(width: 62, height: 42)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1))
+                    .padding(3)
+                    .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .strokeBorder(selecionada ? Color.accentColor : .clear, lineWidth: 2))
+                Text(valor.titulo)
+                    .font(.system(size: 11, weight: selecionada ? .semibold : .regular))
+                    .foregroundStyle(selecionada ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Tom \(valor.titulo)")
+        .accessibilityAddTraits(selecionada ? [.isSelected] : [])
+    }
+}
+
+/// A janelinha do seletor: barra azul no topo e os três semáforos.
+private struct MiniJanela: View {
+    let escura: Bool
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            (escura ? Color(red: 0.10, green: 0.11, blue: 0.20) : Color(white: 0.92))
+            VStack(alignment: .leading, spacing: 4) {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(escura ? Color(red: 0.25, green: 0.45, blue: 0.95)
+                                 : Color(red: 0.45, green: 0.62, blue: 0.98))
+                    .frame(height: 9)
+                    .padding(.horizontal, 5)
+                    .padding(.top, 5)
+                HStack(spacing: 2.5) {
+                    Circle().fill(.red).frame(width: 4, height: 4)
+                    Circle().fill(.yellow).frame(width: 4, height: 4)
+                    Circle().fill(.green).frame(width: 4, height: 4)
+                }
+                .padding(.leading, 6)
+            }
+        }
+    }
+}
+
+/// Metade clara, metade escura, com o corte diagonal do original.
+private struct MiniJanelaAutomatica: View {
+    var body: some View {
+        ZStack {
+            MiniJanela(escura: true)
+            MiniJanela(escura: false).clipShape(CorteDiagonal())
+        }
+    }
+}
+
+private struct CorteDiagonal: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: .zero)
+        p.addLine(to: CGPoint(x: rect.width * 0.62, y: 0))
+        p.addLine(to: CGPoint(x: rect.width * 0.38, y: rect.height))
+        p.addLine(to: CGPoint(x: 0, y: rect.height))
+        p.closeSubpath()
+        return p
     }
 }
 
