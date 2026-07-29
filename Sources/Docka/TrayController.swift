@@ -268,23 +268,12 @@ struct TrayView: View {
             .padding(.bottom, 10)
             .accessibilityLabel("Configurações do Docka")
         }
-        // visual do Dock real: vidro claro translúcido, padding justo, borda fina
         .padding(.horizontal, TrayGeometry.padding)
-        .padding(.top, 6)
-        .padding(.bottom, 5)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(.regularMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .strokeBorder(.white.opacity(0.14), lineWidth: 0.8)
-                )
-                .shadow(color: .black.opacity(0.35), radius: 16, y: 6)
-        )
+        .padding(.vertical, TrayGeometry.verticalPadding)
+        // o raio acompanha a altura do vidro, como no Dock: um raio fixo fica
+        // quadrado com ícones pequenos e arredondado demais com ícones grandes
+        .dockGlass(cornerRadius: TrayGeometry.cornerRadius(size: store.iconSize,
+                                                           maxScale: store.maxScale))
         .coordinateSpace(name: "tray")
         .onContinuousHover(coordinateSpace: .named("tray")) { phase in
             switch phase {
@@ -310,7 +299,6 @@ struct TrayIcon: View {
     var bounceEnabled = true
     let action: () -> Void
 
-    @State private var pressed = false
     @State private var bounce: CGFloat = 0     // deslocamento Y do quique
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -326,32 +314,34 @@ struct TrayIcon: View {
                                 size: size, gap: TrayGeometry.gap)
     }
 
+    /// A bolinha do Dock é pequena e proporcional ao tile.
+    private var indicatorSize: CGFloat { max(3, size * 0.1) }
+
     var body: some View {
         Button {
-            pressed = true
             action()
             launchBounce()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { pressed = false }
         } label: {
-            VStack(spacing: 2) {
+            VStack(spacing: 3) {
                 Image(nsImage: app.icon)
                     .resizable()
                     .interpolation(.high)
                     .frame(width: size * scale, height: size * scale)
-                    .shadow(color: .black.opacity(0.35), radius: 5, y: 3)
-                    .scaleEffect(pressed ? 0.85 : 1, anchor: .bottom)
+                    // sem sombra: o Dock não põe sombra sob os ícones. A arte do
+                    // ícone já traz o próprio sombreado, e uma sombra por cima é
+                    // o que mais denunciava que isto não era o Dock.
                     .offset(y: bounce)
 
-                // bolinha de app em execução (como no Dock)
+                // bolinha de app em execução, proporcional ao ícone e SEM escalar
+                // com a magnificação — no Dock ela tem tamanho fixo
                 Circle()
-                    .fill(.white.opacity(isRunning ? 0.7 : 0))
-                    .frame(width: 4, height: 4)
-                    .shadow(color: .white.opacity(isRunning ? 0.8 : 0), radius: 2)
+                    .fill(.white.opacity(isRunning ? 0.85 : 0))
+                    .frame(width: indicatorSize, height: indicatorSize)
             }
             // container de altura fixa alinhado embaixo: o ícone cresce PARA CIMA.
             // A largura acompanha a escala — é ela que empurra os vizinhos.
             .frame(width: size * scale,
-                   height: size * maxScale + 10,
+                   height: size * maxScale + TrayGeometry.iconSlotSlack,
                    alignment: .bottom)
             .contentShape(Rectangle())
         }
@@ -372,29 +362,19 @@ struct TrayIcon: View {
                 }
             }
         }
-        // balão com o nome sobre o ícone ampliado
-        .overlay(alignment: .top) {
+        // balão com o nome. No Dock ele acompanha o TOPO DO ÍCONE — com um
+        // deslocamento fixo ele flutuava alto sobre os ícones em repouso.
+        .overlay(alignment: .bottom) {
             if magnified {
-                Text(app.name)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(
-                        Capsule().fill(.ultraThinMaterial)
-                            .overlay(Capsule().fill(Color.black.opacity(0.35)))
-                            .overlay(Capsule().strokeBorder(.white.opacity(0.2), lineWidth: 0.5))
-                    )
-                    .fixedSize()
-                    .offset(y: -30)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                DockLabel(text: app.name)
+                    .offset(y: -(size * scale) - 16)
+                    .transition(.opacity)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)   // o nome já vai no rótulo do botão
             }
         }
         .animation(.interactiveSpring(response: 0.16, dampingFraction: 0.78), value: scale)
         .animation(.spring(duration: 0.25), value: magnified)
-        .animation(.spring(duration: 0.2), value: pressed)
         .zIndex(magnified ? 1 : 0)
     }
 

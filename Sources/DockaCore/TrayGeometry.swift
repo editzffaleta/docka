@@ -29,8 +29,24 @@ public enum TrayGeometry {
     public static let gap: CGFloat = 6
     /// Espessura do vidro em volta da faixa de ícones.
     public static let padding: CGFloat = 10
+    /// Vidro acima e abaixo da faixa de ícones.
+    public static let verticalPadding: CGFloat = 6
     /// Separador + engrenagem no fim da bandeja.
     public static let trailingWidth: CGFloat = 44
+
+    /// Altura do vidro: o ícone no tamanho máximo mais o vidro em volta.
+    public static func glassHeight(size: CGFloat, maxScale: CGFloat) -> CGFloat {
+        size * max(1, maxScale) + iconSlotSlack + 2 * verticalPadding
+    }
+
+    /// Folga vertical dentro do slot do ícone (respiro para a bolinha de execução).
+    public static let iconSlotSlack: CGFloat = 10
+
+    /// Raio do canto proporcional à altura, como no Dock. Um raio fixo deixa a
+    /// bandeja quadrada com ícones pequenos e arredondada demais com ícones grandes.
+    public static func cornerRadius(size: CGFloat, maxScale: CGFloat) -> CGFloat {
+        glassHeight(size: size, maxScale: maxScale) * 0.30
+    }
 
     public static func restingContentWidth(appCount: Int, size: CGFloat) -> CGFloat {
         let n = max(1, appCount)
