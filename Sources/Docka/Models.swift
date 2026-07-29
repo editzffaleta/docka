@@ -1,5 +1,18 @@
 import SwiftUI
 import Combine
+import ServiceManagement
+
+// Identidade do app lida do bundle, para não repetir a versão no código
+enum AppInfo {
+    /// CFBundleShortVersionString do .app. Fora de um bundle (binário do SPM) é "dev".
+    static var version: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
+    }
+
+    /// `false` quando o Docka roda fora de um .app assinado — aí o macOS não tem
+    /// o que registrar nos itens de início de sessão.
+    static var isBundled: Bool { Bundle.main.bundleIdentifier != nil }
+}
 
 // Paleta do app (tema escuro premium, accent azul-turquesa — mesma cor da logo)
 enum Theme {
@@ -114,6 +127,56 @@ final class DockaStore: ObservableObject {
     @Published var bounceOnLaunch: Bool { didSet { defaults.set(bounceOnLaunch, forKey: Key.bounceOnLaunch) } }
     @Published var position: String { didSet { defaults.set(position, forKey: Key.position) } }
 
+    // MARK: - Abrir no login
+    //
+    // Este ajuste não mora no UserDefaults: quem guarda o estado é o próprio macOS,
+    // em Configurações do Sistema › Geral › Itens de Início de Sessão, e o usuário
+    // pode desligar por lá sem passar pelo app. Por isso sempre lemos do sistema.
+
+    @Published private(set) var launchAtLogin = false
+    /// Preenchido quando o registro falha ou quando o usuário desativou o Docka
+    /// nas Configurações do Sistema.
+    @Published private(set) var launchAtLoginNote: String?
+
+    func refreshLaunchAtLogin() {
+        guard AppInfo.isBundled else {
+            launchAtLogin = false
+            launchAtLoginNote = "Disponível apenas no Docka instalado em Aplicativos."
+            return
+        }
+        switch SMAppService.mainApp.status {
+        case .enabled:
+            launchAtLogin = true
+            launchAtLoginNote = nil
+        case .requiresApproval:
+            launchAtLogin = false
+            launchAtLoginNote = "O macOS está bloqueando: libere o Docka em Itens de Início de Sessão."
+        default:
+            launchAtLogin = false
+            launchAtLoginNote = nil
+        }
+    }
+
+    func setLaunchAtLogin(_ enabled: Bool) {
+        guard AppInfo.isBundled else { refreshLaunchAtLogin(); return }
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+            launchAtLoginNote = nil
+        } catch {
+            launchAtLoginNote = "Não foi possível alterar: \(error.localizedDescription)"
+        }
+        // o estado verdadeiro é o do sistema, não o que pedimos
+        refreshLaunchAtLogin()
+    }
+
+    func openLoginItemsSettings() {
+        SMAppService.openSystemSettingsLoginItems()
+    }
+
     private init() {
         // as chaves são as mesmas de antes: quem já usava o app mantém seus ajustes
         defaults.register(defaults: [
@@ -143,6 +206,8 @@ final class DockaStore: ObservableObject {
         apps = (defaults.stringArray(forKey: Key.apps) ?? [])
             .filter { FileManager.default.fileExists(atPath: $0) }
             .map { PinnedApp(path: $0) }
+
+        refreshLaunchAtLogin()
     }
 
     func move(_ path: String, before target: String) {

@@ -245,9 +245,7 @@ struct TrayView: View {
                 .padding(.bottom, 10)
 
             Button {
-                NSApp.setActivationPolicy(.regular)
-                NSApp.activate(ignoringOtherApps: true)
-                NSApp.windows.first { $0 is NSPanel == false }?.makeKeyAndOrderFront(nil)
+                SettingsWindowController.shared.show()
             } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 16))

@@ -112,6 +112,8 @@ struct SettingsWindowView: View {
     private var behaviorTab: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 12) {
+                launchAtLoginRow
+
                 settingRow(icon: "cursorarrow.motionlines",
                            title: "Pressure Zone",
                            desc: "Só revela quando você empurra o cursor contra o canto de propósito.",
@@ -210,6 +212,37 @@ struct SettingsWindowView: View {
             .padding(.horizontal, 40)
             .padding(.bottom, 24)
         }
+        // o usuário pode ter mexido nos Itens de Início de Sessão por fora
+        .onAppear { store.refreshLaunchAtLogin() }
+    }
+
+    // Linha própria porque, além do toggle, ela precisa explicar quando o macOS
+    // recusa o registro (app fora de Aplicativos, ou bloqueado nas Configurações).
+    private var launchAtLoginRow: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            settingRow(icon: "power",
+                       title: "Abrir no login",
+                       desc: "O Docka sobe sozinho quando você entra no Mac.",
+                       on: Binding(get: { store.launchAtLogin },
+                                   set: { store.setLaunchAtLogin($0) }))
+
+            if let note = store.launchAtLoginNote {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color(red: 0.98, green: 0.75, blue: 0.35))
+                    Text(note)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(.white.opacity(0.65))
+                    Spacer()
+                    Button("Abrir Configurações do Sistema") { store.openLoginItemsSettings() }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 11.5, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                }
+                .padding(.horizontal, 4)
+            }
+        }
     }
 
     private func settingRow(icon: String, title: String, desc: String, on: Binding<Bool>) -> some View {
@@ -239,7 +272,7 @@ struct SettingsWindowView: View {
             Spacer()
             AppLogo(size: 96).pulseGlow(Theme.accent)
             Text("Docka").font(.system(size: 26, weight: .bold)).foregroundStyle(.white)
-            Text("Versão 1.0.0")
+            Text("Versão \(AppInfo.version)")
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundStyle(.white.opacity(0.5))
             Text("Uma bandeja de apps que vive na borda da sua tela.")
