@@ -23,13 +23,16 @@ final class BrightnessController {
         panel = NSPanel(contentRect: .zero,
                         styleMask: [.borderless, .nonactivatingPanel],
                         backing: .buffered, defer: false)
-        panel.level = .mainMenu
         panel.backgroundColor = .clear
         panel.isOpaque = false
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.isFloatingPanel = true
+        // DEPOIS de isFloatingPanel, de propósito: essa propriedade rebaixa a
+        // janela para o nível .floating (3) e sobrescreve o nível pedido antes.
+        // Com ela primeiro, o painel ficava ABAIXO do Dock da Apple (nível 20).
+        panel.level = .mainMenu                       // acima de tudo, como o Dock
         panel.contentView = NSHostingView(
             rootView: BrightnessPanelView()
                 .environmentObject(store)
@@ -184,40 +187,39 @@ struct BrightnessPanelView: View {
             }
         }
         .frame(width: Brightness.knobSize, height: Brightness.knobSize)
-        // acompanha o nível ao longo da régua
+        .contentShape(Circle())
+        // A área de arrasto entra ANTES do .offset, de propósito: `.offset`
+        // desloca só o desenho, e um overlay aplicado depois fica no frame de
+        // layout, parado no centro. Era esse o defeito — o sol subia com o
+        // nível e a área clicável ficava para trás; só em 50% os dois
+        // coincidiam. Aplicado aqui, os dois deslocam juntos.
+        .overlay(
+            ArrastoAppKit(
+                aoArrastar: { d in
+                    if nivelAoIniciar == nil { nivelAoIniciar = store.brightnessLevel }
+                    // até o limiar ainda pode ser clique: não mexe no brilho
+                    guard !Brightness.isTap(translation: d.height) else { return }
+                    esfregando = true
+                    aplicar(Brightness.dragStep(inicio: nivelAoIniciar ?? store.brightnessLevel,
+                                                translation: d.height,
+                                                atual: store.brightnessLevel,
+                                                span: comprimento))
+                },
+                aoSoltar: { d in
+                    nivelAoIniciar = nil
+                    esfregando = false
+                    if Brightness.isTap(translation: d.height) {
+                        SettingsWindowController.shared.show()
+                    }
+                },
+                cursor: .openHand)
+        )
+        // acompanha o nível ao longo da régua — desenho E área de toque
         .offset(y: Brightness.knobOffset(level: store.brightnessLevel,
                                          rulerLength: comprimento))
         // mola curta: o botão persegue o valor sem parecer preso a um trilho
         .animation(.spring(response: 0.22, dampingFraction: 0.82),
                    value: store.brightnessLevel)
-        .contentShape(Circle())
-        .overlay(CursorDeMao().allowsHitTesting(false))
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { g in
-                    // A referência é o nível do INÍCIO do gesto. Calcular a
-                    // partir do corrente realimentava: o botão se movia, o
-                    // cursor ficava noutra posição relativa a ele e o brilho
-                    // disparava — o "muito rápido" relatado.
-                    if nivelAoIniciar == nil { nivelAoIniciar = store.brightnessLevel }
-                    // até o limiar ainda pode ser clique: não mexe no brilho
-                    guard !Brightness.isTap(translation: g.translation.height) else { return }
-                    esfregando = true
-                    aplicar(Brightness.dragStep(inicio: nivelAoIniciar ?? store.brightnessLevel,
-                                                translation: g.translation.height,
-                                                atual: store.brightnessLevel,
-                                                span: comprimento))
-                }
-                .onEnded { g in
-                    nivelAoIniciar = nil
-                    esfregando = false
-                    // sem movimento, foi clique: abre os ajustes. Este ramo
-                    // sumiu na reescrita do botão e o clique parou de funcionar.
-                    if Brightness.isTap(translation: g.translation.height) {
-                        SettingsWindowController.shared.show()
-                    }
-                }
-        )
         .frame(height: comprimento + Brightness.knobSize, alignment: .center)
         .accessibilityLabel("Brilho")
         .accessibilityValue("\(Brightness.knobLabel(level: store.brightnessLevel)) por cento")

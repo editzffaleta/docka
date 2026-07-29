@@ -34,13 +34,16 @@ final class TrayController {
         panel = NSPanel(contentRect: .zero,
                         styleMask: [.borderless, .nonactivatingPanel],
                         backing: .buffered, defer: false)
-        panel.level = .mainMenu                       // acima de tudo, como o Dock
         panel.backgroundColor = .clear
         panel.isOpaque = false
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.isFloatingPanel = true
+        // DEPOIS de isFloatingPanel, de propósito: essa propriedade rebaixa a
+        // janela para o nível .floating (3) e sobrescreve o nível pedido antes.
+        // Com ela primeiro, o painel ficava ABAIXO do Dock da Apple (nível 20).
+        panel.level = .mainMenu                       // acima de tudo, como o Dock
         panel.acceptsMouseMovedEvents = true   // necessário para o cursorUpdate da alça
 
         panel.contentView = NSHostingView(
@@ -255,41 +258,6 @@ final class TrayManager {
     }
 }
 
-// MARK: - Cursor sobre a alça do separador
-//
-// NSCursor.set() chamado por um app INATIVO é ignorado — o cursor pertence ao
-// app ativo, e o Docka vive em segundo plano. O canal que o AppKit oferece
-// para janelas sem foco é o evento cursorUpdate de uma NSTrackingArea com
-// .activeAlways: o sistema pede o cursor à janela sob o mouse (é assim que o
-// Safari mostra a mãozinha em links mesmo desfocado).
-private struct CursorDeRedimensionar: NSViewRepresentable {
-    let vertical: Bool
-
-    final class V: NSView {
-        var vertical = true
-        override func updateTrackingAreas() {
-            super.updateTrackingAreas()
-            trackingAreas.forEach(removeTrackingArea)
-            addTrackingArea(NSTrackingArea(
-                rect: .zero,
-                options: [.cursorUpdate, .activeAlways, .inVisibleRect],
-                owner: self))
-        }
-        override func cursorUpdate(with event: NSEvent) {
-            (vertical ? NSCursor.resizeUpDown : NSCursor.resizeLeftRight).set()
-        }
-        // invisível ao clique: o arrasto e o menu continuam com a SwiftUI abaixo
-        override func hitTest(_ point: NSPoint) -> NSView? { nil }
-    }
-
-    func makeNSView(context: Context) -> NSView {
-        let v = V(); v.vertical = vertical; return v
-    }
-    func updateNSView(_ nsView: NSView, context: Context) {
-        (nsView as? V)?.vertical = vertical
-    }
-}
-
 // MARK: - A bandeja em si (vidro + ícones com magnificação estilo Dock)
 
 struct TrayView: View {
@@ -461,18 +429,43 @@ struct TrayView: View {
         // abre o menu da bandeja. Antes isso morava no traço separador, que só
         // existia para dividir os apps da engrenagem — sem ela, o traço ficava
         // pendurado no fim da fileira sem dividir nada.
-        .contentShape(Rectangle())
-        .overlay(CursorDeRedimensionar(vertical: !edge.isVertical).allowsHitTesting(false))
-        .gesture(redimensionarPelaAlca)
-        .contextMenu { menuDaBandeja }
         // O vidro é desenhado à parte, ancorado na borda e com a espessura de
         // REPOUSO: o ícone ampliado sai para fora dele, como no Dock.
+        //
+        // Ele também é a ALÇA: arrastar redimensiona os ícones, o clique-direito
+        // abre o menu. Fica aqui, e não na fileira, por causa do roteamento de
+        // clique do SwiftUI — a fileira com `.contentShape(Rectangle())` passava
+        // a reivindicar a área inteira e engolia tudo antes de chegar na alça.
+        // No vidro, que está ATRÁS dos ícones, cada um pega o que é seu: ícone
+        // onde há ícone, alça no vidro livre em volta.
         .background(alignment: alinhamentoDoVidro) {
             Color.clear
                 .frame(width: edge.isVertical ? TrayGeometry.glassHeight(size: size) : nil,
                        height: edge.isVertical ? nil : TrayGeometry.glassHeight(size: size))
                 .dockGlass(cornerRadius: TrayGeometry.cornerRadius(size: size),
                            tint: store.glassTint)
+                .contentShape(RoundedRectangle(
+                    cornerRadius: TrayGeometry.cornerRadius(size: size), style: .continuous))
+                .overlay(
+            ArrastoAppKit(
+                aoArrastar: { d in
+                    if tamanhoAoIniciarArrasto == nil { tamanhoAoIniciarArrasto = size }
+                    // na lateral quem manda é o eixo horizontal, e "aumentar"
+                    // aponta para dentro da tela
+                    let delta: CGFloat
+                    switch edge {
+                    case .bottom: delta = d.height
+                    case .left:   delta = -d.width
+                    case .right:  delta = d.width
+                    }
+                    store.iconSize = TrayGeometry.iconSizeDragged(
+                        from: tamanhoAoIniciarArrasto ?? size, verticalTranslation: delta)
+                },
+                aoSoltar: { _ in tamanhoAoIniciarArrasto = nil },
+                cursor: edge.isVertical ? .resizeLeftRight : .resizeUpDown,
+                receberCliques: true)
+        )
+                .contextMenu { menuDaBandeja }
         }
     }
 
@@ -490,30 +483,6 @@ struct TrayView: View {
         }
         Divider()
         Button("Configurações do Docka…") { SettingsWindowController.shared.show() }
-    }
-
-    /// Arrastar a alça redimensiona os ícones. O tamanho de referência é o do
-    /// INÍCIO do arrasto — acumular sobre o corrente faria o tamanho acelerar.
-    private var redimensionarPelaAlca: some Gesture {
-        DragGesture(minimumDistance: 1)
-            .onChanged { g in
-                if tamanhoAoIniciarArrasto == nil { tamanhoAoIniciarArrasto = size }
-                // na lateral quem manda é o eixo horizontal, e o sentido de
-                // "aumentar" aponta para dentro da tela
-                let delta: CGFloat
-                switch edge {
-                case .bottom: delta = g.translation.height
-                case .left:   delta = -g.translation.width
-                case .right:  delta = g.translation.width
-                }
-                store.iconSize = TrayGeometry.iconSizeDragged(
-                    from: tamanhoAoIniciarArrasto ?? size, verticalTranslation: delta)
-                (edge.isVertical ? NSCursor.resizeLeftRight : NSCursor.resizeUpDown).set()
-            }
-            .onEnded { _ in
-                tamanhoAoIniciarArrasto = nil
-                NSCursor.arrow.set()
-            }
     }
 
     // MARK: hover
