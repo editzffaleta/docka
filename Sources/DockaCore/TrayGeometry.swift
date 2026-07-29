@@ -22,9 +22,60 @@ public enum TrayGeometry {
     /// Folga ao redor da bandeja antes de considerar que o cursor saiu dela.
     public static let hideSlack: CGFloat = 30
 
-    /// Ícones + espaçamentos + padding do vidro + margem para a magnificação.
-    public static func trayWidth(appCount: Int, iconSize: CGFloat) -> CGFloat {
-        CGFloat(max(1, appCount)) * (iconSize + 14) + 150
+    // Nomes iguais aos da especificação do dockbar, para a conta bater com o
+    // desenho: `size` é o ícone, `gap` o vão entre eles, `padding` o vidro em volta.
+
+    /// Vão entre ícones em repouso. O Dock da Apple é justo (o dockbar usa 5).
+    public static let gap: CGFloat = 6
+    /// Espessura do vidro em volta da faixa de ícones.
+    public static let padding: CGFloat = 10
+    /// Separador + engrenagem no fim da bandeja.
+    public static let trailingWidth: CGFloat = 44
+
+    public static func restingContentWidth(appCount: Int, size: CGFloat) -> CGFloat {
+        let n = max(1, appCount)
+        return CGFloat(n) * size + CGFloat(n - 1) * gap
+    }
+
+    /// Largura da faixa de ícones no pior caso de ampliação.
+    ///
+    /// Varre a posição do cursor e fica com a soma de larguras mais alta. O
+    /// painel tem frame fixo: se ele for menor que isso, o ícone ampliado da
+    /// ponta é cortado. Roda no layout, não a cada quadro.
+    public static func magnifiedContentWidth(appCount: Int,
+                                             size: CGFloat,
+                                             maxScale: CGFloat,
+                                             maxRange: CGFloat) -> CGFloat {
+        let n = max(1, appCount)
+        let gaps = CGFloat(n - 1) * gap
+        let span = restingContentWidth(appCount: n, size: size)
+        guard maxScale > 1, maxRange > 0 else { return span }
+
+        var maior = span
+        var pointer = -maxRange
+        while pointer <= span + maxRange {
+            var soma: CGFloat = 0
+            for i in 0..<n {
+                let centro = Magnification.restingCenter(index: i, size: size,
+                                                         gap: gap, padding: 0)
+                soma += size * Magnification.scale(pointer: pointer, itemCenter: centro,
+                                                   itemSize: size, maxRange: maxRange,
+                                                   maxScale: maxScale)
+            }
+            maior = max(maior, soma + gaps)
+            pointer += 4
+        }
+        return maior
+    }
+
+    /// Largura total do painel: faixa de ícones ampliada + vidro + engrenagem.
+    public static func trayWidth(appCount: Int,
+                                 size: CGFloat,
+                                 maxScale: CGFloat,
+                                 maxRange: CGFloat) -> CGFloat {
+        magnifiedContentWidth(appCount: appCount, size: size,
+                              maxScale: maxScale, maxRange: maxRange)
+            + 2 * padding + trailingWidth
     }
 
     /// Linha de base da bandeja.
@@ -40,12 +91,15 @@ public enum TrayGeometry {
     public static func frame(screenFrame: CGRect,
                              visibleFrame: CGRect,
                              appCount: Int,
-                             iconSize: CGFloat,
+                             size: CGFloat,
+                             maxScale: CGFloat,
+                             maxRange: CGFloat,
                              position: Position,
                              offsetX: CGFloat,
                              followDock: Bool,
                              height: CGFloat) -> CGRect {
-        let width = trayWidth(appCount: appCount, iconSize: iconSize)
+        let width = trayWidth(appCount: appCount, size: size,
+                              maxScale: maxScale, maxRange: maxRange)
         let x: CGFloat
         switch position {
         case .left:   x = screenFrame.minX + offsetX

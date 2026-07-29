@@ -42,7 +42,7 @@ Perfeita para quem mantém o Dock enxuto mas quer um segundo escalão de apps se
 | Recurso | Descrição |
 |---------|-----------|
 | **Revelação pela borda** | Encoste o cursor na borda inferior e a bandeja sobe com mola; afaste e ela se recolhe sozinha |
-| **Magnificação de ícones** | Curva gaussiana como a do Dock — o ícone sob o cursor cresce até 1,75× a partir da linha de base e empurra os vizinhos |
+| **Magnificação de ícones** | A curva do Dock, parametrizada como no [dockbar](https://github.com/CatsJuice/dockbar): `size`, `gap`, `padding`, `maxScale` e `maxRange`. O ícone sob o cursor cresce até 1,75× a partir da linha de base e empurra os vizinhos; fora do alcance, ninguém se mexe |
 | **Balão de nome** | O nome do app flutua em uma cápsula de vidro sobre o ícone ampliado |
 | **Indicador de execução** | Bolinha branca sob cada app aberto |
 | **Quique ao lançar** | O ícone quica duas vezes enquanto o app abre, com som opcional |
@@ -115,7 +115,7 @@ moram no `DockaCore`, onde `swift test` alcança.
 | Linguagem | Swift 5.9, Swift Package executável (sem `.xcodeproj`) |
 | Interface | SwiftUI puro + `NSPanel` (AppKit) para a janela flutuante |
 | Detecção do cursor | Polling leve de `NSEvent.mouseLocation` a 20×/s — dispensa Acessibilidade |
-| Magnificação | Curva gaussiana por distância do cursor (`exp(-d²/2σ²)`), mola interativa |
+| Magnificação | Onda de cosseno entre `1` e `maxScale`, limitada por `maxRange`, avaliada como a inclinação média de um seno ao longo da largura do ícone — modelo do [dockbar](https://github.com/CatsJuice/dockbar). Mola interativa por cima |
 | Ícones | `NSWorkspace.shared.icon(forFile:)` em representação de 256 px |
 | Atalho global | `RegisterEventHotKey` (Carbon) — funciona sem permissões; gravação por monitor **local** de eventos, que também dispensa Monitoramento de Entrada |
 | Acessibilidade | `accessibilityReduceMotion` do sistema + rótulos e valores de VoiceOver |

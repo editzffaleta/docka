@@ -214,19 +214,37 @@ struct SettingsWindowView: View {
                         .accessibilityValue("\(Int(store.iconSize)) pontos")
 
                     HStack {
-                        Text("Ampliação")
+                        Text("Ampliação máxima")
                             .font(.system(size: 12.5)).foregroundStyle(.white.opacity(0.75))
                         Spacer()
-                        Text(store.magnification == 0 ? "Desativada" : "\(Int(store.magnification * 100))%")
+                        Text(store.maxScale <= 1
+                             ? "Desativada"
+                             : String(format: "%.2f×", store.maxScale))
                             .font(.system(size: 12, design: .monospaced))
                             .foregroundStyle(Theme.accent)
                             .contentTransition(.numericText())
                     }
-                    Slider(value: $store.magnification, in: 0...1).tint(Theme.accent)
-                        .accessibilityLabel("Ampliação")
-                        .accessibilityValue(store.magnification == 0
+                    Slider(value: $store.maxScale, in: 1...2.5).tint(Theme.accent)
+                        .accessibilityLabel("Ampliação máxima")
+                        .accessibilityValue(store.maxScale <= 1
                                             ? "Desativada"
-                                            : "\(Int(store.magnification * 100)) por cento")
+                                            : String(format: "%.2f vezes", store.maxScale))
+
+                    HStack {
+                        Text("Alcance da ampliação")
+                            .font(.system(size: 12.5)).foregroundStyle(.white.opacity(0.75))
+                        Spacer()
+                        Text("\(Int(store.maxRange)) pt")
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(Theme.accent)
+                            .contentTransition(.numericText())
+                    }
+                    Slider(value: $store.maxRange, in: 60...400).tint(Theme.accent)
+                        .accessibilityLabel("Alcance da ampliação")
+                        .accessibilityValue("\(Int(store.maxRange)) pontos")
+
+                    Text("O alcance é a distância em que o cursor ainda mexe com um ícone. Fora dele o ícone fica exatamente no tamanho normal, como no Dock.")
+                        .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
 
                     HStack {
                         Text("Posição da bandeja na tela")

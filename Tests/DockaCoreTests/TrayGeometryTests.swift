@@ -13,23 +13,44 @@ struct TrayGeometryTests {
 
     // MARK: largura
 
-    @Test("A largura cresce com a quantidade de apps e o tamanho do ícone")
-    func widthGrows() {
-        let small = TrayGeometry.trayWidth(appCount: 3, iconSize: 48)
+    @Test("A largura em repouso segue size, gap e a contagem de apps")
+    func larguraEmRepouso() {
+        let tres = TrayGeometry.restingContentWidth(appCount: 3, size: 48)
         // o esperado vai num local tipado: dentro do #expect o literal seria
         // inferido como Int e a comparação não sobrevive à expansão do macro
-        let esperado: CGFloat = 3 * (48 + 14) + 150
-        #expect(small == esperado)
-        #expect(TrayGeometry.trayWidth(appCount: 4, iconSize: 48) > small)
-        #expect(TrayGeometry.trayWidth(appCount: 3, iconSize: 64) > small)
+        let esperado: CGFloat = 3 * 48 + 2 * TrayGeometry.gap
+        #expect(tres == esperado)
+        #expect(TrayGeometry.restingContentWidth(appCount: 4, size: 48) > tres)
+        #expect(TrayGeometry.restingContentWidth(appCount: 3, size: 64) > tres)
+    }
+
+    @Test("A largura do painel reserva espaço para a ampliação")
+    func larguraReservaAmpliacao() {
+        // o painel tem frame fixo: sem essa folga, o ícone ampliado da ponta
+        // seria cortado pela borda do NSPanel
+        let comAmpliacao = TrayGeometry.magnifiedContentWidth(appCount: 6, size: 48,
+                                                              maxScale: 1.75, maxRange: 200)
+        let repouso = TrayGeometry.restingContentWidth(appCount: 6, size: 48)
+        #expect(comAmpliacao > repouso)
+
+        let maior = TrayGeometry.magnifiedContentWidth(appCount: 6, size: 48,
+                                                       maxScale: 2.5, maxRange: 200)
+        #expect(maior > comAmpliacao)
+    }
+
+    @Test("Sem ampliação, a largura é a de repouso")
+    func semAmpliacaoNaoReservaNada() {
+        #expect(TrayGeometry.magnifiedContentWidth(appCount: 6, size: 48,
+                                                   maxScale: 1, maxRange: 200)
+                == TrayGeometry.restingContentWidth(appCount: 6, size: 48))
     }
 
     @Test("Sem apps, a bandeja ainda tem a largura de um ícone")
-    func widthWithNoApps() {
+    func larguraSemApps() {
         // o painel existe antes de o usuário escolher qualquer app; largura 0 o
         // deixaria com frame degenerado
-        #expect(TrayGeometry.trayWidth(appCount: 0, iconSize: 48)
-                == TrayGeometry.trayWidth(appCount: 1, iconSize: 48))
+        #expect(TrayGeometry.trayWidth(appCount: 0, size: 48, maxScale: 1.75, maxRange: 200)
+                == TrayGeometry.trayWidth(appCount: 1, size: 48, maxScale: 1.75, maxRange: 200))
     }
 
     // MARK: posição horizontal
@@ -159,7 +180,8 @@ struct TrayGeometryTests {
                        offsetX: CGFloat = 24,
                        followDock: Bool = false) -> CGRect {
         TrayGeometry.frame(screenFrame: screen, visibleFrame: visible,
-                           appCount: 5, iconSize: 48, position: position,
-                           offsetX: offsetX, followDock: followDock, height: trayHeight)
+                           appCount: 5, size: 48, maxScale: 1.75, maxRange: 200,
+                           position: position, offsetX: offsetX,
+                           followDock: followDock, height: trayHeight)
     }
 }

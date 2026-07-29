@@ -92,7 +92,10 @@ final class DockaStore: ObservableObject {
         static let followDock = "docka.followDock"
         static let offsetX = "docka.offsetX"
         static let iconSize = "docka.iconSize"
-        static let magnification = "docka.magnification"
+        static let maxScale = "docka.maxScale"
+        static let maxRange = "docka.maxRange"
+        /// Chave antiga: guardava o "boost" 0…1 (0,75 = 1,75×).
+        static let magnificationLegacy = "docka.magnification"
         static let showIndicators = "docka.showIndicators"
         static let bounceOnLaunch = "docka.bounceOnLaunch"
         static let position = "docka.position"
@@ -124,7 +127,10 @@ final class DockaStore: ObservableObject {
     @Published var followDock: Bool { didSet { defaults.set(followDock, forKey: Key.followDock) } }
     @Published var offsetX: Double { didSet { defaults.set(offsetX, forKey: Key.offsetX) } }
     @Published var iconSize: Double { didSet { defaults.set(iconSize, forKey: Key.iconSize) } }
-    @Published var magnification: Double { didSet { defaults.set(magnification, forKey: Key.magnification) } }
+    /// Ampliação máxima do ícone sob o cursor (1 = desativada).
+    @Published var maxScale: Double { didSet { defaults.set(maxScale, forKey: Key.maxScale) } }
+    /// Até onde o cursor ainda mexe com um ícone, em pontos.
+    @Published var maxRange: Double { didSet { defaults.set(maxRange, forKey: Key.maxRange) } }
     @Published var showIndicators: Bool { didSet { defaults.set(showIndicators, forKey: Key.showIndicators) } }
     @Published var bounceOnLaunch: Bool { didSet { defaults.set(bounceOnLaunch, forKey: Key.bounceOnLaunch) } }
     @Published var position: String { didSet { defaults.set(position, forKey: Key.position) } }
@@ -211,7 +217,19 @@ final class DockaStore: ObservableObject {
         SMAppService.openSystemSettingsLoginItems()
     }
 
+    /// A versão anterior guardava a ampliação como "boost" 0…1 (0,75 = 1,75×).
+    /// Roda ANTES do `register(defaults:)` — depois dele todo `object(forKey:)`
+    /// devolve o padrão registrado e não dá mais para saber o que era do usuário.
+    private static func migrarAmpliacao(_ defaults: UserDefaults) {
+        guard defaults.object(forKey: Key.maxScale) == nil,
+              let boost = defaults.object(forKey: Key.magnificationLegacy) as? Double
+        else { return }
+        defaults.set(boost <= 0 ? 1.0 : 1.0 + boost, forKey: Key.maxScale)
+    }
+
     private init() {
+        Self.migrarAmpliacao(defaults)
+
         // as chaves são as mesmas de antes: quem já usava o app mantém seus ajustes
         defaults.register(defaults: [
             Key.onboarded: false,
@@ -220,7 +238,8 @@ final class DockaStore: ObservableObject {
             Key.followDock: true,
             Key.offsetX: 24.0,          // distância da borda
             Key.iconSize: 48.0,
-            Key.magnification: 0.75,    // 0 = ampliação desativada
+            Key.maxScale: Double(Magnification.defaultMaxScale),   // 1 = desativada
+            Key.maxRange: Double(Magnification.defaultMaxRange),
             Key.showIndicators: true,
             Key.bounceOnLaunch: true,
             Key.position: "right",      // left | center | right
@@ -234,7 +253,8 @@ final class DockaStore: ObservableObject {
         followDock = defaults.bool(forKey: Key.followDock)
         offsetX = defaults.double(forKey: Key.offsetX)
         iconSize = defaults.double(forKey: Key.iconSize)
-        magnification = defaults.double(forKey: Key.magnification)
+        maxScale = defaults.double(forKey: Key.maxScale)
+        maxRange = defaults.double(forKey: Key.maxRange)
         showIndicators = defaults.bool(forKey: Key.showIndicators)
         bounceOnLaunch = defaults.bool(forKey: Key.bounceOnLaunch)
         position = defaults.string(forKey: Key.position) ?? "right"

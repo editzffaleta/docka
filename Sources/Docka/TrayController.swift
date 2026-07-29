@@ -67,7 +67,9 @@ final class TrayController {
         panel.setFrame(TrayGeometry.frame(screenFrame: screen.frame,
                                           visibleFrame: screen.visibleFrame,
                                           appCount: store.apps.count,
-                                          iconSize: store.iconSize,
+                                          size: store.iconSize,
+                                          maxScale: store.maxScale,
+                                          maxRange: store.maxRange,
                                           position: .init(persisted: store.position),
                                           offsetX: store.offsetX,
                                           followDock: store.followDock,
@@ -149,7 +151,11 @@ final class TrayController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [self] in
             reveal()
             let start = Date()
-            let sweepWidth = CGFloat(max(1, store.apps.count)) * (store.iconSize + 14) + 40
+            // varre exatamente a faixa de ícones, no mesmo espaço de coordenadas
+            // que o hover real usa
+            let sweepWidth = TrayGeometry.restingContentWidth(appCount: store.apps.count,
+                                                              size: store.iconSize)
+                + 2 * TrayGeometry.padding
             Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { _ in
                 let t = Date().timeIntervalSince(start)
                 let phase = 0.5 + 0.5 * sin(t * 2.0 * .pi / 3.0)   // ciclo de 3 s
@@ -206,10 +212,19 @@ struct TrayView: View {
     }
 
     private var tray: some View {
-        HStack(alignment: .bottom, spacing: 4) {
-            ForEach(store.apps) { app in
-                TrayIcon(app: app, hoverX: effectiveHoverX, baseSize: store.iconSize,
-                         maxBoost: store.magnification,
+        HStack(alignment: .bottom, spacing: TrayGeometry.gap) {
+            ForEach(Array(store.apps.enumerated()), id: \.element.id) { index, app in
+                TrayIcon(app: app,
+                         // o centro vem da posição EM REPOUSO, calculada pelo índice:
+                         // medir o centro já ampliado realimentaria a conta
+                         center: Magnification.restingCenter(index: index,
+                                                             size: store.iconSize,
+                                                             gap: TrayGeometry.gap,
+                                                             padding: TrayGeometry.padding),
+                         hoverX: effectiveHoverX,
+                         size: store.iconSize,
+                         maxScale: store.maxScale,
+                         maxRange: store.maxRange,
                          isRunning: running.contains(app.path) && store.showIndicators,
                          bounceEnabled: store.bounceOnLaunch) {
                     store.playSound("Tink")
@@ -254,7 +269,7 @@ struct TrayView: View {
             .accessibilityLabel("Configurações do Docka")
         }
         // visual do Dock real: vidro claro translúcido, padding justo, borda fina
-        .padding(.horizontal, 10)
+        .padding(.horizontal, TrayGeometry.padding)
         .padding(.top, 6)
         .padding(.bottom, 5)
         .background(
@@ -285,25 +300,30 @@ struct TrayView: View {
 // balão quando ampliado, tem bolinha de "app aberto" e quica ao lançar.
 struct TrayIcon: View {
     let app: PinnedApp
+    /// Centro do ícone com a bandeja em repouso, no espaço "tray".
+    let center: CGFloat
     let hoverX: CGFloat?
-    let baseSize: Double
-    var maxBoost: Double = 0.75                // 0 = ampliação desativada
+    let size: Double
+    var maxScale: Double = 1.75                // 1 = ampliação desativada
+    var maxRange: Double = 200
     let isRunning: Bool
     var bounceEnabled = true
     let action: () -> Void
 
-    @State private var frameX: CGFloat = 0
     @State private var pressed = false
     @State private var bounce: CGFloat = 0     // deslocamento Y do quique
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var scale: CGFloat {
-        guard let hx = hoverX, frameX > 0 else { return 1 }
-        return Magnification.scale(distance: abs(hx - frameX), maxBoost: maxBoost)
+        guard let hx = hoverX else { return 1 }
+        return Magnification.scale(pointer: hx, itemCenter: center, itemSize: size,
+                                   maxRange: maxRange, maxScale: maxScale)
     }
 
+    /// Só o ícone apontado mostra o nome, como no Dock.
     private var magnified: Bool {
-        Magnification.isMagnified(scale: scale, maxBoost: maxBoost)
+        Magnification.isHovered(pointer: hoverX, itemCenter: center,
+                                size: size, gap: TrayGeometry.gap)
     }
 
     var body: some View {
@@ -317,7 +337,7 @@ struct TrayIcon: View {
                 Image(nsImage: app.icon)
                     .resizable()
                     .interpolation(.high)
-                    .frame(width: baseSize * scale, height: baseSize * scale)
+                    .frame(width: size * scale, height: size * scale)
                     .shadow(color: .black.opacity(0.35), radius: 5, y: 3)
                     .scaleEffect(pressed ? 0.85 : 1, anchor: .bottom)
                     .offset(y: bounce)
@@ -328,9 +348,10 @@ struct TrayIcon: View {
                     .frame(width: 4, height: 4)
                     .shadow(color: .white.opacity(isRunning ? 0.8 : 0), radius: 2)
             }
-            // container de altura fixa alinhado embaixo: o ícone cresce PARA CIMA
-            .frame(width: baseSize * scale + 6,
-                   height: baseSize * (1 + maxBoost) + 10,
+            // container de altura fixa alinhado embaixo: o ícone cresce PARA CIMA.
+            // A largura acompanha a escala — é ela que empurra os vizinhos.
+            .frame(width: size * scale,
+                   height: size * maxScale + 10,
                    alignment: .bottom)
             .contentShape(Rectangle())
         }
@@ -371,13 +392,6 @@ struct TrayIcon: View {
                     .accessibilityHidden(true)   // o nome já vai no rótulo do botão
             }
         }
-        .background(
-            GeometryReader { geo in
-                Color.clear
-                    .onAppear { frameX = geo.frame(in: .named("tray")).midX }
-                    .onChange(of: geo.frame(in: .named("tray")).midX) { _, x in frameX = x }
-            }
-        )
         .animation(.interactiveSpring(response: 0.16, dampingFraction: 0.78), value: scale)
         .animation(.spring(duration: 0.25), value: magnified)
         .animation(.spring(duration: 0.2), value: pressed)
