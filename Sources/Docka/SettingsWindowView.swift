@@ -72,11 +72,17 @@ struct SettingsWindowView: View {
                     Label { Text(s.titulo) } icon: { IconeSecao(secao: s) }
                 }
             }
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 240)
+            // largura fixa: nas Configurações a barra lateral não é
+            // redimensionável nem recolhível
+            .navigationSplitViewColumnWidth(200)
+            // fora o botão de recolher — ele desalinha a barra de título e o
+            // painel da Apple não tem esse controle
+            .toolbar(removing: .sidebarToggle)
         } detail: {
             conteudo
                 .navigationTitle(secao.titulo)
         }
+        .navigationSplitViewStyle(.balanced)
         .onAppear { store.refreshLaunchAtLogin() }
     }
 
