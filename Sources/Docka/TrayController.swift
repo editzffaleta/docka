@@ -235,16 +235,44 @@ struct TrayView: View {
         1 + (store.maxScale - 1) * Double(hoverForca)
     }
 
-    /// Escalas soma-zero da fileira: o apontado cresce, os distantes cedem, e
-    /// a largura total não muda — é isso que deixa o vidro parado.
+    /// Escalas da fileira: pico CHEIO sob o cursor — o ícone "passa" da barra,
+    /// como no Dock real — com a vizinhança estreitada pelo alcance limitado.
+    /// A fileira cresce o pouco correspondente; a ancoragem mantém o ponto sob
+    /// o cursor parado. (O soma-zero foi tentado e diluía o pico: com poucos
+    /// ícones não existe pico cheio E vidro imóvel — o Dock real também cresce.)
     private var escalas: [CGFloat] {
-        Magnification.zeroSumScales(pointer: effectiveHoverX,
-                                    count: store.apps.count,
-                                    size: store.iconSize,
-                                    gap: TrayGeometry.gap(size: store.iconSize),
-                                    padding: TrayGeometry.padding(size: store.iconSize),
-                                    maxScale: ampliacaoEfetiva,
-                                    maxRange: store.maxRange)
+        let n = store.apps.count
+        guard n > 0, let p = effectiveHoverX else {
+            return Array(repeating: 1, count: max(0, n))
+        }
+        let size = store.iconSize
+        let gap = TrayGeometry.gap(size: size)
+        let alcance = Magnification.cappedRange(count: n, size: size, gap: gap,
+                                                maxRange: store.maxRange)
+        return (0..<n).map { i in
+            Magnification.scale(
+                pointer: p,
+                itemCenter: Magnification.restingCenter(
+                    index: i, size: size, gap: gap,
+                    padding: TrayGeometry.padding(size: size)),
+                itemSize: size,
+                maxRange: alcance,
+                maxScale: ampliacaoEfetiva)
+        }
+    }
+
+    /// Mantém PARADO o ponto sob o cursor enquanto a fileira cresce.
+    private var deslocamentoDaFileira: CGFloat {
+        let size = store.iconSize
+        let gap = TrayGeometry.gap(size: size)
+        return Magnification.centeredRowShift(
+            pointer: effectiveHoverX,
+            count: store.apps.count,
+            size: size, gap: gap,
+            padding: TrayGeometry.padding(size: size),
+            maxScale: ampliacaoEfetiva,
+            maxRange: Magnification.cappedRange(count: store.apps.count, size: size,
+                                               gap: gap, maxRange: store.maxRange))
     }
 
     /// Converte o cursor do espaço do painel para o do vidro em repouso.
@@ -317,6 +345,8 @@ struct TrayView: View {
             VStack {
                 Spacer(minLength: 0)
                 tray
+                    // ancora o ponto sob o cursor enquanto a fileira cresce
+                    .offset(x: deslocamentoDaFileira)
                     // sem o deslize de baixo quando o sistema pede menos movimento:
                     // a bandeja só surge e some
                     .offset(y: store.trayVisible || reduceMotion ? 0 : 200)

@@ -138,14 +138,20 @@ public enum TrayGeometry {
 
     /// Largura total do painel.
     ///
-    /// Com a redistribuição soma-zero a fileira NÃO muda de largura durante a
-    /// ampliação — o painel só precisa da fileira em repouso e de uma margem
-    /// para a sombra respirar.
+    /// A fileira cresce com o pico cheio e a ancoragem a desloca para os lados:
+    /// o painel reserva o extra dos DOIS lados, calculado já com o alcance
+    /// limitado pela fileira.
     public static func trayWidth(appCount: Int,
                                  size: CGFloat,
                                  maxScale: CGFloat,
                                  maxRange: CGFloat) -> CGFloat {
-        restingRowWidth(appCount: appCount, size: size) + 24
+        let alcance = Magnification.cappedRange(count: appCount, size: size,
+                                                gap: gap(size: size), maxRange: maxRange)
+        let repouso = restingContentWidth(appCount: appCount, size: size)
+        let ampliada = magnifiedContentWidth(appCount: appCount, size: size,
+                                             maxScale: maxScale, maxRange: alcance)
+        return repouso + 2 * (ampliada - repouso)
+            + 2 * padding(size: size) + trailingWidth(size: size)
     }
 
     /// Linha de base da bandeja.
