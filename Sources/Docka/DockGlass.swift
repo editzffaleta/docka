@@ -14,6 +14,8 @@ struct DockGlass: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(macOS 26.0, *) {
+            // .regular é o vidro de chrome do sistema. O .clear existe para vidro
+            // sobre mídia (fotos, vídeo) e some demais sobre conteúdo claro.
             content.glassEffect(.regular,
                                 in: .rect(cornerRadius: cornerRadius, style: .continuous))
         } else {
