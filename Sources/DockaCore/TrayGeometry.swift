@@ -25,22 +25,38 @@ public enum TrayGeometry {
     // Nomes iguais aos da especificação do dockbar, para a conta bater com o
     // desenho: `size` é o ícone, `gap` o vão entre eles, `padding` o vidro em volta.
 
-    /// Vão entre ícones em repouso. O Dock da Apple é justo (o dockbar usa 5).
-    public static let gap: CGFloat = 6
-    /// Espessura do vidro em volta da faixa de ícones.
-    public static let padding: CGFloat = 10
+    // Os três números abaixo saíram de medir uma captura do Dock real desta
+    // máquina (tilesize 32), não de estimativa.
+
+    /// Vão entre ícones em repouso: no Dock os tiles quase se encostam.
+    public static let gap: CGFloat = 5
+    /// Vidro à esquerda e à direita da faixa de ícones.
+    public static let padding: CGFloat = 13
     /// Vidro acima e abaixo da faixa de ícones.
-    public static let verticalPadding: CGFloat = 6
+    public static let verticalPadding: CGFloat = 7
     /// Separador + engrenagem no fim da bandeja.
     public static let trailingWidth: CGFloat = 44
 
-    /// Altura do vidro: o ícone no tamanho máximo mais o vidro em volta.
+    /// Altura do vidro: o ícone no tamanho máximo, a faixa da bolinha e o vidro em volta.
     public static func glassHeight(size: CGFloat, maxScale: CGFloat) -> CGFloat {
-        size * max(1, maxScale) + iconSlotSlack + 2 * verticalPadding
+        size * max(1, maxScale) + indicatorRow(size: size) + 2 * verticalPadding
     }
 
-    /// Folga vertical dentro do slot do ícone (respiro para a bolinha de execução).
-    public static let iconSlotSlack: CGFloat = 10
+    /// Diâmetro da bolinha de app em execução — proporcional ao ícone, como no Dock.
+    public static func indicatorSize(size: CGFloat) -> CGFloat {
+        max(3, size * 0.1)
+    }
+
+    /// Faixa abaixo do ícone reservada à bolinha.
+    ///
+    /// Era uma folga fixa de 10 pt herdada do código original, sem relação com
+    /// nada: sobrava espaço ACIMA do ícone, que no Dock é justo.
+    public static func indicatorRow(size: CGFloat) -> CGFloat {
+        indicatorSpacing + indicatorSize(size: size)
+    }
+
+    /// Respiro entre o ícone e a bolinha.
+    public static let indicatorSpacing: CGFloat = 3
 
     /// Raio do canto proporcional à altura, como no Dock. Um raio fixo deixa a
     /// bandeja quadrada com ícones pequenos e arredondada demais com ícones grandes.

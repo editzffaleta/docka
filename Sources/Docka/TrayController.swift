@@ -264,11 +264,12 @@ struct TrayView: View {
             }
 
             // separador + engrenagem
-            RoundedRectangle(cornerRadius: 1)
-                .fill(.white.opacity(0.2))
-                .frame(width: 1, height: store.iconSize * 0.75)
-                .padding(.horizontal, 3)
-                .padding(.bottom, 10)
+            // no Dock o traço vai quase da altura do ícone e é bem discreto
+            RoundedRectangle(cornerRadius: 0.5)
+                .fill(.white.opacity(0.18))
+                .frame(width: 1, height: store.iconSize * 0.9)
+                .padding(.horizontal, 5)
+                .padding(.bottom, 6)
                 .accessibilityHidden(true)          // traço decorativo
 
             Button {
@@ -331,14 +332,14 @@ struct TrayIcon: View {
     }
 
     /// A bolinha do Dock é pequena e proporcional ao tile.
-    private var indicatorSize: CGFloat { max(3, size * 0.1) }
+    private var indicatorSize: CGFloat { TrayGeometry.indicatorSize(size: size) }
 
     var body: some View {
         Button {
             action()
             launchBounce()
         } label: {
-            VStack(spacing: 3) {
+            VStack(spacing: TrayGeometry.indicatorSpacing) {
                 Image(nsImage: app.icon)
                     .resizable()
                     .interpolation(.high)
@@ -357,7 +358,7 @@ struct TrayIcon: View {
             // container de altura fixa alinhado embaixo: o ícone cresce PARA CIMA.
             // A largura acompanha a escala — é ela que empurra os vizinhos.
             .frame(width: size * scale,
-                   height: size * maxScale + TrayGeometry.iconSlotSlack,
+                   height: size * maxScale + TrayGeometry.indicatorRow(size: size),
                    alignment: .bottom)
             .contentShape(Rectangle())
         }
