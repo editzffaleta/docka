@@ -403,7 +403,8 @@ struct TrayView: View {
                 .fill(Color(nsColor: .separatorColor))
                 .frame(width: 1, height: store.iconSize * 0.9)
                 .padding(.horizontal, TrayGeometry.gap(size: store.iconSize) + 3)
-                .padding(.bottom, TrayGeometry.indicatorRow(size: store.iconSize))
+                .padding(.bottom, TrayGeometry.indicatorRow(size: store.iconSize)
+                                + TrayGeometry.paddingBottom(size: store.iconSize))
                 .contentShape(Rectangle())          // pegada maior que o traço de 1 pt
                 .overlay(CursorDeRedimensionar())
                 .gesture(redimensionarPeloSeparador)
@@ -431,7 +432,8 @@ struct TrayView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .padding(.bottom, TrayGeometry.indicatorRow(size: store.iconSize))
+            .padding(.bottom, TrayGeometry.indicatorRow(size: store.iconSize)
+                            + TrayGeometry.paddingBottom(size: store.iconSize))
             .accessibilityLabel("Configurações do Docka")
         }
         .padding(.horizontal, TrayGeometry.padding(size: store.iconSize))
@@ -494,9 +496,11 @@ struct TrayIcon: View {
             // container de altura fixa alinhado embaixo: o ícone cresce PARA CIMA.
             // A largura acompanha a escala — é ela que empurra os vizinhos.
             .frame(width: size * scale,
-                   height: size * slotScale + TrayGeometry.indicatorRow(size: size)
-                          + TrayGeometry.paddingBottom(size: size),
+                   height: size * slotScale + TrayGeometry.indicatorRow(size: size),
                    alignment: .bottom)
+            // padding de verdade: dentro do frame com alignment .bottom, a folga
+            // ia para CIMA e a bolinha ficava em cima da borda do vidro
+            .padding(.bottom, TrayGeometry.paddingBottom(size: size))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
