@@ -47,11 +47,14 @@ struct SettingsWindowView: View {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityAddTraits(tab == t ? [.isSelected] : [])
                     }
                 }
                 .padding(4)
                 .background(RoundedRectangle(cornerRadius: 12).fill(.black.opacity(0.25)))
                 .reveal(delay: 0.1)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Seções")
 
                 Group {
                     switch tab {
@@ -87,6 +90,7 @@ struct SettingsWindowView: View {
                             Image(nsImage: app.icon)
                                 .resizable().frame(width: 40, height: 40)
                                 .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                                .accessibilityHidden(true)   // o nome vai no botão abaixo
                             Button {
                                 withAnimation(.spring(duration: 0.3)) { store.toggle(app.path) }
                             } label: {
@@ -95,6 +99,7 @@ struct SettingsWindowView: View {
                                     .foregroundStyle(.white.opacity(0.5))
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("Remover \(app.name) do Docka")
                         }
                     }
                 }
@@ -139,6 +144,44 @@ struct SettingsWindowView: View {
                            desc: "Bolinha branca sob cada app em execução.",
                            on: $store.showIndicators)
 
+                // atalho global
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 14) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Theme.accent.opacity(0.14))
+                            Image(systemName: "keyboard")
+                                .font(.system(size: 15)).foregroundStyle(Theme.accent)
+                        }
+                        .frame(width: 38, height: 38)
+                        .accessibilityHidden(true)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Atalho global")
+                                .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+                            Text("Fixa a bandeja aberta e a esconde no segundo toque.")
+                                .font(.system(size: 12)).foregroundStyle(.white.opacity(0.55))
+                        }
+                        Spacer()
+                        ShortcutRecorder()
+                    }
+
+                    if let erro = store.shortcutError {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color(red: 0.98, green: 0.75, blue: 0.35))
+                            Text(erro)
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(.white.opacity(0.65))
+                            Spacer()
+                        }
+                        .padding(.horizontal, 4)
+                    }
+                }
+                .padding(.horizontal, 16).padding(.vertical, 12)
+                .glassCard(hoverLift: false)
+
                 // calibração
                 VStack(alignment: .leading, spacing: 14) {
                     Label("Calibração", systemImage: "slider.horizontal.3")
@@ -154,6 +197,8 @@ struct SettingsWindowView: View {
                             .contentTransition(.numericText())
                     }
                     Slider(value: $store.offsetX, in: 0...400).tint(Theme.accent)
+                        .accessibilityLabel("Distância da borda")
+                        .accessibilityValue("\(Int(store.offsetX)) pontos")
 
                     HStack {
                         Text("Tamanho dos ícones")
@@ -165,6 +210,8 @@ struct SettingsWindowView: View {
                             .contentTransition(.numericText())
                     }
                     Slider(value: $store.iconSize, in: 32...64, step: 4).tint(Theme.accent)
+                        .accessibilityLabel("Tamanho dos ícones")
+                        .accessibilityValue("\(Int(store.iconSize)) pontos")
 
                     HStack {
                         Text("Ampliação")
@@ -176,6 +223,10 @@ struct SettingsWindowView: View {
                             .contentTransition(.numericText())
                     }
                     Slider(value: $store.magnification, in: 0...1).tint(Theme.accent)
+                        .accessibilityLabel("Ampliação")
+                        .accessibilityValue(store.magnification == 0
+                                            ? "Desativada"
+                                            : "\(Int(store.magnification * 100)) por cento")
 
                     HStack {
                         Text("Posição da bandeja na tela")

@@ -55,7 +55,7 @@ Perfeita para quem mantém o Dock enxuto mas quer um segundo escalão de apps se
 | **Arrastar arquivos** | Solte arquivos do Finder sobre um ícone para abri-los com aquele app |
 | **Reordenar** | Arraste um ícone sobre outro para trocar a ordem |
 | **Clique-direito** | Menu com Abrir, Mostrar no Finder e Remover do Docka |
-| **Atalho global ⌘⇧D** | Fixa a bandeja aberta (não some com o mouse) e esconde no segundo toque |
+| **Atalho global ⇧⌘D** | Fixa a bandeja aberta (não some com o mouse) e esconde no segundo toque — a combinação é configurável |
 | **Multi-monitor** | A bandeja aparece na tela onde o cursor está |
 
 ### Modos e ajustes
@@ -66,6 +66,8 @@ Perfeita para quem mantém o Dock enxuto mas quer um segundo escalão de apps se
 | **Vive na barra de menus** | Sem ícone no Dock e fora do ⌘Tab; a janela de configurações aparece só quando você pede |
 | **Pressure Zone** | Modo opcional que só revela a bandeja quando você empurra o cursor contra o canto de propósito — evita aberturas acidentais em apps de tela cheia |
 | **Calibração ao vivo** | Distância da borda e tamanho dos ícones ajustáveis por slider, com efeito imediato na bandeja |
+| **Atalho configurável** | Grave a combinação que quiser na aba Comportamento; o Docka avisa se ela já estiver em uso por outro app |
+| **Acessibilidade** | Respeita **Reduzir Movimento** do sistema (sem partículas, sem deslize, sem quique) e rotula a bandeja para o VoiceOver |
 | **Onboarding em 3 passos** | Boas-vindas → escolha de apps (grade com busca) → modo de revelação |
 | **Barra de menus** | Ícone com atalhos rápidos: sons, Pressure Zone, abrir no login, configurações e encerrar |
 
@@ -85,13 +87,14 @@ Pressure Zone, sons e calibração ao vivo) e **Sobre**.
 Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o que os testes cobrem)
 ├── TrayGeometry.swift       — onde a bandeja fica e quando revelar/esconder
 ├── Magnification.swift      — a curva gaussiana de ampliação
+├── Shortcut.swift           — atalho global: validação e exibição (⇧⌘D)
 └── AppScanner.swift         — varredura de /Applications, nome do app, reordenação
 
 Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── DockaApp.swift           — @main, MenuBarExtra, janela de configurações, abrir no login
 ├── Models.swift             — DockaStore (estado + preferências), PinnedApp, cache de ícones
 ├── TrayController.swift     — NSPanel da bandeja, polling do cursor
-├── HotKey.swift             — atalho global ⌘⇧D (Carbon, sem permissões)
+├── HotKey.swift             — atalho global configurável (Carbon, sem permissões)
 ├── OnboardingView.swift     — fluxo de boas-vindas em 3 passos
 ├── SettingsWindowView.swift — abas Apps / Comportamento / Sobre
 ├── Effects.swift            — glass cards, fundo aurora, partículas, botões
@@ -114,7 +117,8 @@ moram no `DockaCore`, onde `swift test` alcança.
 | Detecção do cursor | Polling leve de `NSEvent.mouseLocation` a 20×/s — dispensa Acessibilidade |
 | Magnificação | Curva gaussiana por distância do cursor (`exp(-d²/2σ²)`), mola interativa |
 | Ícones | `NSWorkspace.shared.icon(forFile:)` em representação de 256 px |
-| Atalho global | `RegisterEventHotKey` (Carbon) — funciona sem permissões |
+| Atalho global | `RegisterEventHotKey` (Carbon) — funciona sem permissões; gravação por monitor **local** de eventos, que também dispensa Monitoramento de Entrada |
+| Acessibilidade | `accessibilityReduceMotion` do sistema + rótulos e valores de VoiceOver |
 | Arrastar e soltar | `Transferable` (`.draggable`/`.dropDestination`) com payload de URL |
 | Persistência | `UserDefaults` publicado via `@Published` (caminhos dos apps e preferências) |
 | Abrir no login | `SMAppService.mainApp` — sem helper e sem permissão |
@@ -148,7 +152,7 @@ swift run
 ```
 
 Na primeira execução, o onboarding abre para você escolher os apps.
-Depois, empurre o cursor até a borda inferior direita da tela — ou pressione **⌘⇧D**. ✨
+Depois, empurre o cursor até a borda inferior direita da tela — ou pressione **⇧⌘D**. ✨
 
 ### Regenerar a logo e o demo
 

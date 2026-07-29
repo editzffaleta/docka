@@ -69,7 +69,7 @@ Modo demo (bandeja fixa com hover simulado, útil para testar visual e capturas)
 | `DockaApp.swift` | `@main`, MenuBarExtra, janela principal, registro do atalho |
 | `Models.swift` | `DockaStore` (estado/preferências), `PinnedApp`, `Theme` |
 | `TrayController.swift` | `NSPanel` da bandeja, magnificação, polling do cursor |
-| `HotKey.swift` | Atalho global ⌘⇧D (Carbon) |
+| `HotKey.swift` | Atalho global configurável (Carbon) |
 | `OnboardingView.swift` | Fluxo de boas-vindas |
 | `SettingsWindowView.swift` | Gerenciador (Apps / Comportamento / Sobre) |
 | `Effects.swift` | Componentes visuais reutilizáveis |

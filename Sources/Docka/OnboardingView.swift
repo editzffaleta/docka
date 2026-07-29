@@ -20,6 +20,8 @@ struct OnboardingView: View {
                 }
                 .animation(.spring(duration: 0.4), value: step)
                 .padding(.top, 42)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Passo \(step + 1) de 3")
 
                 Group {
                     switch step {
@@ -243,6 +245,9 @@ struct AppPickCell: View {
         .scaleEffect(hovering ? 1.03 : 1)
         .animation(.spring(duration: 0.25), value: hovering)
         .onHover { hovering = $0 }
+        .accessibilityLabel(app.name)
+        .accessibilityAddTraits(selected ? [.isSelected] : [])
+        .accessibilityHint(selected ? "Remove do Docka" : "Adiciona ao Docka")
     }
 }
 
@@ -281,6 +286,10 @@ struct ModeCard: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(desc)
+        .accessibilityAddTraits(selected ? [.isSelected] : [])
         .glassCard(hoverLift: false)
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
             .strokeBorder(selected ? Theme.accent.opacity(0.7) : .clear, lineWidth: 1.5))

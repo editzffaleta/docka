@@ -81,7 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         TrayController.shared.start()
         HotKeyManager.shared.onPress = { TrayController.shared.toggleFromHotKey() }
-        HotKeyManager.shared.register()
+        DockaStore.shared.activateShortcut()
 
         if DockaStore.shared.onboarded {
             // já configurado: nasce direto na barra de menus, sem piscar janela

@@ -96,6 +96,8 @@ final class DockaStore: ObservableObject {
         static let showIndicators = "docka.showIndicators"
         static let bounceOnLaunch = "docka.bounceOnLaunch"
         static let position = "docka.position"
+        static let atalhoTecla = "docka.hotkey.keyCode"
+        static let atalhoMods = "docka.hotkey.modifiers"
     }
 
     private let defaults = UserDefaults.standard
@@ -126,6 +128,38 @@ final class DockaStore: ObservableObject {
     @Published var showIndicators: Bool { didSet { defaults.set(showIndicators, forKey: Key.showIndicators) } }
     @Published var bounceOnLaunch: Bool { didSet { defaults.set(bounceOnLaunch, forKey: Key.bounceOnLaunch) } }
     @Published var position: String { didSet { defaults.set(position, forKey: Key.position) } }
+
+    // MARK: - Atalho global
+
+    @Published private(set) var shortcut: Shortcut = .padrao
+    /// Mensagem quando o macOS recusa a combinação escolhida.
+    @Published private(set) var shortcutError: String?
+
+    /// Registra o atalho no sistema e persiste se der certo.
+    /// Um atalho recusado não é gravado — senão o app subiria sem atalho nenhum
+    /// na próxima vez, sem explicar por quê.
+    func setShortcut(_ novo: Shortcut) {
+        if let falha = HotKeyManager.shared.apply(novo) {
+            shortcutError = falha.mensagem
+            HotKeyManager.shared.apply(shortcut)   // volta para o que funcionava
+            return
+        }
+        shortcut = novo
+        shortcutError = nil
+        defaults.set(Int(novo.keyCode), forKey: Key.atalhoTecla)
+        defaults.set(Int(novo.modifiers.rawValue), forKey: Key.atalhoMods)
+    }
+
+    func resetShortcut() {
+        setShortcut(.padrao)
+    }
+
+    /// Chamado uma vez na inicialização do app.
+    func activateShortcut() {
+        if let falha = HotKeyManager.shared.apply(shortcut) {
+            shortcutError = falha.mensagem
+        }
+    }
 
     // MARK: - Abrir no login
     //
@@ -189,7 +223,9 @@ final class DockaStore: ObservableObject {
             Key.magnification: 0.75,    // 0 = ampliação desativada
             Key.showIndicators: true,
             Key.bounceOnLaunch: true,
-            Key.position: "right"       // left | center | right
+            Key.position: "right",      // left | center | right
+            Key.atalhoTecla: Int(Shortcut.padrao.keyCode),
+            Key.atalhoMods: Int(Shortcut.padrao.modifiers.rawValue)
         ])
 
         onboarded = defaults.bool(forKey: Key.onboarded)
@@ -206,6 +242,11 @@ final class DockaStore: ObservableObject {
         apps = (defaults.stringArray(forKey: Key.apps) ?? [])
             .filter { FileManager.default.fileExists(atPath: $0) }
             .map { PinnedApp(path: $0) }
+
+        let gravado = Shortcut(keyCode: UInt16(defaults.integer(forKey: Key.atalhoTecla)),
+                               modifiers: .init(rawValue: UInt32(defaults.integer(forKey: Key.atalhoMods))))
+        // um valor corrompido no plist não pode deixar o app sem atalho
+        shortcut = gravado.isValid ? gravado : .padrao
 
         refreshLaunchAtLogin()
     }

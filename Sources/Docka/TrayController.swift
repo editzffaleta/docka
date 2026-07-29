@@ -107,17 +107,25 @@ final class TrayController {
         }
     }
 
+    // Reduzir Movimento do sistema. Aqui vem do NSWorkspace porque estamos fora
+    // de uma View — nas telas, o SwiftUI entrega isso pelo Environment.
+    private var reduceMotion: Bool {
+        NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    }
+
     private func reveal() {
         hideDelay = 0
         store.playSound("Pop")
-        withAnimation(.spring(duration: 0.42, bounce: 0.28)) {
+        // com Reduzir Movimento a bandeja aparece por opacidade, sem subir nem quicar
+        withAnimation(reduceMotion ? .easeOut(duration: 0.18)
+                                   : .spring(duration: 0.42, bounce: 0.28)) {
             store.trayVisible = true
         }
     }
 
     private func hide() {
         store.pinnedOpen = false
-        withAnimation(.spring(duration: 0.32)) {
+        withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.32)) {
             store.trayVisible = false
         }
     }
@@ -157,12 +165,15 @@ struct TrayView: View {
     @EnvironmentObject var store: DockaStore
     @State private var hoverX: CGFloat? = nil     // posição do mouse p/ magnificação
     @State private var running: Set<String> = []  // caminhos dos apps abertos
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack {
             Spacer(minLength: 0)
             tray
-                .offset(y: store.trayVisible ? 0 : 200)
+                // sem o deslize de baixo quando o sistema pede menos movimento:
+                // a bandeja só surge e some
+                .offset(y: store.trayVisible || reduceMotion ? 0 : 200)
                 .opacity(store.trayVisible ? 1 : 0)
         }
         .padding(.bottom, 8)
@@ -227,6 +238,7 @@ struct TrayView: View {
                 .frame(width: 1, height: store.iconSize * 0.75)
                 .padding(.horizontal, 3)
                 .padding(.bottom, 10)
+                .accessibilityHidden(true)          // traço decorativo
 
             Button {
                 SettingsWindowController.shared.show()
@@ -239,6 +251,7 @@ struct TrayView: View {
             }
             .buttonStyle(.plain)
             .padding(.bottom, 10)
+            .accessibilityLabel("Configurações do Docka")
         }
         // visual do Dock real: vidro claro translúcido, padding justo, borda fina
         .padding(.horizontal, 10)
@@ -282,6 +295,7 @@ struct TrayIcon: View {
     @State private var frameX: CGFloat = 0
     @State private var pressed = false
     @State private var bounce: CGFloat = 0     // deslocamento Y do quique
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var scale: CGFloat {
         guard let hx = hoverX, frameX > 0 else { return 1 }
@@ -321,6 +335,11 @@ struct TrayIcon: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        // o VoiceOver anuncia "Safari, em execução, botão" — o nome está no balão,
+        // que é visual e some quando o ícone não está sob o cursor
+        .accessibilityLabel(app.name)
+        .accessibilityValue(isRunning ? "Em execução" : "")
+        .accessibilityHint("Abre o aplicativo")
         // clique-direito: ações do ícone
         .contextMenu {
             Button("Abrir") { action() }
@@ -349,6 +368,7 @@ struct TrayIcon: View {
                     .offset(y: -30)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                     .allowsHitTesting(false)
+                    .accessibilityHidden(true)   // o nome já vai no rótulo do botão
             }
         }
         .background(
@@ -366,7 +386,8 @@ struct TrayIcon: View {
 
     // quique duplo, como o Dock ao abrir um app
     private func launchBounce() {
-        guard bounceEnabled else { return }
+        // Reduzir Movimento vence o ajuste do app: é uma preferência do sistema
+        guard bounceEnabled, !reduceMotion else { return }
         func hop(_ height: CGFloat, delay: Double, fall: Double) {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                 withAnimation(.easeOut(duration: 0.22)) { bounce = -height }
