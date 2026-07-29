@@ -80,6 +80,17 @@ public enum TrayGeometry {
         glassHeight(size: size) * 0.25
     }
 
+    /// Novo tamanho do ícone ao arrastar o separador, como no Dock: arrastar
+    /// para CIMA aumenta, para baixo diminui, 1 pt de cursor = 1 pt de ícone.
+    /// A faixa é a mesma do slider de ajustes.
+    public static let iconSizeRange: ClosedRange<CGFloat> = 32...64
+
+    public static func iconSizeDragged(from start: CGFloat,
+                                       verticalTranslation: CGFloat) -> CGFloat {
+        min(max(start - verticalTranslation, iconSizeRange.lowerBound),
+            iconSizeRange.upperBound)
+    }
+
     public static func restingContentWidth(appCount: Int, size: CGFloat) -> CGFloat {
         let n = max(1, appCount)
         return CGFloat(n) * size + CGFloat(n - 1) * gap(size: size)

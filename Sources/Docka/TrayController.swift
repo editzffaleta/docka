@@ -197,7 +197,22 @@ struct TrayView: View {
     @EnvironmentObject var store: DockaStore
     @State private var hoverX: CGFloat? = nil     // posição do mouse p/ magnificação
     @State private var running: Set<String> = []  // caminhos dos apps abertos
+    @State private var tamanhoAoIniciarArrasto: Double? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Arrastar o separador redimensiona os ícones, como no Dock. O tamanho de
+    /// referência é o do INÍCIO do arrasto — acumular sobre o valor corrente
+    /// faria o tamanho acelerar sozinho.
+    private var redimensionarPeloSeparador: some Gesture {
+        DragGesture(minimumDistance: 1)
+            .onChanged { g in
+                if tamanhoAoIniciarArrasto == nil { tamanhoAoIniciarArrasto = store.iconSize }
+                store.iconSize = TrayGeometry.iconSizeDragged(
+                    from: tamanhoAoIniciarArrasto ?? store.iconSize,
+                    verticalTranslation: g.translation.height)
+            }
+            .onEnded { _ in tamanhoAoIniciarArrasto = nil }
+    }
 
     var body: some View {
         VStack {
@@ -274,13 +289,31 @@ struct TrayView: View {
             }
 
             // separador + engrenagem
-            // no Dock o traço vai quase da altura do ícone e é bem discreto
+            // O traço do Dock: discreto, quase da altura do ícone — e uma ALÇA.
+            // Arrastar para cima/baixo redimensiona os ícones ao vivo, e o
+            // clique-direito abre o menu de posição, como no separador do Dock.
             RoundedRectangle(cornerRadius: 0.5)
                 .fill(Color(nsColor: .separatorColor))
                 .frame(width: 1, height: store.iconSize * 0.9)
                 .padding(.horizontal, TrayGeometry.gap(size: store.iconSize) + 3)
                 .padding(.bottom, TrayGeometry.indicatorRow(size: store.iconSize))
-                .accessibilityHidden(true)          // traço decorativo
+                .contentShape(Rectangle())          // pegada maior que o traço de 1 pt
+                .onHover { dentro in
+                    if dentro { NSCursor.resizeUpDown.push() } else { NSCursor.pop() }
+                }
+                .gesture(redimensionarPeloSeparador)
+                .contextMenu {
+                    Picker("Posição na Tela", selection: $store.position) {
+                        Text("Esquerda").tag("left")
+                        Text("Centro").tag("center")
+                        Text("Direita").tag("right")
+                    }
+                    Divider()
+                    Button("Configurações do Docka…") { SettingsWindowController.shared.show() }
+                }
+                .accessibilityLabel("Tamanho dos ícones")
+                .accessibilityValue("\(Int(store.iconSize)) pontos")
+                .accessibilityHint("Arraste para cima ou para baixo para redimensionar")
 
             Button {
                 SettingsWindowController.shared.show()

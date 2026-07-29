@@ -80,6 +80,25 @@ struct TrayGeometryTests {
         #expect(TrayGeometry.paddingTop(size: 32) > TrayGeometry.paddingBottom(size: 32))
     }
 
+    // MARK: arrastar o separador (redimensionar como no Dock)
+
+    @Test("Arrastar o separador para cima aumenta o ícone, 1 pt por 1 pt")
+    func arrastoParaCimaAumenta() {
+        // translation.height é NEGATIVO ao arrastar para cima
+        #expect(TrayGeometry.iconSizeDragged(from: 40, verticalTranslation: -10) == 50)
+        // para baixo diminui — e 30 fica abaixo do mínimo, então trava no mínimo
+        #expect(TrayGeometry.iconSizeDragged(from: 40, verticalTranslation: 10)
+                == TrayGeometry.iconSizeRange.lowerBound)
+    }
+
+    @Test("O arrasto respeita a mesma faixa do slider de ajustes")
+    func arrastoRespeitaFaixa() {
+        #expect(TrayGeometry.iconSizeDragged(from: 60, verticalTranslation: -500)
+                == TrayGeometry.iconSizeRange.upperBound)
+        #expect(TrayGeometry.iconSizeDragged(from: 36, verticalTranslation: 500)
+                == TrayGeometry.iconSizeRange.lowerBound)
+    }
+
     // MARK: posição horizontal
 
     @Test("À direita, a bandeja encosta na borda direita menos o offset")
