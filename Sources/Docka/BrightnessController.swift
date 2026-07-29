@@ -133,7 +133,7 @@ struct BrightnessPanelView: View {
     @State private var nivelAoIniciar: Double?
 
     private var edge: TrayEdge { Brightness.edge(persisted: store.brightnessEdge) }
-    private let comprimento: CGFloat = 250
+    private let comprimento = Brightness.rulerLength
 
     var body: some View {
         conteudo
@@ -152,8 +152,10 @@ struct BrightnessPanelView: View {
         let regua = BrightnessRuler(
             level: Binding(get: { store.brightnessLevel },
                            set: { store.brightnessLevel = $0 }),
-            comprimento: comprimento, espessura: 54)
-        HStack(spacing: 14) {
+            comprimento: comprimento,
+            espessura: Brightness.rulerThickness,
+            tint: store.glassTint)
+        HStack(spacing: 12) {
             if edge == .left { regua; botao } else { botao; regua }
         }
     }
@@ -162,21 +164,21 @@ struct BrightnessPanelView: View {
     /// desliza ao longo da régua acompanhando o nível.
     private var botao: some View {
         ZStack {
-            Circle().fill(Color(nsColor: .black).opacity(0.82))
-            Circle().strokeBorder(Color.accentColor.opacity(esfregando ? 0.95 : 0.45),
+            GlassCircle(tint: store.glassTint)
+            Circle().strokeBorder(Color.accentColor.opacity(esfregando ? 0.95 : 0.35),
                                   lineWidth: esfregando ? 2 : 1)
             if esfregando {
                 Text(Brightness.knobLabel(level: store.brightnessLevel))
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                     .monospacedDigit()
             } else {
                 Image(systemName: "sun.max.fill")
-                    .font(.system(size: 17))
+                    .font(.system(size: 14))
                     .foregroundStyle(Color.accentColor)
             }
         }
-        .frame(width: 44, height: 44)
+        .frame(width: Brightness.knobSize, height: Brightness.knobSize)
         // acompanha o nível ao longo da régua
         .offset(y: Brightness.knobOffset(level: store.brightnessLevel,
                                          rulerLength: comprimento))
@@ -202,7 +204,7 @@ struct BrightnessPanelView: View {
                     esfregando = false
                 }
         )
-        .frame(height: comprimento + 44, alignment: .center)
+        .frame(height: comprimento + Brightness.knobSize, alignment: .center)
         .accessibilityLabel("Brilho")
         .accessibilityValue("\(Brightness.knobLabel(level: store.brightnessLevel)) por cento")
         .accessibilityHint("Arraste para cima ou para baixo para ajustar")

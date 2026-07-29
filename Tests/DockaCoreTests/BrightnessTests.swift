@@ -147,6 +147,22 @@ struct BrightnessTests {
         #expect(Brightness.scrub(from: 0.1, translation: 9999) == 0)
     }
 
+    @Test("A régua é esguia como a da referência")
+    func reguaEsguia() {
+        // medido no vídeo do usuário: ~13% da altura. A primeira versão tinha
+        // 22% e ficou grossa demais.
+        let razao = Brightness.rulerThickness / Brightness.rulerLength
+        #expect(razao > 0.11 && razao < 0.16)
+        // o botão é um pouco mais estreito que a régua, como na referência
+        #expect(Brightness.knobSize < Brightness.rulerThickness)
+    }
+
+    @Test("O painel cabe a régua e o botão lado a lado")
+    func painelCabe() {
+        #expect(Brightness.panelExtent > Brightness.rulerLength)
+        #expect(Brightness.panelThickness > Brightness.rulerThickness + Brightness.knobSize)
+    }
+
     @Test("O controle só aceita as laterais")
     func sóLaterais() {
         // a régua é vertical: deitada na borda inferior viraria outra coisa

@@ -5,8 +5,10 @@ import DockaCore
 struct BrightnessRuler: View {
     @Binding var level: Double
     /// Comprimento da régua no eixo em que ela cresce.
-    var comprimento: CGFloat = 240
-    var espessura: CGFloat = 52
+    var comprimento: CGFloat = Brightness.rulerLength
+    var espessura: CGFloat = Brightness.rulerThickness
+    /// Tonalização do vidro, a mesma da bandeja.
+    var tint: Double = 0.5
 
     @State private var arrastando = false
 
@@ -36,10 +38,9 @@ struct BrightnessRuler: View {
         }
         .frame(width: espessura, height: comprimento)
         .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: espessura * 0.42, style: .continuous)
-                .fill(Color(nsColor: .black).opacity(0.82))
-        )
+        // mesma vibrância do painel da bandeja: é o que parece vidro sobre o
+        // desktop. O preto sólido de antes não reagia ao fundo.
+        .dockGlass(cornerRadius: espessura * 0.46, tint: tint)
         .accessibilityElement()
         .accessibilityLabel("Brilho da tela")
         .accessibilityValue("\(Int(level * 100)) por cento")
@@ -55,7 +56,7 @@ struct BrightnessRuler: View {
             .fill(destaque > 0
                   ? Color.accentColor.opacity(0.35 + 0.65 * destaque)
                   : Color.white.opacity(graude ? 0.32 : 0.16))
-            .frame(width: espessura * (graude ? 0.52 : 0.34) + destaque * espessura * 0.12,
+            .frame(width: espessura * (graude ? 0.62 : 0.40) + destaque * espessura * 0.16,
                    height: graude ? 2.5 : 1.5)
     }
 

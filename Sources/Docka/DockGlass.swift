@@ -75,6 +75,28 @@ extension View {
     }
 }
 
+/// Vidro em círculo — para o botão do controle de brilho.
+///
+/// Mesma vibrância do painel da bandeja: `.glassEffect` não serve aqui, porque
+/// só refrata conteúdo de dentro da própria janela.
+struct GlassCircle: View {
+    var tint: Double = 0.5
+
+    var body: some View {
+        ZStack {
+            Vibrancia(material: GlassTint.material(for: tint).appKit)
+            let escurecer = GlassTint.overlayOpacity(tint)
+            if escurecer > 0 { Color.black.opacity(escurecer) }
+        }
+        .clipShape(Circle())
+        .overlay(Circle().strokeBorder(
+            LinearGradient(colors: [.white.opacity(0.30), .white.opacity(0.06)],
+                           startPoint: .top, endPoint: .bottom),
+            lineWidth: 0.8))
+        .shadow(color: .black.opacity(0.28), radius: 10, y: 3)
+    }
+}
+
 /// O balão de nome do Dock: retângulo arredondado com RABINHO apontando para o
 /// ícone. Comparado lado a lado com uma foto do balão real ("Lixo"): cantos
 /// menos redondos que uma cápsula, texto 13 semibold e a setinha embaixo.

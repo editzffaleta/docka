@@ -45,9 +45,20 @@ public enum Brightness {
         return bordasPermitidas.contains(e) ? e : .right
     }
 
-    /// Tamanho do painel do controle: régua + botão de sol ao lado.
-    public static let panelExtent: CGFloat = 300     // ao longo da borda
-    public static let panelThickness: CGFloat = 130  // perpendicular
+    // Proporções medidas no controle de referência do usuário: a régua tem
+    // ~13% da própria altura de espessura, e o botão é um pouco mais estreito
+    // que ela. A minha primeira versão estava em 22% — grossa demais.
+
+    /// Comprimento da régua.
+    public static let rulerLength: CGFloat = 280
+    /// Espessura da régua — 13,5% do comprimento, como na referência.
+    public static let rulerThickness: CGFloat = 38
+    /// Diâmetro do botão.
+    public static let knobSize: CGFloat = 34
+
+    /// Tamanho do painel do controle: régua + botão ao lado.
+    public static var panelExtent: CGFloat { rulerLength + 70 }
+    public static var panelThickness: CGFloat { rulerThickness + knobSize + 46 }
 
     /// Quantos pontos de arrasto cobrem a faixa inteira de brilho.
     /// Calibrado pelo comprimento da régua: esfregar no sol anda o mesmo tanto
