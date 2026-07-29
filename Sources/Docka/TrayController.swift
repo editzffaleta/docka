@@ -226,7 +226,14 @@ struct TrayView: View {
     @State private var hoverX: CGFloat? = nil     // posição do mouse p/ magnificação
     @State private var running: Set<String> = []  // caminhos dos apps abertos
     @State private var tamanhoAoIniciarArrasto: Double? = nil
+    /// Força do efeito (0…1), atenuada pela distância vertical do cursor.
+    @State private var hoverForca: CGFloat = 1
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// A ampliação máxima, atenuada pela rampa vertical.
+    private var ampliacaoEfetiva: Double {
+        1 + (store.maxScale - 1) * Double(hoverForca)
+    }
 
     private var deslocamentoDaFileira: CGFloat {
         Magnification.centeredRowShift(pointer: effectiveHoverX,
@@ -234,27 +241,52 @@ struct TrayView: View {
                                        size: store.iconSize,
                                        gap: TrayGeometry.gap(size: store.iconSize),
                                        padding: TrayGeometry.padding(size: store.iconSize),
-                                       maxScale: store.maxScale,
+                                       maxScale: ampliacaoEfetiva,
                                        maxRange: store.maxRange)
     }
 
-    /// Converte o cursor do espaço do painel para o espaço do vidro em repouso,
-    /// e só aceita hover na faixa vertical do vidro — o painel é mais alto que
-    /// a bandeja e o Dock não amplia com o cursor pairando lá em cima.
+    /// Converte o cursor do espaço do painel para o do vidro em repouso.
+    ///
+    /// Duas regras vindas do Dock real:
+    /// - dentro do efeito o rastreio é 1:1, SEM mola — a suavidade vem da curva
+    ///   de proximidade, não do tempo; elástico aqui fazia a bandeja "nadar";
+    /// - a saída vertical é uma RAMPA, não um degrau: subir o cursor desfaz a
+    ///   ampliação gradualmente. Degrau fazia a bandeja pular ao cruzar a linha.
     private func atualizarHover(_ fase: HoverPhase, painel: CGSize) {
         switch fase {
         case .active(let p):
             let fileira = TrayGeometry.restingRowWidth(appCount: store.apps.count,
                                                        size: store.iconSize)
+            let vidroEsq = (painel.width - fileira) / 2
             let topoDoVidro = painel.height - 8
                 - TrayGeometry.glassHeight(size: store.iconSize)
-            if p.y >= topoDoVidro - 24 {
-                hoverX = p.x - (painel.width - fileira) / 2
-            } else if hoverX != nil {
-                withAnimation(.spring(duration: 0.35)) { hoverX = nil }
+            let dentroX = p.x >= vidroEsq - 6 && p.x <= vidroEsq + fileira + 6
+            let acima = topoDoVidro - p.y                 // >0 = cursor acima do vidro
+            let rampa: CGFloat = 36
+            let forca = dentroX ? max(0, min(1, 1 - acima / rampa)) : 0
+
+            if forca <= 0 {
+                encerrarHover()
+            } else if hoverX == nil {
+                // entrada: uma mola curta para o efeito nascer sem estalo
+                withAnimation(.spring(duration: 0.22)) {
+                    hoverX = p.x - vidroEsq
+                    hoverForca = forca
+                }
+            } else {
+                hoverX = p.x - vidroEsq
+                hoverForca = forca
             }
         case .ended:
-            withAnimation(.spring(duration: 0.35)) { hoverX = nil }
+            encerrarHover()
+        }
+    }
+
+    private func encerrarHover() {
+        guard hoverX != nil else { return }
+        withAnimation(.spring(duration: 0.3)) {
+            hoverX = nil
+            hoverForca = 1
         }
     }
 
@@ -290,8 +322,6 @@ struct TrayView: View {
                     // a bandeja só surge e some
                     .offset(y: store.trayVisible || reduceMotion ? 0 : 200)
                     .opacity(store.trayVisible ? 1 : 0)
-                    .animation(.interactiveSpring(response: 0.16, dampingFraction: 0.78),
-                               value: deslocamentoDaFileira)
             }
             .padding(.bottom, 8)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -340,7 +370,7 @@ struct TrayView: View {
                                                              padding: TrayGeometry.padding(size: store.iconSize)),
                          hoverX: effectiveHoverX,
                          size: store.iconSize,
-                         maxScale: store.maxScale,
+                         maxScale: ampliacaoEfetiva,
                          maxRange: store.maxRange,
                          isRunning: running.contains(app.path) && store.showIndicators,
                          bounceEnabled: store.bounceOnLaunch) {
@@ -507,7 +537,6 @@ struct TrayIcon: View {
                     .accessibilityHidden(true)   // o nome já vai no rótulo do botão
             }
         }
-        .animation(.interactiveSpring(response: 0.16, dampingFraction: 0.78), value: scale)
         .animation(.spring(duration: 0.25), value: magnified)
         .zIndex(magnified ? 1 : 0)
     }
