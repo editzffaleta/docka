@@ -43,11 +43,20 @@ public enum TrayGeometry {
     public static func paddingTop(size: CGFloat) -> CGFloat { size * 0.108 }
     /// Vidro abaixo da bolinha de execução, que quase encosta na borda.
     public static func paddingBottom(size: CGFloat) -> CGFloat { size * 0.055 }
-    /// Separador + engrenagem no fim da bandeja.
-    ///
-    /// Escala com o tile: no Dock o Lixo tem exatamente o tamanho dos outros
-    /// ícones, e o traço antes dele acompanha.
-    public static func trailingWidth(size: CGFloat) -> CGFloat { size * 1.35 }
+    /// Separador + engrenagem, como o HStack os monta de fato:
+    /// [vão][traço com 2·(gap+3) de folga][vão][tile da engrenagem].
+    /// Precisa ser exato — a posição do cursor no espaço do painel é convertida
+    /// para o espaço da fileira usando esta largura.
+    public static func trailingWidth(size: CGFloat) -> CGFloat {
+        4 * gap(size: size) + 7 + size
+    }
+
+    /// Largura da fileira inteira em repouso, vidro incluído.
+    public static func restingRowWidth(appCount: Int, size: CGFloat) -> CGFloat {
+        2 * padding(size: size)
+            + restingContentWidth(appCount: appCount, size: size)
+            + trailingWidth(size: size)
+    }
 
     /// Altura do vidro — calculada com o ícone **em repouso**, de propósito.
     ///

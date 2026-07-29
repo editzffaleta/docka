@@ -139,6 +139,66 @@ struct MagnificationTests {
         #expect(fracaoDoPico(1, 200) > 0.9)
     }
 
+    // MARK: ancoragem da fileira (o conserto do tremor)
+
+    private func shift(_ p: CGFloat?, count: Int = 5, maxScale: CGFloat = 1.75) -> CGFloat {
+        Magnification.centeredRowShift(pointer: p, count: count, size: 48, gap: 6,
+                                       padding: 10, maxScale: maxScale, maxRange: 140)
+    }
+
+    @Test("Sem cursor ou sem ampliação, a fileira não se desloca")
+    func semCursorSemDeslocamento() {
+        #expect(shift(nil) == 0)
+        #expect(shift(100, maxScale: 1) == 0)
+        #expect(shift(100, count: 0) == 0)
+    }
+
+    @Test("Cursor no centro da fileira: simetria, deslocamento zero")
+    func centroSimetrico() {
+        let larguraDosIcones: CGFloat = 5 * 48 + 4 * 6
+        let centro = 10 + larguraDosIcones / 2
+        #expect(abs(shift(centro)) < 0.001)
+    }
+
+    @Test("O ponto sob o cursor fica PARADO — é a definição da ancoragem")
+    func pontoSobOCursorParado() {
+        // reconstitui a fileira ampliada e verifica que o centro do ícone
+        // apontado, somado ao deslocamento, volta ao lugar de repouso
+        let size: CGFloat = 48, gap: CGFloat = 6, padding: CGFloat = 10
+        for alvo in 0..<5 {
+            let centroRepouso = Magnification.restingCenter(index: alvo, size: size,
+                                                            gap: gap, padding: padding)
+            let s = shift(centroRepouso)
+            let pFileira = centroRepouso - padding
+
+            var scaledX: CGFloat = 0
+            var extra: CGFloat = 0
+            var centroAmpliado: CGFloat = 0
+            for i in 0..<5 {
+                let c = Magnification.restingCenter(index: i, size: size, gap: gap, padding: 0)
+                let w = size * Magnification.scale(pointer: pFileira, itemCenter: c,
+                                                   itemSize: size, maxRange: 140, maxScale: 1.75)
+                if i == alvo { centroAmpliado = scaledX + w / 2 }
+                extra += w - size
+                scaledX += w + (i < 4 ? gap : 0)
+            }
+            // posição na tela = posição centralizada + deslocamento; o cursor está
+            // no centro do ícone, então o centro ampliado deve cair no de repouso
+            let naTela = centroAmpliado - extra / 2 + s
+            #expect(abs(naTela - (centroRepouso - padding)) < 0.001,
+                    "ícone \(alvo): \(naTela) vs \(centroRepouso - padding)")
+        }
+    }
+
+    @Test("Cursor na ponta esquerda empurra a fileira para a direita")
+    func pontaEsquerdaEmpurraParaDireita() {
+        // com o cursor na borda do 1º ícone, todo o crescimento vai para a direita
+        #expect(shift(10) > 0)
+        // e na ponta direita, para a esquerda
+        let fimDosIcones: CGFloat = 10 + 5 * 48 + 4 * 6
+        #expect(shift(fimDosIcones) < 0)
+    }
+
     // MARK: posições em repouso
 
     @Test("Os centros em repouso ficam espaçados por size + gap")

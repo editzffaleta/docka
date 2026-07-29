@@ -228,6 +228,36 @@ struct TrayView: View {
     @State private var tamanhoAoIniciarArrasto: Double? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var deslocamentoDaFileira: CGFloat {
+        Magnification.centeredRowShift(pointer: effectiveHoverX,
+                                       count: store.apps.count,
+                                       size: store.iconSize,
+                                       gap: TrayGeometry.gap(size: store.iconSize),
+                                       padding: TrayGeometry.padding(size: store.iconSize),
+                                       maxScale: store.maxScale,
+                                       maxRange: store.maxRange)
+    }
+
+    /// Converte o cursor do espaço do painel para o espaço do vidro em repouso,
+    /// e só aceita hover na faixa vertical do vidro — o painel é mais alto que
+    /// a bandeja e o Dock não amplia com o cursor pairando lá em cima.
+    private func atualizarHover(_ fase: HoverPhase, painel: CGSize) {
+        switch fase {
+        case .active(let p):
+            let fileira = TrayGeometry.restingRowWidth(appCount: store.apps.count,
+                                                       size: store.iconSize)
+            let topoDoVidro = painel.height - 8
+                - TrayGeometry.glassHeight(size: store.iconSize)
+            if p.y >= topoDoVidro - 24 {
+                hoverX = p.x - (painel.width - fileira) / 2
+            } else if hoverX != nil {
+                withAnimation(.spring(duration: 0.35)) { hoverX = nil }
+            }
+        case .ended:
+            withAnimation(.spring(duration: 0.35)) { hoverX = nil }
+        }
+    }
+
     /// Arrastar o separador redimensiona os ícones, como no Dock. O tamanho de
     /// referência é o do INÍCIO do arrasto — acumular sobre o valor corrente
     /// faria o tamanho acelerar sozinho.
@@ -249,16 +279,28 @@ struct TrayView: View {
     }
 
     var body: some View {
-        VStack {
-            Spacer(minLength: 0)
-            tray
-                // sem o deslize de baixo quando o sistema pede menos movimento:
-                // a bandeja só surge e some
-                .offset(y: store.trayVisible || reduceMotion ? 0 : 200)
-                .opacity(store.trayVisible ? 1 : 0)
+        GeometryReader { geo in
+            VStack {
+                Spacer(minLength: 0)
+                tray
+                    // compensa a origem móvel da fileira centralizada: mantém
+                    // PARADO o ponto sob o cursor enquanto os ícones crescem
+                    .offset(x: deslocamentoDaFileira)
+                    // sem o deslize de baixo quando o sistema pede menos movimento:
+                    // a bandeja só surge e some
+                    .offset(y: store.trayVisible || reduceMotion ? 0 : 200)
+                    .opacity(store.trayVisible ? 1 : 0)
+                    .animation(.interactiveSpring(response: 0.16, dampingFraction: 0.78),
+                               value: deslocamentoDaFileira)
+            }
+            .padding(.bottom, 8)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // O hover mora no espaço FIXO do painel, não no da fileira: a fileira
+            // muda de largura com a ampliação e a origem dela se move — medir o
+            // cursor num referencial móvel realimentava a conta e a ampliação
+            // tremia sob um cursor parado, com o pico escorregando de ícone.
+            .onContinuousHover { fase in atualizarHover(fase, painel: geo.size) }
         }
-        .padding(.bottom, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
         .onAppear { refreshRunning() }
         .onChange(of: store.trayVisible) { _, visible in
@@ -371,13 +413,7 @@ struct TrayView: View {
                 .dockGlass(cornerRadius: TrayGeometry.cornerRadius(size: store.iconSize),
                            tint: store.glassTint)
         }
-        .coordinateSpace(name: "tray")
-        .onContinuousHover(coordinateSpace: .named("tray")) { phase in
-            switch phase {
-            case .active(let p): hoverX = p.x
-            case .ended: withAnimation(.spring(duration: 0.35)) { hoverX = nil }
-            }
-        }
+
     }
 }
 

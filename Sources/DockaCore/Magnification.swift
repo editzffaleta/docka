@@ -26,6 +26,52 @@ public enum Magnification {
     /// 35% e o terceiro já em repouso, que é o relevo do Dock da Apple.
     public static let defaultMaxRange: CGFloat = 140
 
+    /// Deslocamento horizontal que mantém PARADO o ponto sob o cursor quando a
+    /// fileira (um HStack centralizado no painel) muda de largura com a ampliação.
+    ///
+    /// Sem isto, o crescimento centralizado move a origem da fileira sob um
+    /// cursor parado: o ícone cresce, a fileira alarga, a coordenada do cursor
+    /// na fileira muda, a escala muda — realimentação, e a ampliação treme.
+    /// O Dock real ancora o ponto sob o cursor e empurra os vizinhos para fora.
+    ///
+    /// `pointer` vem no espaço do vidro (0 = borda esquerda do vidro).
+    public static func centeredRowShift(pointer: CGFloat?,
+                                        count: Int,
+                                        size: CGFloat,
+                                        gap: CGFloat,
+                                        padding: CGFloat,
+                                        maxScale: CGFloat,
+                                        maxRange: CGFloat) -> CGFloat {
+        guard let pointer, count > 0, maxScale > 1, size > 0 else { return 0 }
+        let p = pointer - padding            // coords da fileira: 0 = borda do 1º ícone
+        var restingX: CGFloat = 0
+        var scaledX: CGFloat = 0
+        var scaledP: CGFloat? = p < 0 ? p : nil
+        var extraTotal: CGFloat = 0
+
+        for i in 0..<count {
+            let centro = restingCenter(index: i, size: size, gap: gap, padding: 0)
+            let w = size * scale(pointer: p, itemCenter: centro, itemSize: size,
+                                 maxRange: maxRange, maxScale: maxScale)
+            extraTotal += w - size
+            // o mesmo ponto material do ícone, na fileira já ampliada
+            if scaledP == nil, p <= restingX + size {
+                scaledP = scaledX + (p - restingX) / size * w
+            }
+            restingX += size; scaledX += w
+            if i < count - 1 {
+                if scaledP == nil, p <= restingX + gap {
+                    scaledP = scaledX + (p - restingX)   // vãos não mudam de largura
+                }
+                restingX += gap; scaledX += gap
+            }
+        }
+        let sp = scaledP ?? (scaledX + (p - restingX))   // além da ponta direita
+
+        // (p - sp) ancora o ponto material; extraTotal/2 desfaz a centralização
+        return (p - sp) + extraTotal / 2
+    }
+
     /// O cursor está sobre **este** ícone?
     ///
     /// É o que decide o balão com o nome. Não dá para usar um limiar de escala:
