@@ -17,7 +17,10 @@ import CoreGraphics
 public enum Magnification {
 
     /// Ampliação máxima do ícone sob o cursor (1 = desativada).
-    public static let defaultMaxScale: CGFloat = 1.75
+    ///
+    /// 1,5 medido num print do Dock real do usuário (Terminal ampliado vs
+    /// vizinho em repouso). Com o pico cheio, 1,75 ficava grande demais.
+    public static let defaultMaxScale: CGFloat = 1.5
     /// Até onde o cursor ainda mexe com um ícone, em pontos.
     ///
     /// O dockbar usa 200, mas com os ícones de 48 pt do Docka isso deixa o
