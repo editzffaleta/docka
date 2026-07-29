@@ -76,7 +76,7 @@ public enum TrayGeometry {
     /// Raio do canto proporcional à altura, como no Dock. Um raio fixo deixa a
     /// bandeja quadrada com ícones pequenos e arredondada demais com ícones grandes.
     public static func cornerRadius(size: CGFloat) -> CGFloat {
-        glassHeight(size: size) * 0.25
+        glassHeight(size: size) * 0.32
     }
 
     /// Novo tamanho do ícone ao arrastar o separador, como no Dock: arrastar
