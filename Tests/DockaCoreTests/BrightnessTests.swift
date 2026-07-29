@@ -147,6 +147,15 @@ struct BrightnessTests {
         #expect(Brightness.scrub(from: 0.1, translation: 9999) == 0)
     }
 
+    @Test("Toque e arrasto são separados pelo movimento")
+    func toqueVsArrasto() {
+        // sem isto o botão perde um dos dois papéis — foi o que aconteceu
+        #expect(Brightness.isTap(translation: 0))
+        #expect(Brightness.isTap(translation: 2))
+        #expect(!Brightness.isTap(translation: 12))
+        #expect(!Brightness.isTap(translation: -12))
+    }
+
     @Test("O tique toca uma vez por degrau, não por evento")
     func tiquePorDegrau() {
         // dezenas de eventos por segundo com som viraria metralhadora

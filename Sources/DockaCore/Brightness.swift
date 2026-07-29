@@ -85,6 +85,15 @@ public enum Brightness {
         return clamp(0.5 - Double(offset / rulerLength))
     }
 
+    /// O gesto foi um toque, e não um arrasto?
+    ///
+    /// O botão acumula dois papéis, e é isto que os separa. Ficou de fora numa
+    /// reescrita e o clique parou de funcionar — por isso mora aqui, com teste,
+    /// em vez de ser um `if` solto na view.
+    public static func isTap(translation: CGFloat) -> Bool {
+        abs(translation) <= dragThreshold
+    }
+
     /// Suavização do arrasto: o nível caminha esta fração da distância até o
     /// alvo em cada evento, em vez de saltar direto.
     ///

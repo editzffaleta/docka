@@ -200,21 +200,28 @@ struct BrightnessPanelView: View {
                     // cursor ficava noutra posição relativa a ele e o brilho
                     // disparava — o "muito rápido" relatado.
                     if nivelAoIniciar == nil { nivelAoIniciar = store.brightnessLevel }
+                    // até o limiar ainda pode ser clique: não mexe no brilho
+                    guard !Brightness.isTap(translation: g.translation.height) else { return }
                     esfregando = true
                     aplicar(Brightness.dragStep(inicio: nivelAoIniciar ?? store.brightnessLevel,
                                                 translation: g.translation.height,
                                                 atual: store.brightnessLevel,
                                                 span: comprimento))
                 }
-                .onEnded { _ in
+                .onEnded { g in
                     nivelAoIniciar = nil
                     esfregando = false
+                    // sem movimento, foi clique: abre os ajustes. Este ramo
+                    // sumiu na reescrita do botão e o clique parou de funcionar.
+                    if Brightness.isTap(translation: g.translation.height) {
+                        SettingsWindowController.shared.show()
+                    }
                 }
         )
         .frame(height: comprimento + Brightness.knobSize, alignment: .center)
         .accessibilityLabel("Brilho")
         .accessibilityValue("\(Brightness.knobLabel(level: store.brightnessLevel)) por cento")
-        .accessibilityHint("Arraste para cima ou para baixo para ajustar")
+        .accessibilityHint("Arraste para ajustar o brilho; toque para abrir os ajustes")
         .accessibilityAdjustableAction { direcao in
             aplicar(store.brightnessLevel
                     + (direcao == .increment ? Brightness.stepSize : -Brightness.stepSize))
