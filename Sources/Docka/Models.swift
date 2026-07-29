@@ -273,7 +273,7 @@ final class DockaStore: ObservableObject {
             Key.showIndicators: true,
             Key.bounceOnLaunch: true,
             Key.position: "right",      // left | center | right
-            Key.glassTint: GlassTint.systemNeutral,   // nasce idêntico ao sistema
+            Key.glassTint: GlassTint.systemNeutral,   // nasce translúcido, como o Dock
             Key.appearance: TrayAppearance.automatico.rawValue,
             Key.atalhoTecla: Int(Shortcut.padrao.keyCode),
             Key.atalhoMods: Int(Shortcut.padrao.modifiers.rawValue)

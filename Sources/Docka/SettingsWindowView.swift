@@ -312,12 +312,12 @@ struct SettingsWindowView: View {
             Divider().overlay(.white.opacity(0.08))
 
             HStack {
-                Text("Liquid Glass")
+                Text("Material do painel")
                     .font(.system(size: 12.5)).foregroundStyle(.white.opacity(0.75))
                 Spacer()
-                Text(GlassTint.usesClearGlass(store.glassTint) ? "Transparente"
-                     : GlassTint.isSystemNeutral(store.glassTint) ? "Como o sistema"
-                     : "Tonalizado \(Int(GlassTint.overlayOpacity(store.glassTint) * 100))%")
+                Text(GlassTint.material(for: store.glassTint) == .translucido ? "Translúcido"
+                     : GlassTint.overlayOpacity(store.glassTint) == 0 ? "Fosco (padrão)"
+                     : "Fosco + \(Int(GlassTint.overlayOpacity(store.glassTint) * 100))%")
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(Theme.accent)
                     .contentTransition(.numericText())
@@ -338,11 +338,11 @@ struct SettingsWindowView: View {
             }
 
             HStack(spacing: 10) {
-                Text("O meio é o vidro do sistema, sem nada por cima — ele já obedece ao seu slider do Liquid Glass. Para os lados, desvia dele.")
+                Text("Vibrância do sistema, a mesma do Dock e da barra de menus. À esquerda deixa mais do fundo atravessar; à direita fecha.")
                     .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
                 Spacer()
                 if !GlassTint.isSystemNeutral(store.glassTint) {
-                    Button("Voltar ao do sistema") {
+                    Button("Voltar ao padrão") {
                         withAnimation(.spring(duration: 0.3)) { store.matchSystemGlassTint() }
                     }
                     .buttonStyle(.plain)

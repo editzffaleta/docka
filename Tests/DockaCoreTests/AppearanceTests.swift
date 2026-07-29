@@ -23,29 +23,40 @@ struct TrayAppearanceTests {
 @Suite("Tonalização do vidro")
 struct GlassTintTests {
 
-    @Test("A ponta esquerda do controle usa o vidro transparente")
-    func pontaEsquerdaEClear() {
-        #expect(GlassTint.usesClearGlass(0))
-        #expect(GlassTint.usesClearGlass(0.05))
-        #expect(!GlassTint.usesClearGlass(0.5))
-        #expect(!GlassTint.usesClearGlass(1))
+    @Test("O controle escolhe entre os dois materiais de vibrância")
+    func escolheMaterial() {
+        // Não é mais .glassEffect: medido em captura, ele só refrata conteúdo
+        // dentro da própria janela, e a bandeja é um painel transparente sobre a
+        // área de trabalho. Quem amostra atrás da janela é o NSVisualEffectView
+        // com blendingMode .behindWindow.
+        #expect(GlassTint.material(for: 0) == .translucido)
+        #expect(GlassTint.material(for: 0.2) == .translucido)
+        #expect(GlassTint.material(for: GlassTint.systemNeutral) == .fosco)
+        #expect(GlassTint.material(for: 1) == .fosco)
     }
 
-    @Test("O meio do controle não põe NADA por cima do vidro do sistema")
-    func meioNaoTonaliza() {
-        // Este é o conserto: .glassEffect(.regular) já obedece ao slider Liquid
-        // Glass do usuário. Somar tint por cima aplicava a tonalização duas
-        // vezes, fechava o vidro e matava o brilho de borda.
+    @Test("O padrão é o escuro translúcido, como a barra do Dock")
+    func padraoEFosco() {
+        #expect(GlassTint.material(for: GlassTint.systemNeutral) == .fosco)
+        #expect(GlassTint.overlayOpacity(GlassTint.systemNeutral) == 0)
+        #expect(GlassTint.isSystemNeutral(GlassTint.systemNeutral))
+    }
+
+    @Test("Dois terços do controle não põem NADA por cima do vidro")
+    func doisTercosSemTint() {
+        // .glassEffect já obedece ao slider Liquid Glass do usuário. Somar tint
+        // por cima aplicava a tonalização duas vezes, fechava o vidro e matava
+        // o brilho de borda — verificado em captura, com e sem tint.
         #expect(GlassTint.overlayOpacity(GlassTint.systemNeutral) == 0)
         #expect(GlassTint.overlayOpacity(0.3) == 0)
         #expect(GlassTint.overlayOpacity(0.5) == 0)
-        #expect(GlassTint.isSystemNeutral(0.5))
-        #expect(GlassTint.isSystemNeutral(0.3))
+        #expect(GlassTint.overlayOpacity(GlassTint.tintStart) == 0)
+        #expect(GlassTint.isSystemNeutral(GlassTint.systemNeutral))
     }
 
-    @Test("A tonalização só começa depois do meio, e cresce até o teto")
+    @Test("A tonalização só começa no terço final, e cresce até o teto")
     func cresceDepoisDoMeio() {
-        let valores = [0.6, 0.7, 0.8, 0.9, 1.0].map { GlassTint.overlayOpacity($0) }
+        let valores = [0.7, 0.8, 0.9, 1.0].map { GlassTint.overlayOpacity($0) }
         for (a, b) in zip(valores, valores.dropFirst()) {
             #expect(a < b)
         }

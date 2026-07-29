@@ -1,46 +1,71 @@
 import SwiftUI
 import DockaCore
 
-/// O vidro do painel.
+/// Vibrância do sistema, com amostragem **atrás da janela**.
 ///
-/// No macOS 26+ o Dock usa **Liquid Glass**, e o sistema expõe esse material
-/// pelo `.glassEffect`. Usar o material de verdade é o que faz a bandeja parecer
-/// nativa: a imitação anterior (`.regularMaterial` + camada branca + borda
-/// branca + sombra) sempre ia errar o brilho da borda e a refração, porque
-/// nenhum dos dois reage ao conteúdo que passa por baixo.
+/// É o que o Dock e a barra de menus usam. Ao contrário do `.glassEffect`, ela
+/// enxerga o desktop através da janela — verificado lado a lado: com um gradiente
+/// atrás da janela, só esta pega a cor; o `glassEffect` fica chapado.
+struct Vibrancia: NSViewRepresentable {
+    let material: NSVisualEffectView.Material
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let v = NSVisualEffectView()
+        v.material = material
+        v.blendingMode = .behindWindow      // a diferença que faz o fundo aparecer
+        v.state = .active                   // ativa mesmo com o painel sem foco
+        return v
+    }
+
+    func updateNSView(_ v: NSVisualEffectView, context: Context) {
+        v.material = material
+    }
+}
+
+extension GlassTint.Material {
+    var appKit: NSVisualEffectView.Material {
+        switch self {
+        case .translucido: return .popover      // deixa o fundo atravessar
+        case .fosco:       return .hudWindow    // escuro translúcido da barra
+        }
+    }
+}
+
+/// O fundo do painel da bandeja.
 ///
-/// Abaixo do 26 cai no material antigo, que é o melhor disponível lá.
+/// Este arquivo já usou `.glassEffect` do Liquid Glass. **Não funciona aqui:**
+/// esse efeito só refrata conteúdo que esteja DENTRO da própria janela, e a
+/// bandeja é um painel transparente sobre a área de trabalho. Sem nada para
+/// refratar, ele degradava para um retângulo chapado.
 struct DockGlass: ViewModifier {
     let cornerRadius: CGFloat
-    /// 0 = transparente, 1 = tonalizado — o mesmo eixo do slider do sistema.
+    /// 0 = translúcido, 1 = fosco e tonalizado.
     var tint: Double = 0.5
 
     func body(content: Content) -> some View {
-        if #available(macOS 26.0, *) {
-            // Duas alavancas para um só slider: a ponta transparente usa a
-            // variante .clear; do limiar para cima é .regular (o vidro de chrome
-            // do sistema) com tint preto crescente.
-            if GlassTint.usesClearGlass(tint) {
-                content.glassEffect(.clear,
-                                    in: .rect(cornerRadius: cornerRadius, style: .continuous))
-            } else {
-                content.glassEffect(
-                    .regular.tint(.black.opacity(GlassTint.overlayOpacity(tint))),
-                    in: .rect(cornerRadius: cornerRadius, style: .continuous))
-            }
-        } else {
-            content.background(legado)
-        }
+        content.background(fundo)
     }
 
-    private var legado: some View {
+    private var forma: RoundedRectangle {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(.regularMaterial)
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(.white.opacity(0.12), lineWidth: 0.8)
-            )
-            .shadow(color: .black.opacity(0.3), radius: 14, y: 5)
+    }
+
+    private var fundo: some View {
+        ZStack {
+            Vibrancia(material: GlassTint.material(for: tint).appKit)
+            let escurecer = GlassTint.overlayOpacity(tint)
+            if escurecer > 0 { Color.black.opacity(escurecer) }
+        }
+        .clipShape(forma)
+        // A vibrância não desenha o brilho de contorno que o Dock tem. Aqui o
+        // traço à mão se justifica: sem glassEffect, o sistema não o fornece.
+        .overlay(
+            forma.strokeBorder(
+                LinearGradient(colors: [.white.opacity(0.30), .white.opacity(0.06)],
+                               startPoint: .top, endPoint: .bottom),
+                lineWidth: 0.8)
+        )
+        .shadow(color: .black.opacity(0.28), radius: 12, y: 4)
     }
 }
 
@@ -50,12 +75,7 @@ extension View {
     }
 }
 
-/// O balão com o nome do app.
-///
-/// Cápsula escura sólida, de propósito: ela fica POR CIMA do vidro da bandeja, e
-/// vidro não consegue amostrar vidro — empilhar `glassEffect` aqui é vidro sobre
-/// vidro, que o próprio sistema não resolve. Também é o que o Dock faz: o rótulo
-/// dele é uma cápsula escura, não um painel de vidro.
+/// O balão com o nome do app — cápsula sólida, como a do Dock.
 struct DockLabel: View {
     let text: String
 
