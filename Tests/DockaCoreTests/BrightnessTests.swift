@@ -147,6 +147,26 @@ struct BrightnessTests {
         #expect(Brightness.scrub(from: 0.1, translation: 9999) == 0)
     }
 
+    @Test("O tique toca uma vez por degrau, não por evento")
+    func tiquePorDegrau() {
+        // dezenas de eventos por segundo com som viraria metralhadora
+        #expect(!Brightness.crossedStep(from: 0.50, to: 0.505))   // mesmo degrau
+        #expect(Brightness.crossedStep(from: 0.50, to: 0.57))     // degrau seguinte
+        #expect(Brightness.crossedStep(from: 0.57, to: 0.50))     // e voltando
+    }
+
+    @Test("Um arrasto lento cruza cada degrau uma única vez")
+    func tiqueNaoRepete() {
+        var anterior = 0.0
+        var tiques = 0
+        for i in 0...160 {                        // arrasto fino de 0 a 1
+            let atual = Double(i) / 160.0
+            if Brightness.crossedStep(from: anterior, to: atual) { tiques += 1 }
+            anterior = atual
+        }
+        #expect(tiques == Brightness.steps)       // exatamente 16 degraus
+    }
+
     @Test("A régua é esguia como a da referência")
     func reguaEsguia() {
         // medido no vídeo do usuário: ~13% da altura. A primeira versão tinha

@@ -20,6 +20,9 @@ struct BrightnessRuler: View {
                         .position(x: geo.size.width / 2,
                                   y: geo.size.height * (1 - Brightness.tickLevel(i)))
                 }
+                // a faixa acesa desliza junto com o valor em vez de saltar de
+                // traço em traço
+                .animation(.spring(response: 0.28, dampingFraction: 0.85), value: level)
             }
             .contentShape(Rectangle())
             .gesture(
@@ -64,8 +67,13 @@ struct BrightnessRuler: View {
     /// Escreve o valor no sistema e relê: a régua mostra o brilho REAL, não uma
     /// estimativa. Ler é justamente o que a tecla de mídia não permitia.
     private func aplicar(_ novo: Double) {
-        guard abs(novo - level) > 0.0001 else { return }
+        let antes = level
+        guard abs(novo - antes) > 0.0001 else { return }
         BrightnessBackend.escrever(novo)
-        level = BrightnessBackend.ler() ?? novo
+        let depois = BrightnessBackend.ler() ?? novo
+        level = depois
+        if Brightness.crossedStep(from: antes, to: depois) {
+            DockaStore.shared.tiqueDeBrilho()
+        }
     }
 }

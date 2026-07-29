@@ -143,6 +143,8 @@ struct BrightnessPanelView: View {
             .offset(x: state.visible || reduceMotion ? 0
                      : (edge == .left ? -160 : 160))
             .opacity(state.visible ? 1 : 0)
+            .scaleEffect(state.visible || reduceMotion ? 1 : 0.94,
+                         anchor: edge == .left ? .leading : .trailing)
             .frame(maxWidth: .infinity, maxHeight: .infinity,
                    alignment: edge == .left ? .leading : .trailing)
             .padding(edge == .left ? .leading : .trailing, 10)
@@ -185,7 +187,9 @@ struct BrightnessPanelView: View {
         // acompanha o nível ao longo da régua
         .offset(y: Brightness.knobOffset(level: store.brightnessLevel,
                                          rulerLength: comprimento))
-        .animation(.smooth(duration: 0.12), value: store.brightnessLevel)
+        // mola curta: o botão persegue o valor sem parecer preso a um trilho
+        .animation(.spring(response: 0.22, dampingFraction: 0.82),
+                   value: store.brightnessLevel)
         .contentShape(Circle())
         .overlay(CursorDeMao().allowsHitTesting(false))
         .gesture(
@@ -218,9 +222,12 @@ struct BrightnessPanelView: View {
     }
 
     private func aplicar(_ novo: Double) {
-        guard abs(novo - store.brightnessLevel) > 0.0001 else { return }
+        let antes = store.brightnessLevel
+        guard abs(novo - antes) > 0.0001 else { return }
         BrightnessBackend.escrever(novo)
-        store.brightnessLevel = BrightnessBackend.ler() ?? novo
+        let depois = BrightnessBackend.ler() ?? novo
+        store.brightnessLevel = depois
+        if Brightness.crossedStep(from: antes, to: depois) { store.tiqueDeBrilho() }
     }
 }
 

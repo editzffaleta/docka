@@ -428,8 +428,14 @@ final class DockaStore: ObservableObject {
         return list
     }
 
-    func playSound(_ name: String) {
+    func playSound(_ name: String, volume: Float = 1) {
         guard soundsEnabled else { return }
-        NSSound(named: name)?.play()
+        let som = NSSound(named: name)
+        som?.volume = volume
+        som?.play()
     }
+
+    /// Tique do brilho: baixo de propósito. No volume cheio, dezesseis deles
+    /// num arrasto viram barulho em vez de retorno.
+    func tiqueDeBrilho() { playSound("Tink", volume: 0.22) }
 }

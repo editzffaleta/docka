@@ -110,6 +110,17 @@ public enum Brightness {
         "\(Int((clamp(level) * 100).rounded()))"
     }
 
+    /// Passou de um degrau de 1/16 para outro?
+    ///
+    /// É o que decide o tique: um som por evento de arrasto viraria metralhadora
+    /// (são dezenas por segundo), e um som por gesto não daria a sensação de
+    /// escala. Um por degrau é o que o próprio macOS faz no volume.
+    public static func crossedStep(from: Double, to: Double) -> Bool {
+        let a = (clamp(from) / stepSize).rounded(.down)
+        let b = (clamp(to) / stepSize).rounded(.down)
+        return a != b
+    }
+
     // MARK: régua
 
     /// Quantidade de traços da régua. Múltiplo dos passos para cada toque de
