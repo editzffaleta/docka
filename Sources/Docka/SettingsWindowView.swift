@@ -209,19 +209,34 @@ private struct GeralView: View {
 
 private struct AppsView: View {
     @EnvironmentObject var store: DockaStore
+    @State private var alvo: UUID?
+
+    /// A bandeja sendo editada — a principal, salvo escolha do usuário.
+    private var dock: DockConfig {
+        store.docks.first { $0.id == alvo } ?? store.principal
+    }
 
     var body: some View {
         Form {
+            if store.docks.count > 1 {
+                Section {
+                    Picker("Bandeja", selection: Binding(
+                        get: { dock.id }, set: { alvo = $0 })) {
+                        ForEach(store.docks) { d in Text(d.titulo).tag(d.id) }
+                    }
+                }
+            }
+
             Section("Na bandeja") {
-                if store.apps.isEmpty {
+                if dock.apps.isEmpty {
                     ContentUnavailableView("Nenhum app na bandeja",
                                            systemImage: "square.dashed",
                                            description: Text("Escolha abaixo os apps que ficam no Docka."))
                 } else {
-                    ForEach(store.apps) { app in
+                    ForEach(store.apps(of: dock)) { app in
                         LabeledContent {
                             Button {
-                                withAnimation { store.toggle(app.path) }
+                                withAnimation { store.alternarApp(app.path, em: dock.id) }
                             } label: {
                                 Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
                             }
@@ -239,7 +254,7 @@ private struct AppsView: View {
             }
 
             Section("Aplicativos instalados") {
-                AppPickerGrid()
+                AppPickerGrid(dockID: dock.id)
                     .frame(minHeight: 260)
                     .listRowInsets(EdgeInsets())
             }
@@ -280,7 +295,7 @@ private struct AparenciaView: View {
                     VStack(alignment: .trailing, spacing: 10) {
                         MaterialPreview(tint: store.glassTint,
                                         appearance: TrayAppearance(persisted: store.appearance),
-                                        apps: store.apps)
+                                        apps: store.apps(of: store.principal))
                             .frame(width: 330, height: 180)
 
                         HStack(spacing: 8) {
@@ -342,6 +357,10 @@ private struct AparenciaView: View {
 private struct BandejaView: View {
     @EnvironmentObject var store: DockaStore
 
+    private func indice(_ d: DockConfig) -> Int {
+        store.docks.firstIndex(where: { $0.id == d.id }) ?? 0
+    }
+
     var body: some View {
         Form {
             Section {
@@ -363,20 +382,55 @@ private struct BandejaView: View {
                 }
             }
 
-            Section("Posição") {
-                // pop-up, como "Posição do Dock na tela" em Mesa e Dock
-                Picker("Posição na tela", selection: $store.position) {
-                    Text("Esquerda").tag("left")
-                    Text("Centro").tag("center")
-                    Text("Direita").tag("right")
+            ForEach(store.docks) { d in
+                Section {
+                    Picker("Borda da tela", selection: Binding(
+                        get: { d.edge },
+                        set: { store.definirBorda($0, em: d.id) })) {
+                        ForEach(TrayEdge.allCases, id: \.self) { Text($0.titulo).tag($0) }
+                    }
+                    Picker("Posição na borda", selection: Binding(
+                        get: { d.alignment },
+                        set: { store.definirAlinhamento($0, em: d.id) })) {
+                        ForEach(TrayAlignment.allCases, id: \.self) {
+                            Text($0.titulo(for: d.edge)).tag($0)
+                        }
+                    }
+                    if d.alignment != .center {
+                        LabeledContent("Distância do canto") {
+                            LinhaSlider(valor: Binding(get: { d.offset },
+                                                       set: { store.definirOffset($0, em: d.id) }),
+                                        faixa: 0...400,
+                                        texto: "\(Int(d.offset)) pt")
+                        }
+                    }
+                    LabeledContent("Apps") {
+                        HStack(spacing: 6) {
+                            Text("\(d.apps.count)").foregroundStyle(.secondary)
+                            ForEach(store.apps(of: d).prefix(6)) { app in
+                                Image(nsImage: app.icon).resizable().frame(width: 16, height: 16)
+                            }
+                        }
+                    }
+                    if store.docks.count > 1 {
+                        Button("Remover esta bandeja", role: .destructive) {
+                            withAnimation { store.removerDock(d.id) }
+                        }
+                    }
+                } header: {
+                    Text(store.docks.count > 1
+                         ? "Bandeja \(indice(d) + 1) — \(d.titulo)"
+                         : "Bandeja")
                 }
+            }
 
-                LabeledContent("Distância da borda") {
-                    LinhaSlider(valor: $store.offsetX, faixa: 0...400,
-                                texto: "\(Int(store.offsetX)) pt")
-                }
-                .accessibilityLabel("Distância da borda")
-                .accessibilityValue("\(Int(store.offsetX)) pontos")
+            Section {
+                Button("Adicionar bandeja…") { withAnimation { store.adicionarDock() } }
+                    .disabled(store.docks.count >= TrayEdge.allCases.count)
+            } footer: {
+                Text(store.docks.count >= TrayEdge.allCases.count
+                     ? "Uma bandeja por borda da tela."
+                     : "Cada bandeja tem os próprios apps e a própria borda. A aparência é comum a todas.")
             }
 
             Section {

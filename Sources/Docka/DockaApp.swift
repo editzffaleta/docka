@@ -76,8 +76,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.applicationIconImage = icon
         }
 
-        TrayController.shared.start()
-        HotKeyManager.shared.onPress = { TrayController.shared.toggleFromHotKey() }
+        TrayManager.shared.start()
+        HotKeyManager.shared.onPress = { TrayManager.shared.toggleFromHotKey() }
         DockaStore.shared.activateShortcut()
 
         if DockaStore.shared.onboarded {
@@ -88,7 +88,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         if CommandLine.arguments.contains("--demo") {
-            TrayController.shared.startDemo()
+            TrayManager.shared.startDemo()
         }
     }
 

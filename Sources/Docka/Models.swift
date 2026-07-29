@@ -51,11 +51,21 @@ struct PinnedApp: Identifiable, Hashable {
     /// Nome de exibição do Finder, resolvido uma vez na criação (localizado).
     let name: String
 
+    /// displayName toca o disco. Com as bandejas guardando CAMINHOS e mapeando
+    /// para PinnedApp a cada leitura, sem cache isso viraria I/O por quadro.
+    private static var nomes: [String: String] = [:]
+
     init(path: String) {
         self.path = path
-        // displayName respeita o nome localizado do app e a preferência de mostrar
-        // extensões — daí o corte do sufixo só quando ele realmente vem no fim.
-        self.name = AppNaming.trimmingAppSuffix(FileManager.default.displayName(atPath: path))
+        if let cache = Self.nomes[path] {
+            self.name = cache
+        } else {
+            // displayName respeita o nome localizado do app e a preferência de
+            // mostrar extensões — daí o corte do sufixo só no fim.
+            let n = AppNaming.trimmingAppSuffix(FileManager.default.displayName(atPath: path))
+            Self.nomes[path] = n
+            self.name = n
+        }
     }
 
     var icon: NSImage { IconCache.shared.icon(forPath: path) }
@@ -85,7 +95,8 @@ final class DockaStore: ObservableObject {
     static let shared = DockaStore()
 
     private enum Key {
-        static let apps = "docka.apps"
+        static let apps = "docka.apps"          // legado: bandeja única
+        static let docks = "docka.docks"
         static let onboarded = "docka.onboarded"
         static let sounds = "docka.sounds"
         static let pressureZone = "docka.pressureZone"
@@ -107,9 +118,60 @@ final class DockaStore: ObservableObject {
 
     private let defaults = UserDefaults.standard
 
-    // apps escolhidos (persistidos por caminho)
-    @Published var apps: [PinnedApp] {
-        didSet { defaults.set(apps.map(\.path), forKey: Key.apps) }
+    /// As bandejas. Cada uma tem seus apps e sua borda.
+    @Published var docks: [DockConfig] {
+        didSet {
+            guard let data = try? JSONEncoder().encode(docks) else { return }
+            defaults.set(data, forKey: Key.docks)
+        }
+    }
+
+    /// Apps de uma bandeja, já resolvidos (nome em cache, arquivo existente).
+    func apps(of dock: DockConfig) -> [PinnedApp] {
+        dock.apps.filter { FileManager.default.fileExists(atPath: $0) }
+                 .map { PinnedApp(path: $0) }
+    }
+
+    func dock(_ id: UUID) -> DockConfig? { docks.first { $0.id == id } }
+
+    /// A bandeja principal — a que o onboarding configura e a que sempre existe.
+    var principal: DockConfig { docks.first ?? DockConfig() }
+
+    private func atualizar(_ id: UUID, _ mudanca: (inout DockConfig) -> Void) {
+        guard let i = docks.firstIndex(where: { $0.id == id }) else { return }
+        mudanca(&docks[i])
+    }
+
+    func adicionarDock() {
+        docks.append(DockConfig(edge: DockConfig.proximaBordaLivre(docks)))
+    }
+
+    func removerDock(_ id: UUID) {
+        guard docks.count > 1 else { return }   // sempre sobra uma
+        docks.removeAll { $0.id == id }
+    }
+
+    func definirBorda(_ edge: TrayEdge, em id: UUID) { atualizar(id) { $0.edge = edge } }
+    func definirAlinhamento(_ a: TrayAlignment, em id: UUID) { atualizar(id) { $0.alignment = a } }
+    func definirOffset(_ v: Double, em id: UUID) { atualizar(id) { $0.offset = v } }
+
+    func alternarApp(_ path: String, em id: UUID) {
+        atualizar(id) { d in
+            if let i = d.apps.firstIndex(of: path) { d.apps.remove(at: i) }
+            else { d.apps.append(path) }
+        }
+    }
+
+    func estaNaBandeja(_ path: String, _ id: UUID) -> Bool {
+        dock(id)?.apps.contains(path) ?? false
+    }
+
+    func moverApp(_ path: String, antesDe alvo: String, em id: UUID) {
+        atualizar(id) { d in
+            guard let from = d.apps.firstIndex(of: path),
+                  let to = d.apps.firstIndex(of: alvo) else { return }
+            d.apps = Reorder.move(d.apps, from: from, to: to)
+        }
     }
 
     // bandeja
@@ -293,9 +355,26 @@ final class DockaStore: ObservableObject {
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 
-        apps = (defaults.stringArray(forKey: Key.apps) ?? [])
-            .filter { FileManager.default.fileExists(atPath: $0) }
-            .map { PinnedApp(path: $0) }
+        // migração: quem já usava o app tinha UMA bandeja, com os apps em
+        // docka.apps e a posição em docka.position/offsetX
+        if let data = defaults.data(forKey: Key.docks),
+           let salvas = try? JSONDecoder().decode([DockConfig].self, from: data),
+           !salvas.isEmpty {
+            docks = salvas
+        } else {
+            let posLegado = defaults.string(forKey: Key.position) ?? "right"
+            let offLegado = defaults.double(forKey: Key.offsetX)
+            let migrada = DockConfig(apps: defaults.stringArray(forKey: Key.apps) ?? [],
+                                     edge: .bottom,
+                                     alignment: TrayAlignment(persisted: posLegado),
+                                     offset: offLegado)
+            docks = [migrada]
+            // grava já: o didSet não dispara na inicialização, e sem isto cada
+            // abertura criaria um id novo para a mesma bandeja
+            if let data = try? JSONEncoder().encode([migrada]) {
+                defaults.set(data, forKey: Key.docks)
+            }
+        }
 
         let gravado = Shortcut(keyCode: UInt16(defaults.integer(forKey: Key.atalhoTecla)),
                                modifiers: .init(rawValue: UInt32(defaults.integer(forKey: Key.atalhoMods))))
@@ -303,24 +382,6 @@ final class DockaStore: ObservableObject {
         shortcut = gravado.isValid ? gravado : .padrao
 
         refreshLaunchAtLogin()
-    }
-
-    func move(_ path: String, before target: String) {
-        guard let from = apps.firstIndex(where: { $0.path == path }),
-              let to = apps.firstIndex(where: { $0.path == target }) else { return }
-        apps = Reorder.move(apps, from: from, to: to)
-    }
-
-    func toggle(_ path: String) {
-        if let i = apps.firstIndex(where: { $0.path == path }) {
-            apps.remove(at: i)
-        } else {
-            apps.append(PinnedApp(path: path))
-        }
-    }
-
-    func isSelected(_ path: String) -> Bool {
-        apps.contains { $0.path == path }
     }
 
     // MARK: - Apps instalados (para o seletor)

@@ -49,8 +49,8 @@ struct TrayGeometryTests {
     func larguraSemApps() {
         // o painel existe antes de o usuário escolher qualquer app; largura 0 o
         // deixaria com frame degenerado
-        #expect(TrayGeometry.trayWidth(appCount: 0, size: 48, maxScale: 1.75, maxRange: 200)
-                == TrayGeometry.trayWidth(appCount: 1, size: 48, maxScale: 1.75, maxRange: 200))
+        #expect(TrayGeometry.trayExtent(appCount: 0, size: 48, maxScale: 1.75, maxRange: 200)
+                == TrayGeometry.trayExtent(appCount: 1, size: 48, maxScale: 1.75, maxRange: 200))
     }
 
     // MARK: proporções do vidro (calibradas contra o Dock real)
@@ -103,13 +103,13 @@ struct TrayGeometryTests {
 
     @Test("À direita, a bandeja encosta na borda direita menos o offset")
     func positionRight() {
-        let f = frame(position: .right, offsetX: 24)
+        let f = frame(position: .end, offsetX: 24)
         #expect(f.maxX == screen.maxX - 24)
     }
 
     @Test("À esquerda, a bandeja começa na borda esquerda mais o offset")
     func positionLeft() {
-        let f = frame(position: .left, offsetX: 24)
+        let f = frame(position: .start, offsetX: 24)
         #expect(f.minX == screen.minX + 24)
     }
 
@@ -124,9 +124,9 @@ struct TrayGeometryTests {
     func unknownPositionFallsBack() {
         // a preferência é gravada como string livre; versões antigas ou um plist
         // editado à mão não podem quebrar o layout
-        #expect(TrayGeometry.Position(persisted: "bottom") == .right)
-        #expect(TrayGeometry.Position(persisted: "") == .right)
-        #expect(TrayGeometry.Position(persisted: "left") == .left)
+        #expect(TrayAlignment(persisted: "bottom") == .end)
+        #expect(TrayAlignment(persisted: "") == .end)
+        #expect(TrayAlignment(persisted: "left") == .start)
     }
 
     // MARK: seguir o Dock
@@ -157,15 +157,15 @@ struct TrayGeometryTests {
     func revealsAtBottomEdge() {
         let f = frame()
         #expect(TrayGeometry.shouldReveal(cursor: CGPoint(x: f.midX, y: 0),
-                                          trayFrame: f, screenBottomY: 0, pressureZone: false))
+                                          trayFrame: f, screenFrame: screen, edge: .bottom, pressureZone: false))
     }
 
     @Test("Não revela quando o cursor está longe da faixa horizontal")
     func doesNotRevealOutsideZone() {
-        let f = frame(position: .right)
+        let f = frame(position: .end)
         // canto inferior ESQUERDO, com a bandeja à direita
         #expect(!TrayGeometry.shouldReveal(cursor: CGPoint(x: 5, y: 0),
-                                           trayFrame: f, screenBottomY: 0, pressureZone: false))
+                                           trayFrame: f, screenFrame: screen, edge: .bottom, pressureZone: false))
     }
 
     @Test("Pressure Zone é mais exigente que o modo normal")
@@ -174,9 +174,9 @@ struct TrayGeometryTests {
         // 2pt acima da borda: o modo normal aceita, o Pressure Zone não
         let cursor = CGPoint(x: f.midX, y: 2)
         #expect(TrayGeometry.shouldReveal(cursor: cursor, trayFrame: f,
-                                          screenBottomY: 0, pressureZone: false))
+                                          screenFrame: screen, edge: .bottom, pressureZone: false))
         #expect(!TrayGeometry.shouldReveal(cursor: cursor, trayFrame: f,
-                                           screenBottomY: 0, pressureZone: true))
+                                          screenFrame: screen, edge: .bottom, pressureZone: true))
     }
 
     @Test("O gatilho é a borda da tela mesmo com a bandeja acima do Dock")
@@ -185,7 +185,7 @@ struct TrayGeometryTests {
         let f = frame(followDock: true)
         #expect(f.minY == 70)
         #expect(TrayGeometry.shouldReveal(cursor: CGPoint(x: f.midX, y: 0),
-                                          trayFrame: f, screenBottomY: 0, pressureZone: false))
+                                          trayFrame: f, screenFrame: screen, edge: .bottom, pressureZone: false))
     }
 
     // MARK: esconder
@@ -193,7 +193,7 @@ struct TrayGeometryTests {
     @Test("O cursor sobre a bandeja a mantém aberta")
     func staysOpenOverTray() {
         let f = frame(followDock: true)
-        #expect(TrayGeometry.isInsideTray(cursor: CGPoint(x: f.midX, y: f.midY), trayFrame: f))
+        #expect(TrayGeometry.isInsideTray(cursor: CGPoint(x: f.midX, y: f.midY), trayFrame: f, edge: .bottom))
     }
 
     @Test("A região de permanência usa o topo do painel, não a borda da tela")
@@ -203,31 +203,34 @@ struct TrayGeometryTests {
         // bandeja com o cursor ainda em cima dela.
         let f = frame(followDock: true)
         #expect(f.maxY == 70 + trayHeight)
-        #expect(TrayGeometry.isInsideTray(cursor: CGPoint(x: f.midX, y: 235), trayFrame: f))
+        #expect(TrayGeometry.isInsideTray(cursor: CGPoint(x: f.midX, y: 235), trayFrame: f, edge: .bottom))
     }
 
     @Test("Esconde quando o cursor sobe acima da folga")
     func hidesWellAboveTray() {
         let f = frame()
         #expect(!TrayGeometry.isInsideTray(
-            cursor: CGPoint(x: f.midX, y: f.maxY + TrayGeometry.hideSlack + 1), trayFrame: f))
+            cursor: CGPoint(x: f.midX, y: f.maxY + TrayGeometry.hideSlack + 1), trayFrame: f, edge: .bottom))
     }
 
     @Test("Esconde quando o cursor sai pela lateral")
     func hidesToTheSide() {
         let f = frame()
         #expect(!TrayGeometry.isInsideTray(
-            cursor: CGPoint(x: f.minX - TrayGeometry.hideSlack - 1, y: f.midY), trayFrame: f))
+            cursor: CGPoint(x: f.minX - TrayGeometry.hideSlack - 1, y: f.midY), trayFrame: f, edge: .bottom))
     }
 
     // MARK: helper
 
-    private func frame(position: TrayGeometry.Position = .right,
+    private func frame(position: TrayAlignment = .end,
                        offsetX: CGFloat = 24,
-                       followDock: Bool = false) -> CGRect {
+                       followDock: Bool = false,
+                       edge: TrayEdge = .bottom) -> CGRect {
         TrayGeometry.frame(screenFrame: screen, visibleFrame: visible,
-                           appCount: 5, size: 48, maxScale: 1.75, maxRange: 200,
-                           position: position, offsetX: offsetX,
-                           followDock: followDock, height: trayHeight)
+                           edge: edge, alignment: position, offset: offsetX,
+                           followDock: followDock,
+                           extent: TrayGeometry.trayExtent(appCount: 5, size: 48,
+                                                           maxScale: 1.75, maxRange: 200),
+                           thickness: trayHeight)
     }
 }

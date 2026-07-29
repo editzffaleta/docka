@@ -1,40 +1,34 @@
 import SwiftUI
 import AppKit
+import Combine
 import DockaCore
 
-// Painel flutuante que vive na borda inferior da tela, ao lado do Dock.
-// Aparece quando o cursor encosta na borda (ou empurra o canto, no modo Pressure Zone).
+// Uma bandeja = um NSPanel numa borda da tela. O TrayManager mantém um
+// controlador por bandeja configurada; a geometria por borda mora no DockaCore.
+
+/// Estado de exibição de UMA bandeja.
+final class TrayState: ObservableObject {
+    @Published var visible = false
+    @Published var pinned = false          // aberta pelo atalho: não auto-esconde
+    @Published var demoHover: CGFloat? = nil
+    var demoMode = false
+}
+
 final class TrayController {
-    static let shared = TrayController()
+    let dockID: UUID
+    let state = TrayState()
 
     private var panel: NSPanel!
-    private var timer: Timer?
     private let store = DockaStore.shared
     private var hideDelay: TimeInterval = 0
-    private var cancellable: Any?
-    private var screenObserver: NSObjectProtocol?
+    private var retirada: DispatchWorkItem?
 
-    private let trayHeight: CGFloat = 170
-
-    func start() {
+    init(dockID: UUID) {
+        self.dockID = dockID
         buildPanel()
-        // repõe o painel quando a lista de apps ou ajustes mudam
-        cancellable = store.objectWillChange.sink { [weak self] in
-            DispatchQueue.main.async { self?.layoutPanel() }
-        }
-        // "Seguir mudanças do Dock": o macOS publica esta notificação quando o Dock
-        // muda de tamanho ou de lado, e também ao ligar/desligar um monitor.
-        screenObserver = NotificationCenter.default.addObserver(
-            forName: NSApplication.didChangeScreenParametersNotification,
-            object: nil, queue: .main
-        ) { [weak self] _ in
-            self?.layoutPanel()
-        }
-        timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
-            self?.tick()
-        }
-        RunLoop.main.add(timer!, forMode: .common)
     }
+
+    private var dock: DockConfig? { store.dock(dockID) }
 
     private func buildPanel() {
         panel = NSPanel(contentRect: .zero,
@@ -49,13 +43,21 @@ final class TrayController {
         panel.isFloatingPanel = true
         panel.acceptsMouseMovedEvents = true   // necessário para o cursorUpdate da alça
 
-        let host = NSHostingView(rootView: TrayView().environmentObject(store))
-        panel.contentView = host
-        layoutPanel()
+        panel.contentView = NSHostingView(
+            rootView: TrayView(dockID: dockID)
+                .environmentObject(store)
+                .environmentObject(state))
+        layout()
         // nasce fora da tela: quem traz o painel para frente é o reveal()
     }
 
-    // tela onde a bandeja está atualmente (segue o mouse entre monitores)
+    func encerrar() {
+        retirada?.cancel()
+        panel.orderOut(nil)
+        panel.contentView = nil
+    }
+
+    // tela onde a bandeja está (segue o mouse entre monitores)
     private var currentScreen: NSScreen? = NSScreen.main
 
     private func screenUnderMouse() -> NSScreen? {
@@ -72,46 +74,48 @@ final class TrayController {
         }
     }
 
-    private func layoutPanel() {
-        guard let screen = currentScreen else { return }
+    func layout() {
+        guard let screen = currentScreen, let d = dock else { return }
         applyAppearance()
-        panel.setFrame(TrayGeometry.frame(screenFrame: screen.frame,
-                                          visibleFrame: screen.visibleFrame,
-                                          appCount: store.apps.count,
-                                          size: store.iconSize,
-                                          maxScale: store.maxScale,
-                                          maxRange: store.maxRange,
-                                          position: .init(persisted: store.position),
-                                          offsetX: store.offsetX,
-                                          followDock: store.followDock,
-                                          height: trayHeight),
-                       display: true)
+        let size = store.iconSize
+        panel.setFrame(
+            TrayGeometry.frame(
+                screenFrame: screen.frame,
+                visibleFrame: screen.visibleFrame,
+                edge: d.edge,
+                alignment: d.alignment,
+                offset: d.offset,
+                followDock: store.followDock,
+                extent: TrayGeometry.trayExtent(appCount: d.apps.count, size: size,
+                                                maxScale: store.maxScale,
+                                                maxRange: store.maxRange),
+                thickness: TrayGeometry.panelThickness(size: size, maxScale: store.maxScale,
+                                                       edge: d.edge)),
+            display: true)
     }
 
     // MARK: - Detecção do mouse (polling, sem permissões)
 
-    private func tick() {
-        guard store.onboarded, !store.apps.isEmpty else { return }
+    func tick() {
+        guard store.onboarded, let d = dock, !d.apps.isEmpty else { return }
         let loc = NSEvent.mouseLocation
 
         // multi-monitor: a bandeja acompanha a tela onde o cursor está
-        if !store.trayVisible, let s = screenUnderMouse(), s != currentScreen {
+        if !state.visible, let s = screenUnderMouse(), s != currentScreen {
             currentScreen = s
-            layoutPanel()
+            layout()
         }
         guard let screen = currentScreen else { return }
         let f = panel.frame
-        let bottomY = screen.frame.minY
 
-        if !store.trayVisible {
+        if !state.visible {
             if TrayGeometry.shouldReveal(cursor: loc, trayFrame: f,
-                                         screenBottomY: bottomY,
+                                         screenFrame: screen.frame, edge: d.edge,
                                          pressureZone: store.pressureZone) {
                 reveal()
             }
-        } else if !store.pinnedOpen {
-            // esconde quando o cursor sai da região da bandeja (exceto se fixada por atalho)
-            if TrayGeometry.isInsideTray(cursor: loc, trayFrame: f) {
+        } else if !state.pinned {
+            if TrayGeometry.isInsideTray(cursor: loc, trayFrame: f, edge: d.edge) {
                 hideDelay = 0
             } else {
                 hideDelay += 0.05
@@ -126,73 +130,120 @@ final class TrayController {
         NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
     }
 
-    /// Tira o painel da tela depois que a animação de saída termina.
-    private var retirada: DispatchWorkItem?
-
     private func reveal() {
         hideDelay = 0
         retirada?.cancel()
         retirada = nil
-        // O painel só fica na tela enquanto a bandeja está aberta. Antes ele vivia
-        // ali com opacidade 0, e o Liquid Glass seguia amostrando o fundo o tempo
-        // todo — vidro custa GPU mesmo invisível.
+        // O painel só fica na tela enquanto a bandeja está aberta: vidro custa
+        // GPU mesmo invisível.
         panel.orderFrontRegardless()
         store.playSound("Pop")
-        // com Reduzir Movimento a bandeja aparece por opacidade, sem subir nem quicar
         withAnimation(reduceMotion ? .easeOut(duration: 0.18)
                                    : .spring(duration: 0.42, bounce: 0.28)) {
-            store.trayVisible = true
+            state.visible = true
         }
     }
 
     private func hide() {
-        store.pinnedOpen = false
+        state.pinned = false
         withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.32)) {
-            store.trayVisible = false
+            state.visible = false
         }
         let item = DispatchWorkItem { [weak self] in
-            // um reveal no meio da saída cancela isto, mas confere de novo
-            guard let self, !self.store.trayVisible else { return }
+            guard let self, !self.state.visible else { return }
             self.panel.orderOut(nil)
         }
         retirada = item
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: item)
     }
 
-    // alternado pelo atalho global ⌘⇧D
     func toggleFromHotKey() {
-        if store.trayVisible {
+        if state.visible {
             hide()
         } else {
             currentScreen = screenUnderMouse()
-            layoutPanel()
-            store.pinnedOpen = true
+            layout()
+            state.pinned = true
             reveal()
         }
     }
 
-    // modo demo: fixa a bandeja aberta e varre um hover simulado pelos ícones
+    /// Modo demo: bandeja fixa com um hover simulado varrendo os ícones.
     func startDemo() {
-        store.demoMode = true
-        store.pinnedOpen = true
+        guard let d = dock else { return }
+        state.demoMode = true
+        state.pinned = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [self] in
             reveal()
             let start = Date()
-            // varre exatamente a faixa de ícones, no mesmo espaço de coordenadas
-            // que o hover real usa
-            let sweepWidth = TrayGeometry.restingContentWidth(appCount: store.apps.count,
-                                                              size: store.iconSize)
-                + 2 * TrayGeometry.padding(size: store.iconSize)
+            let extensao = TrayGeometry.restingRowWidth(appCount: d.apps.count,
+                                                        size: store.iconSize)
             Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { _ in
                 let t = Date().timeIntervalSince(start)
-                let phase = 0.5 + 0.5 * sin(t * 2.0 * .pi / 3.0)   // ciclo de 3 s
-                self.store.demoHoverX = 15 + (sweepWidth - 30) * phase
+                let fase = 0.5 + 0.5 * sin(t * 2.0 * .pi / 3.0)   // ciclo de 3 s
+                self.state.demoHover = 15 + (extensao - 30) * fase
             }
         }
     }
 }
 
-// Cursor sobre a alça do separador.
+// MARK: - Gerente das bandejas
+
+final class TrayManager {
+    static let shared = TrayManager()
+
+    private var controllers: [UUID: TrayController] = [:]
+    private var timer: Timer?
+    private var cancellable: Any?
+    private var screenObserver: NSObjectProtocol?
+    private let store = DockaStore.shared
+
+    func start() {
+        sincronizar()
+        // repõe os painéis quando as bandejas ou os ajustes mudam
+        cancellable = store.objectWillChange.sink { [weak self] in
+            DispatchQueue.main.async { self?.sincronizar() }
+        }
+        // "Seguir mudanças do Dock": o macOS publica isto quando o Dock muda de
+        // tamanho ou de lado, e também ao ligar/desligar um monitor.
+        screenObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.controllers.values.forEach { $0.layout() }
+        }
+        // um timer só para todas as bandejas: N timers a 20 Hz seria desperdício
+        timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+            self?.controllers.values.forEach { $0.tick() }
+        }
+        RunLoop.main.add(timer!, forMode: .common)
+    }
+
+    /// Cria e remove controladores para bater com as bandejas configuradas.
+    private func sincronizar() {
+        let atuais = Set(store.docks.map(\.id))
+        for id in controllers.keys where !atuais.contains(id) {
+            controllers.removeValue(forKey: id)?.encerrar()
+        }
+        for d in store.docks where controllers[d.id] == nil {
+            controllers[d.id] = TrayController(dockID: d.id)
+        }
+        controllers.values.forEach { $0.layout() }
+    }
+
+    /// O atalho global age na bandeja principal.
+    func toggleFromHotKey() {
+        guard let id = store.docks.first?.id else { return }
+        controllers[id]?.toggleFromHotKey()
+    }
+
+    func startDemo() {
+        guard let id = store.docks.first?.id else { return }
+        controllers[id]?.startDemo()
+    }
+}
+
+// MARK: - Cursor sobre a alça do separador
 //
 // NSCursor.set() chamado por um app INATIVO é ignorado — o cursor pertence ao
 // app ativo, e o Docka vive em segundo plano. O canal que o AppKit oferece
@@ -200,7 +251,10 @@ final class TrayController {
 // .activeAlways: o sistema pede o cursor à janela sob o mouse (é assim que o
 // Safari mostra a mãozinha em links mesmo desfocado).
 private struct CursorDeRedimensionar: NSViewRepresentable {
+    let vertical: Bool
+
     final class V: NSView {
+        var vertical = true
         override func updateTrackingAreas() {
             super.updateTrackingAreas()
             trackingAreas.forEach(removeTrackingArea)
@@ -210,42 +264,56 @@ private struct CursorDeRedimensionar: NSViewRepresentable {
                 owner: self))
         }
         override func cursorUpdate(with event: NSEvent) {
-            NSCursor.resizeUpDown.set()
+            (vertical ? NSCursor.resizeUpDown : NSCursor.resizeLeftRight).set()
         }
         // invisível ao clique: o arrasto e o menu continuam com a SwiftUI abaixo
         override func hitTest(_ point: NSPoint) -> NSView? { nil }
     }
-    func makeNSView(context: Context) -> NSView { V() }
-    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    func makeNSView(context: Context) -> NSView {
+        let v = V(); v.vertical = vertical; return v
+    }
+    func updateNSView(_ nsView: NSView, context: Context) {
+        (nsView as? V)?.vertical = vertical
+    }
 }
 
 // MARK: - A bandeja em si (vidro + ícones com magnificação estilo Dock)
 
 struct TrayView: View {
+    let dockID: UUID
     @EnvironmentObject var store: DockaStore
-    @State private var hoverX: CGFloat? = nil     // posição do mouse p/ magnificação
-    @State private var running: Set<String> = []  // caminhos dos apps abertos
+    @EnvironmentObject var state: TrayState
+
+    @State private var hoverAlong: CGFloat? = nil   // posição do cursor AO LONGO da borda
+    @State private var running: Set<String> = []
     @State private var tamanhoAoIniciarArrasto: Double? = nil
-    /// Força do efeito (0…1), atenuada pela distância vertical do cursor.
-    @State private var hoverForca: CGFloat = 1
+    /// Força do efeito (0…1), atenuada pela distância perpendicular do cursor.
+    @State private var forca: CGFloat = 1
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// A ampliação máxima, atenuada pela rampa vertical.
+    private var dock: DockConfig { store.dock(dockID) ?? DockConfig() }
+    private var edge: TrayEdge { dock.edge }
+    private var apps: [PinnedApp] { store.apps(of: dock) }
+    private var size: CGFloat { store.iconSize }
+
+    /// A ampliação máxima, atenuada pela rampa perpendicular.
     private var ampliacaoEfetiva: Double {
-        1 + (store.maxScale - 1) * Double(hoverForca)
+        1 + (store.maxScale - 1) * Double(forca)
+    }
+
+    /// No modo demo o hover vem do varredor simulado.
+    private var hoverEfetivo: CGFloat? {
+        state.demoMode ? state.demoHover : hoverAlong
     }
 
     /// Escalas da fileira: pico CHEIO sob o cursor — o ícone "passa" da barra,
     /// como no Dock real — com a vizinhança estreitada pelo alcance limitado.
-    /// A fileira cresce o pouco correspondente; a ancoragem mantém o ponto sob
-    /// o cursor parado. (O soma-zero foi tentado e diluía o pico: com poucos
-    /// ícones não existe pico cheio E vidro imóvel — o Dock real também cresce.)
     private var escalas: [CGFloat] {
-        let n = store.apps.count
-        guard n > 0, let p = effectiveHoverX else {
+        let n = apps.count
+        guard n > 0, let p = hoverEfetivo else {
             return Array(repeating: 1, count: max(0, n))
         }
-        let size = store.iconSize
         let gap = TrayGeometry.gap(size: size)
         let alcance = Magnification.cappedRange(count: n, size: size, gap: gap,
                                                 maxRange: store.maxRange)
@@ -262,160 +330,100 @@ struct TrayView: View {
     }
 
     /// Mantém PARADO o ponto sob o cursor enquanto a fileira cresce.
-    private var deslocamentoDaFileira: CGFloat {
-        let size = store.iconSize
+    private var deslocamento: CGFloat {
         let gap = TrayGeometry.gap(size: size)
         return Magnification.centeredRowShift(
-            pointer: effectiveHoverX,
-            count: store.apps.count,
+            pointer: hoverEfetivo,
+            count: apps.count,
             size: size, gap: gap,
             padding: TrayGeometry.padding(size: size),
             maxScale: ampliacaoEfetiva,
-            maxRange: Magnification.cappedRange(count: store.apps.count, size: size,
-                                               gap: gap, maxRange: store.maxRange))
-    }
-
-    /// Converte o cursor do espaço do painel para o do vidro em repouso.
-    ///
-    /// Duas regras vindas do Dock real:
-    /// - dentro do efeito o rastreio é 1:1, SEM mola — a suavidade vem da curva
-    ///   de proximidade, não do tempo; elástico aqui fazia a bandeja "nadar";
-    /// - a saída vertical é uma RAMPA, não um degrau: subir o cursor desfaz a
-    ///   ampliação gradualmente. Degrau fazia a bandeja pular ao cruzar a linha.
-    private func atualizarHover(_ fase: HoverPhase, painel: CGSize) {
-        switch fase {
-        case .active(let p):
-            let fileira = TrayGeometry.restingRowWidth(appCount: store.apps.count,
-                                                       size: store.iconSize)
-            let vidroEsq = (painel.width - fileira) / 2
-            let topoDoVidro = painel.height - 8
-                - TrayGeometry.glassHeight(size: store.iconSize)
-            let dentroX = p.x >= vidroEsq - 6 && p.x <= vidroEsq + fileira + 6
-            let acima = topoDoVidro - p.y                 // >0 = cursor acima do vidro
-            let rampa: CGFloat = 36
-            let forca = dentroX ? max(0, min(1, 1 - acima / rampa)) : 0
-
-            if forca <= 0 {
-                encerrarHover()
-            } else if hoverX == nil {
-                // entrada: uma mola curta para o efeito nascer sem estalo
-                withAnimation(.smooth(duration: 0.18)) {
-                    hoverX = p.x - vidroEsq
-                    hoverForca = forca
-                }
-            } else {
-                hoverX = p.x - vidroEsq
-                hoverForca = forca
-            }
-        case .ended:
-            encerrarHover()
-        }
-    }
-
-    private func encerrarHover() {
-        guard hoverX != nil else { return }
-        withAnimation(.smooth(duration: 0.22)) {
-            hoverX = nil
-            hoverForca = 1
-        }
-    }
-
-    /// Arrastar o separador redimensiona os ícones, como no Dock. O tamanho de
-    /// referência é o do INÍCIO do arrasto — acumular sobre o valor corrente
-    /// faria o tamanho acelerar sozinho.
-    private var redimensionarPeloSeparador: some Gesture {
-        DragGesture(minimumDistance: 1)
-            .onChanged { g in
-                if tamanhoAoIniciarArrasto == nil { tamanhoAoIniciarArrasto = store.iconSize }
-                store.iconSize = TrayGeometry.iconSizeDragged(
-                    from: tamanhoAoIniciarArrasto ?? store.iconSize,
-                    verticalTranslation: g.translation.height)
-                // o cursor sai da alça durante o arrasto e o hover termina —
-                // sem isto a seta vertical viraria seta comum no meio do gesto
-                NSCursor.resizeUpDown.set()
-            }
-            .onEnded { _ in
-                tamanhoAoIniciarArrasto = nil
-                NSCursor.arrow.set()
-            }
+            maxRange: Magnification.cappedRange(count: apps.count, size: size,
+                                                gap: gap, maxRange: store.maxRange))
     }
 
     var body: some View {
         GeometryReader { geo in
-            VStack {
-                Spacer(minLength: 0)
-                tray
-                    // ancora o ponto sob o cursor enquanto a fileira cresce
-                    .offset(x: deslocamentoDaFileira)
-                    // sem o deslize de baixo quando o sistema pede menos movimento:
-                    // a bandeja só surge e some
-                    .offset(y: store.trayVisible || reduceMotion ? 0 : 200)
-                    .opacity(store.trayVisible ? 1 : 0)
-            }
-            .padding(.bottom, 8)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // O hover mora no espaço FIXO do painel, não no da fileira: a fileira
-            // muda de largura com a ampliação e a origem dela se move — medir o
-            // cursor num referencial móvel realimentava a conta e a ampliação
-            // tremia sob um cursor parado, com o pico escorregando de ícone.
-            .onContinuousHover { fase in atualizarHover(fase, painel: geo.size) }
+            bandeja
+                .offset(x: edge.isVertical ? 0 : deslocamento,
+                        y: edge.isVertical ? deslocamento : 0)
+                .offset(deslizeDeEntrada)
+                .opacity(state.visible ? 1 : 0)
+                .padding(bordaInterna, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity,
+                       alignment: alinhamentoDoVidro)
+                .onContinuousHover { fase in atualizarHover(fase, painel: geo.size) }
         }
         .ignoresSafeArea()
         .onAppear { refreshRunning() }
-        .onChange(of: store.trayVisible) { _, visible in
-            if visible { refreshRunning() }
+        .onChange(of: state.visible) { _, v in if v { refreshRunning() } }
+        .onReceive(NSWorkspace.shared.notificationCenter
+            .publisher(for: NSWorkspace.didLaunchApplicationNotification)) { _ in refreshRunning() }
+        .onReceive(NSWorkspace.shared.notificationCenter
+            .publisher(for: NSWorkspace.didTerminateApplicationNotification)) { _ in refreshRunning() }
+    }
+
+    /// Deslize de entrada/saída: a bandeja desliza a partir da borda dela.
+    private var deslizeDeEntrada: CGSize {
+        guard !(state.visible || reduceMotion) else { return .zero }
+        switch edge {
+        case .bottom: return CGSize(width: 0, height: 200)
+        case .left:   return CGSize(width: -200, height: 0)
+        case .right:  return CGSize(width: 200, height: 0)
         }
-        // o macOS avisa quando qualquer app abre ou fecha: sem isso a bolinha
-        // continuava acesa depois de encerrar o app com a bandeja aberta
-        .onReceive(NSWorkspace.shared.notificationCenter
-            .publisher(for: NSWorkspace.didLaunchApplicationNotification)) { _ in
-                refreshRunning()
-            }
-        .onReceive(NSWorkspace.shared.notificationCenter
-            .publisher(for: NSWorkspace.didTerminateApplicationNotification)) { _ in
-                refreshRunning()
-            }
+    }
+
+    private var alinhamentoDoVidro: Alignment {
+        switch edge {
+        case .bottom: return .bottom
+        case .left:   return .leading
+        case .right:  return .trailing
+        }
+    }
+
+    /// A borda da tela, do ponto de vista do conteúdo: é para lá que a bolinha
+    /// aponta e é dela que sai a folga interna.
+    private var bordaInterna: Edge.Set {
+        switch edge {
+        case .bottom: return .bottom
+        case .left:   return .leading
+        case .right:  return .trailing
+        }
     }
 
     private func refreshRunning() {
-        running = Set(NSWorkspace.shared.runningApplications
-            .compactMap { $0.bundleURL?.path })
+        running = Set(NSWorkspace.shared.runningApplications.compactMap { $0.bundleURL?.path })
     }
 
-    // no modo demo o hover vem do varredor simulado
-    private var effectiveHoverX: CGFloat? {
-        store.demoMode ? store.demoHoverX : hoverX
-    }
+    // MARK: a fileira
 
-    private var tray: some View {
-        HStack(alignment: .bottom, spacing: TrayGeometry.gap(size: store.iconSize)) {
-            ForEach(Array(store.apps.enumerated()), id: \.element.id) { index, app in
+    private var bandeja: some View {
+        AoLongoDaBorda(edge: edge, spacing: TrayGeometry.gap(size: size)) {
+            ForEach(Array(apps.enumerated()), id: \.element.id) { index, app in
                 TrayIcon(app: app,
-                         scale: escalas[index],
+                         edge: edge,
+                         scale: escalas.indices.contains(index) ? escalas[index] : 1,
                          apontado: Magnification.isHovered(
-                             pointer: effectiveHoverX,
+                             pointer: hoverEfetivo,
                              itemCenter: Magnification.restingCenter(
-                                 index: index,
-                                 size: store.iconSize,
-                                 gap: TrayGeometry.gap(size: store.iconSize),
-                                 padding: TrayGeometry.padding(size: store.iconSize)),
-                             size: store.iconSize,
-                             gap: TrayGeometry.gap(size: store.iconSize)),
-                         size: store.iconSize,
+                                 index: index, size: size,
+                                 gap: TrayGeometry.gap(size: size),
+                                 padding: TrayGeometry.padding(size: size)),
+                             size: size,
+                             gap: TrayGeometry.gap(size: size)),
+                         size: size,
                          slotScale: store.maxScale,
                          isRunning: running.contains(app.path) && store.showIndicators,
                          bounceEnabled: store.bounceOnLaunch) {
                     store.playSound("Tink")
                     app.launch()
                 }
-                // arrastar o ícone (reordenar) — o payload é a URL do próprio .app
                 .draggable(URL(fileURLWithPath: app.path))
-                // soltar em cima: outro ícone do Docka = reordenar; arquivos = abrir com o app
                 .dropDestination(for: URL.self) { urls, _ in
                     guard let first = urls.first else { return false }
-                    if store.apps.contains(where: { $0.path == first.path }) {
+                    if dock.apps.contains(first.path) {
                         withAnimation(.spring(duration: 0.35)) {
-                            store.move(first.path, before: app.path)
+                            store.moverApp(first.path, antesDe: app.path, em: dockID)
                         }
                     } else {
                         app.open(files: urls)
@@ -423,141 +431,232 @@ struct TrayView: View {
                     }
                     return true
                 }
-            }
-
-            // separador + engrenagem
-            // O traço do Dock: discreto, quase da altura do ícone — e uma ALÇA.
-            // Arrastar para cima/baixo redimensiona os ícones ao vivo, e o
-            // clique-direito abre o menu de posição, como no separador do Dock.
-            RoundedRectangle(cornerRadius: 0.5)
-                .fill(Color(nsColor: .separatorColor))
-                .frame(width: 1, height: store.iconSize * 0.9)
-                .padding(.horizontal, TrayGeometry.gap(size: store.iconSize) + 3)
-                .padding(.bottom, TrayGeometry.indicatorRow(size: store.iconSize)
-                                + TrayGeometry.paddingBottom(size: store.iconSize))
-                .contentShape(Rectangle())          // pegada maior que o traço de 1 pt
-                .overlay(CursorDeRedimensionar())
-                .gesture(redimensionarPeloSeparador)
                 .contextMenu {
-                    Picker("Posição na Tela", selection: $store.position) {
-                        Text("Esquerda").tag("left")
-                        Text("Centro").tag("center")
-                        Text("Direita").tag("right")
-                    }
+                    Button("Abrir") { app.launch() }
+                    Button("Mostrar no Finder") { app.revealInFinder() }
                     Divider()
-                    Button("Configurações do Docka…") { SettingsWindowController.shared.show() }
+                    Button("Remover desta bandeja", role: .destructive) {
+                        withAnimation(.spring(duration: 0.35)) {
+                            store.alternarApp(app.path, em: dockID)
+                        }
+                    }
                 }
-                .accessibilityLabel("Tamanho dos ícones")
-                .accessibilityValue("\(Int(store.iconSize)) pontos")
-                .accessibilityHint("Arraste para cima ou para baixo para redimensionar")
-
-            Button {
-                SettingsWindowController.shared.show()
-            } label: {
-                // mesmo tile dos apps, como o Lixo no Dock
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: store.iconSize * 0.5))
-                    .foregroundStyle(Color(nsColor: .secondaryLabelColor))
-                    .frame(width: store.iconSize, height: store.iconSize)
-                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .padding(.bottom, TrayGeometry.indicatorRow(size: store.iconSize)
-                            + TrayGeometry.paddingBottom(size: store.iconSize))
-            .accessibilityLabel("Configurações do Docka")
+
+            separador
+            engrenagem
         }
-        .padding(.horizontal, TrayGeometry.padding(size: store.iconSize))
-        // O vidro é desenhado à parte, ancorado embaixo e com a altura de
-        // REPOUSO: assim o ícone ampliado sobe para fora dele, como no Dock,
-        // em vez de esticar o painel.
-        .background(alignment: .bottom) {
+        .padding(edge.isVertical ? .vertical : .horizontal, TrayGeometry.padding(size: size))
+        // O vidro é desenhado à parte, ancorado na borda e com a espessura de
+        // REPOUSO: o ícone ampliado sai para fora dele, como no Dock.
+        .background(alignment: alinhamentoDoVidro) {
             Color.clear
-                .frame(height: TrayGeometry.glassHeight(size: store.iconSize))
-                .dockGlass(cornerRadius: TrayGeometry.cornerRadius(size: store.iconSize),
+                .frame(width: edge.isVertical ? TrayGeometry.glassHeight(size: size) : nil,
+                       height: edge.isVertical ? nil : TrayGeometry.glassHeight(size: size))
+                .dockGlass(cornerRadius: TrayGeometry.cornerRadius(size: size),
                            tint: store.glassTint)
         }
+    }
 
+    /// O traço do Dock: discreto — e uma ALÇA. Arrastar redimensiona os ícones
+    /// ao vivo, e o clique-direito abre o menu da bandeja.
+    private var separador: some View {
+        RoundedRectangle(cornerRadius: 0.5)
+            .fill(Color(nsColor: .separatorColor))
+            .frame(width: edge.isVertical ? size * 0.9 : 1,
+                   height: edge.isVertical ? 1 : size * 0.9)
+            .padding(edge.isVertical ? .vertical : .horizontal,
+                     TrayGeometry.gap(size: size) + 3)
+            .padding(bordaInterna, TrayGeometry.indicatorRow(size: size)
+                                 + TrayGeometry.paddingBottom(size: size))
+            .contentShape(Rectangle())
+            .overlay(CursorDeRedimensionar(vertical: !edge.isVertical))
+            .gesture(redimensionarPelaAlca)
+            .contextMenu { menuDaBandeja }
+            .accessibilityLabel("Tamanho dos ícones")
+            .accessibilityValue("\(Int(size)) pontos")
+            .accessibilityHint("Arraste para redimensionar")
+    }
+
+    private var engrenagem: some View {
+        Button {
+            SettingsWindowController.shared.show()
+        } label: {
+            Image(systemName: "gearshape.fill")
+                .font(.system(size: size * 0.5))
+                .foregroundStyle(Color(nsColor: .secondaryLabelColor))
+                .frame(width: size, height: size)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(bordaInterna, TrayGeometry.indicatorRow(size: size)
+                             + TrayGeometry.paddingBottom(size: size))
+        .accessibilityLabel("Configurações do Docka")
+    }
+
+    @ViewBuilder
+    private var menuDaBandeja: some View {
+        Picker("Borda da Tela", selection: Binding(
+            get: { dock.edge }, set: { store.definirBorda($0, em: dockID) })) {
+            ForEach(TrayEdge.allCases, id: \.self) { Text($0.titulo).tag($0) }
+        }
+        Picker("Posição", selection: Binding(
+            get: { dock.alignment }, set: { store.definirAlinhamento($0, em: dockID) })) {
+            ForEach(TrayAlignment.allCases, id: \.self) {
+                Text($0.titulo(for: dock.edge)).tag($0)
+            }
+        }
+        Divider()
+        Button("Configurações do Docka…") { SettingsWindowController.shared.show() }
+    }
+
+    /// Arrastar a alça redimensiona os ícones. O tamanho de referência é o do
+    /// INÍCIO do arrasto — acumular sobre o corrente faria o tamanho acelerar.
+    private var redimensionarPelaAlca: some Gesture {
+        DragGesture(minimumDistance: 1)
+            .onChanged { g in
+                if tamanhoAoIniciarArrasto == nil { tamanhoAoIniciarArrasto = size }
+                // na lateral quem manda é o eixo horizontal, e o sentido de
+                // "aumentar" aponta para dentro da tela
+                let delta: CGFloat
+                switch edge {
+                case .bottom: delta = g.translation.height
+                case .left:   delta = -g.translation.width
+                case .right:  delta = g.translation.width
+                }
+                store.iconSize = TrayGeometry.iconSizeDragged(
+                    from: tamanhoAoIniciarArrasto ?? size, verticalTranslation: delta)
+                (edge.isVertical ? NSCursor.resizeLeftRight : NSCursor.resizeUpDown).set()
+            }
+            .onEnded { _ in
+                tamanhoAoIniciarArrasto = nil
+                NSCursor.arrow.set()
+            }
+    }
+
+    // MARK: hover
+
+    /// Converte o cursor do espaço do painel para o eixo da borda.
+    ///
+    /// Duas regras vindas do Dock real: dentro do efeito o rastreio é 1:1, sem
+    /// mola; e a saída perpendicular é uma RAMPA, não um degrau.
+    private func atualizarHover(_ fase: HoverPhase, painel: CGSize) {
+        switch fase {
+        case .active(let p):
+            let fileira = TrayGeometry.restingRowWidth(appCount: apps.count, size: size)
+            let vidro = TrayGeometry.glassHeight(size: size)
+            let rampa: CGFloat = 36
+
+            // `aoLongo` corre na direção da borda; `fora` mede o afastamento
+            // perpendicular a partir da face interna do vidro
+            let aoLongo: CGFloat, inicio: CGFloat, fora: CGFloat
+            switch edge {
+            case .bottom:
+                inicio = (painel.width - fileira) / 2
+                aoLongo = p.x
+                fora = (painel.height - 8 - vidro) - p.y
+            case .left:
+                inicio = (painel.height - fileira) / 2
+                aoLongo = p.y
+                fora = p.x - (8 + vidro)
+            case .right:
+                inicio = (painel.height - fileira) / 2
+                aoLongo = p.y
+                fora = (painel.width - 8 - vidro) - p.x
+            }
+
+            let naFaixa = aoLongo >= inicio - 6 && aoLongo <= inicio + fileira + 6
+            let f = naFaixa ? max(0, min(1, 1 - fora / rampa)) : 0
+
+            if f <= 0 {
+                encerrarHover()
+            } else if hoverAlong == nil {
+                // entrada: transição curta para o efeito nascer sem estalo
+                withAnimation(.smooth(duration: 0.18)) {
+                    hoverAlong = aoLongo - inicio
+                    forca = f
+                }
+            } else {
+                hoverAlong = aoLongo - inicio
+                forca = f
+            }
+        case .ended:
+            encerrarHover()
+        }
+    }
+
+    private func encerrarHover() {
+        guard hoverAlong != nil else { return }
+        withAnimation(.smooth(duration: 0.22)) {
+            hoverAlong = nil
+            forca = 1
+        }
     }
 }
 
-// Ícone com magnificação fiel ao Dock: cresce PARA CIMA a partir da linha de base,
-// empurra os vizinhos (a largura do frame acompanha a escala), mostra o nome num
-// balão quando ampliado, tem bolinha de "app aberto" e quica ao lançar.
+/// HStack na borda inferior, VStack nas laterais — o resto do layout é o mesmo.
+private struct AoLongoDaBorda<Content: View>: View {
+    let edge: TrayEdge
+    let spacing: CGFloat
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        if edge.isVertical {
+            VStack(alignment: edge == .left ? .leading : .trailing, spacing: spacing) {
+                content()
+            }
+        } else {
+            HStack(alignment: .bottom, spacing: spacing) { content() }
+        }
+    }
+}
+
+// MARK: - Um ícone
+
 struct TrayIcon: View {
     let app: PinnedApp
-    /// Escala deste ícone, já resolvida pela redistribuição soma-zero da fileira.
+    let edge: TrayEdge
+    /// Escala deste ícone, já resolvida pela fileira.
     let scale: CGFloat
     /// O cursor está sobre ESTE ícone — decide o balão de nome.
     let apontado: Bool
     let size: Double
-    /// Teto de ampliação — só para a ALTURA do slot não pulsar com o hover.
-    var slotScale: Double = 1.75
+    /// Teto de ampliação — só para o slot não pulsar com o hover.
+    var slotScale: Double = 1.5
     let isRunning: Bool
     var bounceEnabled = true
     let action: () -> Void
 
-    @State private var bounce: CGFloat = 0     // deslocamento Y do quique
+    @State private var bounce: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// A bolinha do Dock é pequena e proporcional ao tile.
-    private var indicatorSize: CGFloat { TrayGeometry.indicatorSize(size: size) }
-
     var body: some View {
-        Button {
-            action()
-            launchBounce()
-        } label: {
-            VStack(spacing: TrayGeometry.indicatorSpacing(size: size)) {
-                Image(nsImage: app.icon)
-                    .resizable()
-                    .interpolation(.high)
-                    .frame(width: size * scale, height: size * scale)
-                    // sem sombra: o Dock não põe sombra sob os ícones. A arte do
-                    // ícone já traz o próprio sombreado, e uma sombra por cima é
-                    // o que mais denunciava que isto não era o Dock.
-                    .offset(y: bounce)
-
-                // bolinha de app em execução, proporcional ao ícone e SEM escalar
-                // com a magnificação — no Dock ela tem tamanho fixo
-                Circle()
-                    .fill(Color(nsColor: .labelColor).opacity(isRunning ? 0.85 : 0))
-                    .frame(width: indicatorSize, height: indicatorSize)
-            }
-            // container de altura fixa alinhado embaixo: o ícone cresce PARA CIMA.
-            // A largura acompanha a escala — é ela que empurra os vizinhos.
-            .frame(width: size * scale,
-                   height: size * slotScale + TrayGeometry.indicatorRow(size: size),
-                   alignment: .bottom)
-            // padding de verdade: dentro do frame com alignment .bottom, a folga
-            // ia para CIMA e a bolinha ficava em cima da borda do vidro
-            .padding(.bottom, TrayGeometry.paddingBottom(size: size))
-            .contentShape(Rectangle())
+        Button { action(); launchBounce() } label: {
+            conteudo
+                .frame(width: edge.isVertical
+                        ? size * slotScale + TrayGeometry.indicatorRow(size: size)
+                        : size * scale,
+                       height: edge.isVertical
+                        ? size * scale
+                        : size * slotScale + TrayGeometry.indicatorRow(size: size),
+                       alignment: alinhamento)
+                // padding de verdade: dentro do frame com alinhamento na borda,
+                // a folga iria para o lado errado e a bolinha encostaria no vidro
+                .padding(bordaInterna, TrayGeometry.paddingBottom(size: size))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        // o VoiceOver anuncia "Safari, em execução, botão" — o nome está no balão,
-        // que é visual e some quando o ícone não está sob o cursor
         .accessibilityLabel(app.name)
         .accessibilityValue(isRunning ? "Em execução" : "")
         .accessibilityHint("Abre o aplicativo")
-        // clique-direito: ações do ícone
-        .contextMenu {
-            Button("Abrir") { action() }
-            Button("Mostrar no Finder") { app.revealInFinder() }
-            Divider()
-            Button("Remover do Docka", role: .destructive) {
-                withAnimation(.spring(duration: 0.35)) {
-                    DockaStore.shared.toggle(app.path)
-                }
-            }
-        }
-        // balão com o nome. No Dock ele acompanha o TOPO DO ÍCONE — com um
-        // deslocamento fixo ele flutuava alto sobre os ícones em repouso.
-        .overlay(alignment: .bottom) {
+        .overlay(alignment: alinhamento) {
             if apontado {
-                // sem transição: no Dock real o rótulo troca SECO ao passar de um
+                // sem transição: no Dock o rótulo troca SECO ao passar de um
                 // ícone ao outro — o crossfade deixava dois balões na tela
-                DockLabel(text: app.name)
-                    .offset(y: -(size * scale) - 6)
+                DockLabel(text: app.name, edge: edge)
+                    .offset(x: edge == .left ? size * scale + 6
+                             : edge == .right ? -(size * scale) - 6 : 0,
+                            y: edge == .bottom ? -(size * scale) - 6 : 0)
                     .transition(.identity)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)   // o nome já vai no rótulo do botão
@@ -566,19 +665,61 @@ struct TrayIcon: View {
         .zIndex(apontado ? 1 : 0)
     }
 
-    // quique duplo, como o Dock ao abrir um app
+    /// Ícone e bolinha: a bolinha fica sempre do lado da BORDA da tela.
+    @ViewBuilder
+    private var conteudo: some View {
+        let icone = Image(nsImage: app.icon)
+            .resizable()
+            .interpolation(.high)
+            .frame(width: size * scale, height: size * scale)
+            // sem sombra: o Dock não põe sombra sob os ícones
+            .offset(x: edge == .left ? bounce : (edge == .right ? -bounce : 0),
+                    y: edge == .bottom ? bounce : 0)
+        let ponto = Circle()
+            .fill(Color(nsColor: .labelColor).opacity(isRunning ? 0.85 : 0))
+            .frame(width: TrayGeometry.indicatorSize(size: size),
+                   height: TrayGeometry.indicatorSize(size: size))
+
+        switch edge {
+        case .bottom:
+            VStack(spacing: TrayGeometry.indicatorSpacing(size: size)) { icone; ponto }
+        case .left:
+            HStack(spacing: TrayGeometry.indicatorSpacing(size: size)) { ponto; icone }
+        case .right:
+            HStack(spacing: TrayGeometry.indicatorSpacing(size: size)) { icone; ponto }
+        }
+    }
+
+    private var alinhamento: Alignment {
+        switch edge {
+        case .bottom: return .bottom
+        case .left:   return .leading
+        case .right:  return .trailing
+        }
+    }
+
+    private var bordaInterna: Edge.Set {
+        switch edge {
+        case .bottom: return .bottom
+        case .left:   return .leading
+        case .right:  return .trailing
+        }
+    }
+
+    /// Quique duplo, como o Dock ao abrir um app — na direção da borda.
     private func launchBounce() {
-        // Reduzir Movimento vence o ajuste do app: é uma preferência do sistema
+        // Reduzir Movimento vence o ajuste do app: é preferência do sistema
         guard bounceEnabled, !reduceMotion else { return }
-        func hop(_ height: CGFloat, delay: Double, fall: Double) {
+        let sentido: CGFloat = edge == .bottom ? -1 : 1
+        func hop(_ altura: CGFloat, delay: Double, queda: Double) {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                withAnimation(.easeOut(duration: 0.22)) { bounce = -height }
+                withAnimation(.easeOut(duration: 0.22)) { bounce = sentido * altura }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                    withAnimation(.easeIn(duration: fall)) { bounce = 0 }
+                    withAnimation(.easeIn(duration: queda)) { bounce = 0 }
                 }
             }
         }
-        hop(26, delay: 0, fall: 0.2)
-        hop(14, delay: 0.46, fall: 0.24)
+        hop(26, delay: 0, queda: 0.2)
+        hop(14, delay: 0.46, queda: 0.24)
     }
 }

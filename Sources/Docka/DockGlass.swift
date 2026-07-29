@@ -80,6 +80,7 @@ extension View {
 /// menos redondos que uma cápsula, texto 13 semibold e a setinha embaixo.
 struct DockLabel: View {
     let text: String
+    var edge: TrayEdge = .bottom
 
     var body: some View {
         Text(text)
@@ -89,10 +90,19 @@ struct DockLabel: View {
             .foregroundStyle(Color(nsColor: .labelColor))
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
-            .padding(.bottom, BalaoComRabinho.rabinhoAltura)   // área do rabinho
-            .background(BalaoComRabinho()
+            // o rabinho aponta para o ícone, que está do lado da borda
+            .padding(ladoDoRabinho, BalaoComRabinho.rabinhoAltura)
+            .background(BalaoComRabinho(edge: edge)
                 .fill(Color(nsColor: .controlBackgroundColor).opacity(0.94)))
             .fixedSize()
+    }
+
+    private var ladoDoRabinho: Edge.Set {
+        switch edge {
+        case .bottom: return .bottom
+        case .left:   return .leading
+        case .right:  return .trailing
+        }
     }
 }
 
@@ -101,16 +111,31 @@ struct DockLabel: View {
 struct BalaoComRabinho: Shape {
     static let rabinhoAltura: CGFloat = 7
     static let rabinhoLargura: CGFloat = 16
+    var edge: TrayEdge = .bottom
 
     func path(in rect: CGRect) -> Path {
-        let corpo = CGRect(x: 0, y: 0,
-                           width: rect.width,
-                           height: rect.height - Self.rabinhoAltura)
+        let h = Self.rabinhoAltura, w = Self.rabinhoLargura
+        let corpo: CGRect
+        switch edge {
+        case .bottom: corpo = CGRect(x: 0, y: 0, width: rect.width, height: rect.height - h)
+        case .left:   corpo = CGRect(x: h, y: 0, width: rect.width - h, height: rect.height)
+        case .right:  corpo = CGRect(x: 0, y: 0, width: rect.width - h, height: rect.height)
+        }
         var p = Path(roundedRect: corpo, cornerRadius: 9, style: .continuous)
-        let cx = rect.midX
-        p.move(to: CGPoint(x: cx - Self.rabinhoLargura / 2, y: corpo.maxY - 0.5))
-        p.addLine(to: CGPoint(x: cx, y: rect.maxY))
-        p.addLine(to: CGPoint(x: cx + Self.rabinhoLargura / 2, y: corpo.maxY - 0.5))
+        switch edge {
+        case .bottom:
+            p.move(to: CGPoint(x: rect.midX - w / 2, y: corpo.maxY - 0.5))
+            p.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+            p.addLine(to: CGPoint(x: rect.midX + w / 2, y: corpo.maxY - 0.5))
+        case .left:
+            p.move(to: CGPoint(x: corpo.minX + 0.5, y: rect.midY - w / 2))
+            p.addLine(to: CGPoint(x: rect.minX, y: rect.midY))
+            p.addLine(to: CGPoint(x: corpo.minX + 0.5, y: rect.midY + w / 2))
+        case .right:
+            p.move(to: CGPoint(x: corpo.maxX - 0.5, y: rect.midY - w / 2))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+            p.addLine(to: CGPoint(x: corpo.maxX - 0.5, y: rect.midY + w / 2))
+        }
         p.closeSubpath()
         return p
     }

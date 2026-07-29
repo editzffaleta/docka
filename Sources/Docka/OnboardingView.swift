@@ -87,23 +87,23 @@ struct OnboardingView: View {
                 .foregroundStyle(.white.opacity(0.6))
                 .reveal(delay: 0.08)
 
-            AppPickerGrid()
+            AppPickerGrid(dockID: store.principal.id)
                 .reveal(delay: 0.15)
 
             HStack {
-                Text(store.apps.isEmpty
+                Text(store.principal.apps.isEmpty
                      ? "Escolha pelo menos um app para continuar."
-                     : "\(store.apps.count) apps no Docka")
+                     : "\(store.principal.apps.count) apps no Docka")
                     .font(.system(size: 12))
-                    .foregroundStyle(store.apps.isEmpty ? .white.opacity(0.5) : Theme.accent)
+                    .foregroundStyle(store.principal.apps.isEmpty ? .white.opacity(0.5) : Theme.accent)
                     .contentTransition(.numericText())
 
                 Spacer()
 
                 PrimaryButton(title: "Continuar", icon: "arrow.right") {
-                    if !store.apps.isEmpty { step = 2 }
+                    if !store.principal.apps.isEmpty { step = 2 }
                 }
-                .opacity(store.apps.isEmpty ? 0.4 : 1)
+                .opacity(store.principal.apps.isEmpty ? 0.4 : 1)
             }
             .padding(.horizontal, 40)
             .padding(.bottom, 30)
@@ -161,6 +161,7 @@ struct OnboardingView: View {
 // MARK: - Grade de seleção de apps
 
 struct AppPickerGrid: View {
+    let dockID: UUID
     @EnvironmentObject var store: DockaStore
     @State private var query = ""
     private let all = DockaStore.installedApps()
@@ -188,8 +189,10 @@ struct AppPickerGrid: View {
                           spacing: 10) {
                     ForEach(filtered) { app in
                         AppPickCell(app: app,
-                                    selected: store.isSelected(app.path)) {
-                            withAnimation(.spring(duration: 0.3)) { store.toggle(app.path) }
+                                    selected: store.estaNaBandeja(app.path, dockID)) {
+                            withAnimation(.spring(duration: 0.3)) {
+                                store.alternarApp(app.path, em: dockID)
+                            }
                             store.playSound("Tink")
                         }
                     }

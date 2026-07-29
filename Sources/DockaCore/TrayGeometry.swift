@@ -7,15 +7,6 @@ import CoreGraphics
 /// do cursor, mas as contas moram aqui, onde os testes conseguem alcançá-las.
 public enum TrayGeometry {
 
-    public enum Position: String, Sendable, CaseIterable {
-        case left, center, right
-
-        /// A preferência é persistida como string livre; qualquer valor
-        /// desconhecido cai no padrão do app.
-        public init(persisted: String) {
-            self = Position(rawValue: persisted) ?? .right
-        }
-    }
 
     /// Folga lateral da zona que dispara a revelação.
     public static let revealSlackX: CGFloat = 8
@@ -136,15 +127,31 @@ public enum TrayGeometry {
         return maior
     }
 
-    /// Largura total do painel.
+    /// Espessura do painel: o vidro mais o espaço que o ícone ampliado e o
+    /// balão de nome ocupam para fora dele.
+    ///
+    /// Era um 170 fixo herdado do código original — apertado para ícones de 64
+    /// com ampliação alta, e desperdiçado com ícones pequenos.
+    public static func panelThickness(size: CGFloat, maxScale: CGFloat,
+                                      edge: TrayEdge = .bottom) -> CGFloat {
+        let margemDaBorda: CGFloat = 8
+        let estouroDoIcone = size * max(0, maxScale - 1)
+        // O balão sai na direção perpendicular à borda: embaixo ele é uma faixa
+        // baixa, mas numa lateral ele sai deitado e precisa da LARGURA do nome —
+        // sem isso o rótulo aparece cortado na borda do painel.
+        let balao: CGFloat = edge.isVertical ? 240 : 46
+        return margemDaBorda + glassHeight(size: size) + estouroDoIcone + balao
+    }
+
+    /// Extensão do painel AO LONGO da borda.
     ///
     /// A fileira cresce com o pico cheio e a ancoragem a desloca para os lados:
     /// o painel reserva o extra dos DOIS lados, calculado já com o alcance
     /// limitado pela fileira.
-    public static func trayWidth(appCount: Int,
-                                 size: CGFloat,
-                                 maxScale: CGFloat,
-                                 maxRange: CGFloat) -> CGFloat {
+    public static func trayExtent(appCount: Int,
+                                  size: CGFloat,
+                                  maxScale: CGFloat,
+                                  maxRange: CGFloat) -> CGFloat {
         let alcance = Magnification.cappedRange(count: appCount, size: size,
                                                 gap: gap(size: size), maxRange: maxRange)
         let repouso = restingContentWidth(appCount: appCount, size: size)
@@ -164,26 +171,42 @@ public enum TrayGeometry {
         followDock ? visibleFrame.minY : screenFrame.minY
     }
 
+    /// Frame do painel para uma borda qualquer.
+    ///
+    /// `extent` corre ao longo da borda e `thickness` é perpendicular a ela —
+    /// numa lateral os dois trocam de eixo, e é só isso que muda.
     public static func frame(screenFrame: CGRect,
                              visibleFrame: CGRect,
-                             appCount: Int,
-                             size: CGFloat,
-                             maxScale: CGFloat,
-                             maxRange: CGFloat,
-                             position: Position,
-                             offsetX: CGFloat,
+                             edge: TrayEdge,
+                             alignment: TrayAlignment,
+                             offset: CGFloat,
                              followDock: Bool,
-                             height: CGFloat) -> CGRect {
-        let width = trayWidth(appCount: appCount, size: size,
-                              maxScale: maxScale, maxRange: maxRange)
-        let x: CGFloat
-        switch position {
-        case .left:   x = screenFrame.minX + offsetX
-        case .center: x = screenFrame.midX - width / 2
-        case .right:  x = screenFrame.maxX - width - offsetX
+                             extent: CGFloat,
+                             thickness: CGFloat) -> CGRect {
+        switch edge {
+        case .bottom:
+            let base = followDock ? visibleFrame.minY : screenFrame.minY
+            let x: CGFloat
+            switch alignment {
+            case .start:  x = screenFrame.minX + offset
+            case .center: x = screenFrame.midX - extent / 2
+            case .end:    x = screenFrame.maxX - extent - offset
+            }
+            return CGRect(x: x, y: base, width: extent, height: thickness)
+
+        case .left, .right:
+            // AppKit: y cresce para cima, então `start` (topo) é o maior y
+            let y: CGFloat
+            switch alignment {
+            case .start:  y = screenFrame.maxY - extent - offset
+            case .center: y = screenFrame.midY - extent / 2
+            case .end:    y = screenFrame.minY + offset
+            }
+            let x = edge == .left
+                ? (followDock ? visibleFrame.minX : screenFrame.minX)
+                : (followDock ? visibleFrame.maxX : screenFrame.maxX) - thickness
+            return CGRect(x: x, y: y, width: thickness, height: extent)
         }
-        let y = baseY(screenFrame: screenFrame, visibleFrame: visibleFrame, followDock: followDock)
-        return CGRect(x: x, y: y, width: width, height: height)
     }
 
     /// O cursor está encostado na borda inferior, dentro da faixa horizontal da bandeja?
@@ -193,21 +216,45 @@ public enum TrayGeometry {
     /// o modo normal aceita um ponto a mais.
     public static func shouldReveal(cursor: CGPoint,
                                     trayFrame: CGRect,
-                                    screenBottomY: CGFloat,
+                                    screenFrame: CGRect,
+                                    edge: TrayEdge,
                                     pressureZone: Bool) -> Bool {
-        let inZoneX = cursor.x >= trayFrame.minX - revealSlackX
-                   && cursor.x <= trayFrame.maxX + revealSlackX
         let reach: CGFloat = pressureZone ? 1 : 2
-        return inZoneX && cursor.y <= screenBottomY + reach
+        switch edge {
+        case .bottom:
+            let naFaixa = cursor.x >= trayFrame.minX - revealSlackX
+                       && cursor.x <= trayFrame.maxX + revealSlackX
+            return naFaixa && cursor.y <= screenFrame.minY + reach
+        case .left:
+            let naFaixa = cursor.y >= trayFrame.minY - revealSlackX
+                       && cursor.y <= trayFrame.maxY + revealSlackX
+            return naFaixa && cursor.x <= screenFrame.minX + reach
+        case .right:
+            let naFaixa = cursor.y >= trayFrame.minY - revealSlackX
+                       && cursor.y <= trayFrame.maxY + revealSlackX
+            return naFaixa && cursor.x >= screenFrame.maxX - reach
+        }
     }
 
     /// O cursor ainda está sobre a bandeja (ou perto o bastante para não escondê-la)?
     ///
     /// Usa o topo do painel, e não a borda da tela: a bandeja pode estar assentada
     /// em cima do Dock, e aí as duas alturas não coincidem.
-    public static func isInsideTray(cursor: CGPoint, trayFrame: CGRect) -> Bool {
-        cursor.x >= trayFrame.minX - hideSlack
-            && cursor.x <= trayFrame.maxX + hideSlack
-            && cursor.y <= trayFrame.maxY + hideSlack
+    public static func isInsideTray(cursor: CGPoint, trayFrame: CGRect,
+                                    edge: TrayEdge) -> Bool {
+        switch edge {
+        case .bottom:
+            return cursor.x >= trayFrame.minX - hideSlack
+                && cursor.x <= trayFrame.maxX + hideSlack
+                && cursor.y <= trayFrame.maxY + hideSlack
+        case .left:
+            return cursor.y >= trayFrame.minY - hideSlack
+                && cursor.y <= trayFrame.maxY + hideSlack
+                && cursor.x <= trayFrame.maxX + hideSlack
+        case .right:
+            return cursor.y >= trayFrame.minY - hideSlack
+                && cursor.y <= trayFrame.maxY + hideSlack
+                && cursor.x >= trayFrame.minX - hideSlack
+        }
     }
 }
