@@ -48,7 +48,12 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
 ### O que o Docka NÃO faz
 - ❌ Não pede permissão de Acessibilidade, Monitoramento de Entrada ou Gravação de Tela
 - ❌ Não captura teclado (o atalho ⌘⇧D usa `RegisterEventHotKey`, que entrega apenas aquele atalho)
-- ❌ Não acessa a rede — nenhuma conexão de saída, telemetria ou atualização automática
+- ⚠️ Acessa a rede em UM caso só: ao adicionar um site à órbita, busca o ícone
+  (apple-touch-icon/favicon) **no próprio site digitado** — nunca em resolvedor de
+  terceiros, que receberia sua lista de sites. Sessão efêmera (sem cookies),
+  resposta limitada a 1 MB, resultado em cache local; sem rede, o anel usa um
+  globo desenhado localmente. Fora isso: nenhuma conexão de saída, telemetria
+  ou atualização automática
 - ❌ Não lê conteúdo de arquivos do usuário (arrastar-e-soltar apenas repassa URLs ao app de destino via `NSWorkspace`)
 - ❌ Não roda com privilégios elevados nem instala helpers/daemons
 

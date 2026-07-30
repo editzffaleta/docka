@@ -20,6 +20,8 @@ struct OnboardingView: View {
                 }
                 .animation(.spring(duration: 0.4), value: step)
                 .padding(.top, 42)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Passo \(step + 1) de 3")
 
                 Group {
                     switch step {
@@ -85,23 +87,23 @@ struct OnboardingView: View {
                 .foregroundStyle(.white.opacity(0.6))
                 .reveal(delay: 0.08)
 
-            AppPickerGrid()
+            AppPickerGrid(dockID: store.principal.id)
                 .reveal(delay: 0.15)
 
             HStack {
-                Text(store.apps.isEmpty
+                Text(store.principal.apps.isEmpty
                      ? "Escolha pelo menos um app para continuar."
-                     : "\(store.apps.count) apps no Docka")
+                     : "\(store.principal.apps.count) apps no Docka")
                     .font(.system(size: 12))
-                    .foregroundStyle(store.apps.isEmpty ? .white.opacity(0.5) : Theme.accent)
+                    .foregroundStyle(store.principal.apps.isEmpty ? .white.opacity(0.5) : Theme.accent)
                     .contentTransition(.numericText())
 
                 Spacer()
 
                 PrimaryButton(title: "Continuar", icon: "arrow.right") {
-                    if !store.apps.isEmpty { step = 2 }
+                    if !store.principal.apps.isEmpty { step = 2 }
                 }
-                .opacity(store.apps.isEmpty ? 0.4 : 1)
+                .opacity(store.principal.apps.isEmpty ? 0.4 : 1)
             }
             .padding(.horizontal, 40)
             .padding(.bottom, 30)
@@ -159,9 +161,26 @@ struct OnboardingView: View {
 // MARK: - Grade de seleção de apps
 
 struct AppPickerGrid: View {
+    /// A grade serve as bandejas E a órbita: quem decide o que "selecionado"
+    /// significa é quem a cria, por estes dois fechamentos.
+    let estaSelecionado: (String) -> Bool
+    let alternar: (String) -> Void
     @EnvironmentObject var store: DockaStore
     @State private var query = ""
     private let all = DockaStore.installedApps()
+
+    /// A forma histórica: a grade de uma bandeja.
+    init(dockID: UUID) {
+        let store = DockaStore.shared
+        estaSelecionado = { store.estaNaBandeja($0, dockID) }
+        alternar = { store.alternarApp($0, em: dockID) }
+    }
+
+    init(estaSelecionado: @escaping (String) -> Bool,
+         alternar: @escaping (String) -> Void) {
+        self.estaSelecionado = estaSelecionado
+        self.alternar = alternar
+    }
 
     private var filtered: [PinnedApp] {
         query.isEmpty ? all : all.filter { $0.name.localizedCaseInsensitiveContains(query) }
@@ -170,28 +189,31 @@ struct AppPickerGrid: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.white.opacity(0.45))
-                TextField("Buscar apps...", text: $query)
+                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                TextField("Buscar apps…", text: $query)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 13))
             }
-            .padding(.horizontal, 14).padding(.vertical, 9)
-            .background(RoundedRectangle(cornerRadius: 11).fill(.black.opacity(0.25)))
-            .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(.white.opacity(0.1), lineWidth: 1))
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 10).padding(.vertical, 7)
+            .background(RoundedRectangle(cornerRadius: 8)
+                .fill(Color(nsColor: .textBackgroundColor).opacity(0.6)))
+            .overlay(RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1))
+            .padding(.horizontal, 16)
 
             ScrollView(showsIndicators: false) {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 5),
                           spacing: 10) {
                     ForEach(filtered) { app in
                         AppPickCell(app: app,
-                                    selected: store.isSelected(app.path)) {
-                            withAnimation(.spring(duration: 0.3)) { store.toggle(app.path) }
+                                    selected: estaSelecionado(app.path)) {
+                            withAnimation(.spring(duration: 0.3)) {
+                                alternar(app.path)
+                            }
                             store.playSound("Tink")
                         }
                     }
                 }
-                .padding(.horizontal, 40)
+                .padding(.horizontal, 16)
                 .padding(.vertical, 6)
             }
             .frame(maxHeight: 320)
@@ -214,25 +236,25 @@ struct AppPickCell: View {
                     .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
                 Text(app.name)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(selected ? 1 : 0.7))
+                    .foregroundStyle(selected ? Color.primary : .secondary)
                     .lineLimit(1)
             }
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .fill(selected ? Theme.accent.opacity(0.2)
-                          : hovering ? Color.white.opacity(0.06) : .clear)
+                    .fill(selected ? Color.accentColor.opacity(0.18)
+                          : hovering ? Color.primary.opacity(0.06) : .clear)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .strokeBorder(selected ? Theme.accent : .clear, lineWidth: 1.5)
+                    .strokeBorder(selected ? Color.accentColor : .clear, lineWidth: 1.5)
             )
             .overlay(alignment: .topTrailing) {
                 if selected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(Theme.accent)
+                        .foregroundStyle(Color.accentColor)
                         .padding(5)
                         .transition(.scale)
                 }
@@ -243,6 +265,9 @@ struct AppPickCell: View {
         .scaleEffect(hovering ? 1.03 : 1)
         .animation(.spring(duration: 0.25), value: hovering)
         .onHover { hovering = $0 }
+        .accessibilityLabel(app.name)
+        .accessibilityAddTraits(selected ? [.isSelected] : [])
+        .accessibilityHint(selected ? "Remove do Docka" : "Adiciona ao Docka")
     }
 }
 
@@ -281,6 +306,10 @@ struct ModeCard: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(desc)
+        .accessibilityAddTraits(selected ? [.isSelected] : [])
         .glassCard(hoverLift: false)
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
             .strokeBorder(selected ? Theme.accent.opacity(0.7) : .clear, lineWidth: 1.5))

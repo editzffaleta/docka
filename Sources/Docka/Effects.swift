@@ -47,8 +47,19 @@ private func rnd(_ n: Double) -> Double {
 struct ParticleField: View {
     var tint: Color
     var count = 34
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        // com Reduzir Movimento não há partícula estática que valha a pena:
+        // some com o campo inteiro e o Canvas para de redesenhar 30×/s
+        if reduceMotion {
+            Color.clear
+        } else {
+            campo
+        }
+    }
+
+    private var campo: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { tl in
             Canvas { ctx, size in
                 let t = tl.date.timeIntervalSinceReferenceDate
@@ -72,6 +83,7 @@ struct ParticleField: View {
 
 struct AuroraBackground: View {
     @State private var drift = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
@@ -89,7 +101,10 @@ struct AuroraBackground: View {
             ParticleField(tint: Theme.accent)
         }
         .ignoresSafeArea()
+        // fundo decorativo: não há informação aqui para o VoiceOver anunciar
+        .accessibilityHidden(true)
         .onAppear {
+            guard !reduceMotion else { return }   // fica no gradiente parado
             withAnimation(.easeInOut(duration: 14).repeatForever(autoreverses: true)) {
                 drift = true
             }
@@ -100,12 +115,17 @@ struct AuroraBackground: View {
 struct AppearReveal: ViewModifier {
     let delay: Double
     @State private var shown = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
             .opacity(shown ? 1 : 0)
-            .offset(y: shown ? 0 : 18)
+            .offset(y: shown || reduceMotion ? 0 : 18)
             .onAppear {
+                guard !reduceMotion else {
+                    shown = true          // aparece direto, sem o deslize de baixo
+                    return
+                }
                 withAnimation(.spring(duration: 0.7).delay(delay)) { shown = true }
             }
     }
@@ -118,11 +138,13 @@ extension View {
 struct PulseGlow: ViewModifier {
     let color: Color
     @State private var pulse = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
             .shadow(color: color.opacity(pulse ? 0.65 : 0.25), radius: pulse ? 42 : 22)
             .onAppear {
+                guard !reduceMotion else { return }   // brilho fixo, sem pulsar
                 withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
                     pulse = true
                 }

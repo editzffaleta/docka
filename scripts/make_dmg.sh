@@ -55,6 +55,9 @@ cat > "$APP/Contents/Info.plist" << PLIST
     <key>CFBundleVersion</key><string>${VERSION}</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
+    <!-- app de barra de menus: nasce sem ícone no Dock. A janela de configurações
+         troca para .regular em tempo de execução enquanto estiver aberta. -->
+    <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSHumanReadableCopyright</key><string>© 2026 Bruno Zafriel — MIT</string>
 </dict>
