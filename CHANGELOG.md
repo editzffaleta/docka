@@ -4,6 +4,17 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
+## [1.1.2] — 2026-07-30
+
+### Identidade
+
+- Logo trocada de novo, agora pela **Órbita**: um anel de vidro com quatro
+  itens em volta e o apontado ampliado no topo. A da 1.1.1 mantinha a
+  composição antiga (bandeja com ladrilhos) e mexia só em margem e gradiente
+  — de longe ninguém via diferença, e a 32 px ela virava borrão como meia
+  dúzia de utilitários. O anel é a forma que o Docka tem de mais sua e a
+  única testada que continua legível no tamanho em que o ícone vive.
+
 ## [1.1.1] — 2026-07-30
 
 Sem mudança de comportamento: o app funciona exatamente como a 1.1.0. O que
