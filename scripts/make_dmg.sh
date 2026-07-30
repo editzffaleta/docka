@@ -1,7 +1,7 @@
 #!/bin/bash
 # Monta o Docka.app e o instalador DMG.
 #
-# Uso: ./scripts/make_dmg.sh [versao]   (padrão: 1.1.0)
+# Uso: ./scripts/make_dmg.sh [versao]   (padrão: 1.1.1)
 #
 # Sem variáveis extras → assinatura ad-hoc (usuário precisa de clique-direito → Abrir).
 # Com uma conta Apple Developer, exporte antes de rodar e o script assina com
@@ -16,7 +16,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VERSION="${1:-1.1.0}"
+VERSION="${1:-1.1.1}"
 APP="dist/Docka.app"
 SIGN_ID="${DOCKA_SIGN_ID:-}"
 NOTARY_PROFILE="${DOCKA_NOTARY_PROFILE:-}"
