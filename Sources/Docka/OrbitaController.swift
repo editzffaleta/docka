@@ -71,6 +71,25 @@ final class OrbitaController {
         state.visible ? fechar() : abrir()
     }
 
+    /// O atalho de um anel específico: abre nele; aberto NELE, fecha; aberto
+    /// em outro, só troca — fechar no meio da troca jogaria fora o gesto.
+    func alternarNoAnel(_ id: UUID) {
+        if state.visible && store.anelAtivo == id {
+            fechar()
+            return
+        }
+        store.anelAtivo = id
+        if state.visible {
+            selecao.indice = nil
+            if let tela = currentScreen?.frame {
+                panel.setFrame(Orbita.quadro(centro: centro, total: max(1, itens.count),
+                                             tela: tela), display: true)
+            }
+        } else {
+            abrir()
+        }
+    }
+
     func abrir() {
         guard !itens.isEmpty else { return }
         let loc = NSEvent.mouseLocation

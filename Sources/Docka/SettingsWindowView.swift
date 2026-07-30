@@ -777,9 +777,26 @@ private struct OrbitaSettingsView: View {
             let item = anel.itens[i]
             Section("Zona \(i + 1)") {
                 LabeledContent {
-                    Button("Remover do anel", role: .destructive) {
-                        store.removerItem(item.id, de: anel.id)
-                        self.zona = nil
+                    HStack(spacing: 8) {
+                        // uma casa por clique, sem dar a volta: num anel,
+                        // "atravessar" a ponta ao reordenar confunde
+                        Button { store.moverItem(item.id, passo: -1, em: anel.id) } label: {
+                            Image(systemName: "arrow.counterclockwise")
+                        }
+                        .disabled(i == 0)
+                        .help("Mover no sentido anti-horário")
+                        .accessibilityLabel("Mover \(ItemVisual.nome(item)) no sentido anti-horário")
+                        Button { store.moverItem(item.id, passo: 1, em: anel.id) } label: {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        .disabled(i == anel.itens.count - 1)
+                        .help("Mover no sentido horário")
+                        .accessibilityLabel("Mover \(ItemVisual.nome(item)) no sentido horário")
+                        Divider().frame(height: 16)
+                        Button("Remover do anel", role: .destructive) {
+                            store.removerItem(item.id, de: anel.id)
+                            self.zona = nil
+                        }
                     }
                 } label: {
                     Label {
@@ -1157,7 +1174,14 @@ private struct AtalhoView: View {
                     }
                     if store.orbitaControl {
                         linha(.orbita, titulo: "Órbita",
-                              detalhe: "Abre o anel de apps em volta do cursor")
+                              detalhe: "Abre no último anel usado; a rolagem troca")
+                        // um atalho por anel só faz sentido havendo mais de um
+                        if store.aneis.count > 1 {
+                            ForEach(store.aneis) { anel in
+                                linha(.anel(anel.id), titulo: "Órbita — \(anel.nome)",
+                                      detalhe: "Abre direto neste anel, sem rolar até ele")
+                            }
+                        }
                     }
                 } header: {
                     Text("Controles de borda")

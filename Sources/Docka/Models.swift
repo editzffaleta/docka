@@ -241,6 +241,11 @@ final class DockaStore: ObservableObject {
         atualizarAnel(id) { $0.itens.removeAll { $0.id == itemID } }
     }
 
+    /// Move o item uma casa no anel — as setinhas da zona no editor.
+    func moverItem(_ itemID: UUID, passo: Int, em id: UUID) {
+        atualizarAnel(id) { $0.mover(itemID, passo: passo) }
+    }
+
     /// Rola para o anel vizinho — usado pela rolagem com a órbita aberta.
     func rolarAnel(_ passo: Int) {
         anelAtivo = Aneis.proximo(de: anelAtivo, em: aneis, passo: passo)
@@ -415,6 +420,9 @@ final class DockaStore: ObservableObject {
         case .volume:  return "Controle de volume"
         case .ajustes: return "Abrir os ajustes"
         case .orbita:  return "Órbita"
+        case .anel(let uuid):
+            let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
+            return "Órbita — \(nome)"
         case .bandeja(let uuid):
             guard let i = docks.firstIndex(where: { $0.id == uuid }) else { return "Bandeja" }
             let d = docks[i]
@@ -431,7 +439,9 @@ final class DockaStore: ObservableObject {
     /// Chamado na inicialização e sempre que as bandejas mudam.
     func ativarAtalhos() {
         // bandeja apagada não pode deixar o atalho registrado no sistema
-        let limpo = Atalhos.limpar(atalhos, bandejasExistentes: Set(docks.map(\.id)))
+        let limpo = Atalhos.limpar(atalhos,
+                                   bandejasExistentes: Set(docks.map(\.id)),
+                                   aneisExistentes: Set(aneis.map(\.id)))
         if limpo.count != atalhos.count { atalhos = limpo }
         // grava sempre, e não só quando limpou: o conjunto pode ter acabado de
         // nascer da migração do atalho único, e sem isto ele só existiria na

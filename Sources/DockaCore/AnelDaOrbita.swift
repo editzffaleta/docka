@@ -80,6 +80,18 @@ public struct AnelDaOrbita: Codable, Identifiable, Equatable, Sendable {
         self.nome = nome
         self.itens = itens
     }
+
+    /// Move um item uma casa no sentido do `passo` (+1 horário, -1 anti-horário).
+    ///
+    /// Troca de vizinho, e não `Reorder.move`: aqui o gesto é "uma casa por
+    /// clique" nas setinhas da zona, e nas pontas ele simplesmente para — num
+    /// anel, "dar a volta" ao reordenar confunde mais do que ajuda.
+    public mutating func mover(_ itemID: UUID, passo: Int) {
+        guard let i = itens.firstIndex(where: { $0.id == itemID }) else { return }
+        let j = i + passo
+        guard itens.indices.contains(j) else { return }
+        itens.swapAt(i, j)
+    }
 }
 
 public enum Aneis {

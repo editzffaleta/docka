@@ -8,7 +8,8 @@ struct AcaoDeAtalhoTests {
     @Test("A identidade sobrevive à ida e volta do disco")
     func idaEVolta() {
         let uuid = UUID()
-        let casos: [AcaoDeAtalho] = [.bandeja(uuid), .brilho, .volume, .ajustes]
+        let casos: [AcaoDeAtalho] = [.bandeja(uuid), .brilho, .volume, .ajustes,
+                                     .orbita, .anel(uuid)]
         for c in casos {
             #expect(AcaoDeAtalho(id: c.id) == c)
         }
@@ -18,6 +19,7 @@ struct AcaoDeAtalhoTests {
     func chaveInvalida() {
         // um plist corrompido não pode virar uma bandeja fantasma
         #expect(AcaoDeAtalho(id: "bandeja:nao-e-uuid") == nil)
+        #expect(AcaoDeAtalho(id: "anel:nao-e-uuid") == nil)
         #expect(AcaoDeAtalho(id: "bandeja:") == nil)
         #expect(AcaoDeAtalho(id: "qualquer") == nil)
     }
@@ -55,6 +57,18 @@ struct AtalhosTests {
     func livreNaoAcusa() {
         #expect(Atalhos.jaUsadaPor(b, em: ["brilho": a], ignorando: "volume") == nil)
         #expect(Atalhos.jaUsadaPor(a, em: [:], ignorando: "brilho") == nil)
+    }
+
+    @Test("Anel apagado leva o atalho junto, como bandeja")
+    func anelApagadoLevaOAtalho() {
+        let vivo = UUID(), morto = UUID()
+        let mapa = ["anel:\(vivo.uuidString)": a,
+                    "anel:\(morto.uuidString)": b,
+                    "orbita": a]
+        let limpo = Atalhos.limpar(mapa, bandejasExistentes: [], aneisExistentes: [vivo])
+        #expect(limpo.count == 2)
+        #expect(limpo["anel:\(morto.uuidString)"] == nil)
+        #expect(limpo["orbita"] == a)      // a ação genérica não depende de anel
     }
 
     @Test("Bandeja apagada leva o atalho junto")
