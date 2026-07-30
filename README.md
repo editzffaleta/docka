@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Sources/Docka/Assets/logo-256.png" width="140" alt="Logo do Docka" />
+  <img src="assets/logo.png" width="160" alt="Logo do Docka" />
 </p>
 
 <h1 align="center">Docka</h1>
@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/demo.gif" width="780" alt="Docka — a bandeja revelada na borda, com a ampliação e o balão de nome" />
+  <img src="assets/bandeja.gif" width="780" alt="Docka — a bandeja revelada na borda, com a ampliação e o balão de nome" />
 </p>
 
 ---
@@ -112,7 +112,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 ### O gerenciador
 
 <p align="center">
-  <img src="assets/manager.png" width="780" alt="Gerenciador do Docka — a seção da Órbita, com o editor visual do anel" />
+  <img src="assets/gerenciador.png" width="780" alt="Gerenciador do Docka — a seção da Órbita, com o editor visual do anel" />
 </p>
 
 No formato dos **Ajustes do Sistema**: barra lateral com busca e navegação com
@@ -222,14 +222,15 @@ A logo é arte gerada por código — mudar a identidade é editar números em
 capturados do app real rodando:
 
 ```bash
-# logo em 1024 (variante A = teal, B = noturna); depois reduza para o -256
+# logo em 1024 (variante A = teal, B = noturna); daí saem o -256 do app e a do README
 swift scripts/render_logo.swift Sources/Docka/Assets/logo.png A
 sips -z 256 256 Sources/Docka/Assets/logo.png --out Sources/Docka/Assets/logo-256.png
+sips -z 512 512 Sources/Docka/Assets/logo.png --out assets/logo.png
 
 # demo: o app fixa bandeja e réguas abertas, com um hover simulado varrendo os ícones
 .build/debug/Docka --demo &
 # capture frames com screencapture -o -x -R<x,y,w,h> e depois:
-swift scripts/make_gif.swift <pasta-dos-frames> assets/demo.gif 780
+swift scripts/make_gif.swift <pasta-dos-frames> assets/bandeja.gif 780
 
 ./scripts/make_dmg.sh 1.1.0     # Docka.app com o AppIcon.icns gerado + instalador DMG
 ```
