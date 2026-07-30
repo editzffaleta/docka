@@ -66,7 +66,9 @@ Um anel com seus apps em volta do cursor. Aponte na direção de um e clique —
 |---------|-----------|
 | **Aponte e solte** | O item do setor para onde o cursor aponta cresce e mostra o nome no miolo; o clique abre. Vale a direção, não a distância |
 | **Zona morta no centro** | O buraco do anel não seleciona nada, então ele nunca nasce com um app já escolhido debaixo do cursor |
-| **Lista própria** | O anel tem os apps DELE, escolhidos nos ajustes — separados das bandejas, porque a órbita pede poucos apps de alcance rápido, não a fileira inteira |
+| **Quatro tipos de item** | App, site, arquivo e pasta — cada um abre do jeito próprio: app lança, site vai ao navegador, arquivo abre no app padrão, pasta abre no Finder |
+| **Até 8 anéis** | Anéis nomeados (Trabalho, Design, Estudo…), cada um com seus itens. Com a órbita aberta, a rolagem do mouse troca de anel — o nome do ativo aparece no miolo |
+| **Editor visual** | Nos ajustes o anel aparece como ele é: clique num item para ver e editar a zona dele |
 | **Botão lateral do mouse** | Um dos botões extras abre o anel. Aperte para abrir; segure, aponte e solte para lançar de uma vez |
 | **Abre pela quina ou pelo atalho** | Cravar o cursor na quina escolhida abre o anel ali; o atalho global abre onde o cursor estiver. Esc fecha |
 

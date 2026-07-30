@@ -140,6 +140,8 @@ final class DockaStore: ObservableObject {
         static let orbitaCanto = "docka.orbitaCorner"
         static let orbitaBotao = "docka.orbitaMouseButton"
         static let orbitaApps = "docka.orbitaApps"
+        static let orbitaAneis = "docka.orbitaRings"
+        static let orbitaAnelAtivo = "docka.orbitaActiveRing"
     }
 
     private let defaults = UserDefaults.standard
@@ -192,15 +194,56 @@ final class DockaStore: ObservableObject {
         dock(id)?.apps.contains(path) ?? false
     }
 
-    /// Os apps da órbita, resolvidos como os de uma bandeja.
-    var appsDaOrbita: [PinnedApp] {
-        orbitaApps.filter { FileManager.default.fileExists(atPath: $0) }
-                  .map { PinnedApp(path: $0) }
+    /// O anel em uso — o ativo, ou o primeiro se o ativo sumiu.
+    var anelEmUso: AnelDaOrbita? {
+        aneis.first { $0.id == anelAtivo } ?? aneis.first
     }
 
-    func alternarAppDaOrbita(_ path: String) {
-        if let i = orbitaApps.firstIndex(of: path) { orbitaApps.remove(at: i) }
-        else { orbitaApps.append(path) }
+    /// Os itens do anel em uso que ainda existem no disco.
+    var itensDaOrbita: [ItemDaOrbita] {
+        (anelEmUso?.itens ?? []).filter { ItemVisual.existe($0) }
+    }
+
+    private func atualizarAnel(_ id: UUID, _ mudanca: (inout AnelDaOrbita) -> Void) {
+        guard let i = aneis.firstIndex(where: { $0.id == id }) else { return }
+        mudanca(&aneis[i])
+    }
+
+    func adicionarAnel() {
+        guard Aneis.podeCriar(aneis) else { return }
+        let novo = AnelDaOrbita(nome: Aneis.nomeNovo(aneis))
+        aneis.append(novo)
+        anelAtivo = novo.id
+    }
+
+    func removerAnel(_ id: UUID) {
+        guard aneis.count > 1 else { return }   // sempre sobra um
+        aneis.removeAll { $0.id == id }
+        if anelAtivo == id { anelAtivo = aneis.first?.id }
+    }
+
+    func renomearAnel(_ id: UUID, para nome: String) {
+        let limpo = nome.trimmingCharacters(in: .whitespaces)
+        guard !limpo.isEmpty else { return }
+        atualizarAnel(id) { $0.nome = limpo }
+    }
+
+    func adicionarItem(_ item: ItemDaOrbita, em id: UUID) {
+        atualizarAnel(id) { anel in
+            guard anel.itens.count < Aneis.maximoDeItens,
+                  !anel.itens.contains(where: { $0.tipo == item.tipo && $0.valor == item.valor })
+            else { return }
+            anel.itens.append(item)
+        }
+    }
+
+    func removerItem(_ itemID: UUID, de id: UUID) {
+        atualizarAnel(id) { $0.itens.removeAll { $0.id == itemID } }
+    }
+
+    /// Rola para o anel vizinho — usado pela rolagem com a órbita aberta.
+    func rolarAnel(_ passo: Int) {
+        anelAtivo = Aneis.proximo(de: anelAtivo, em: aneis, passo: passo)
     }
 
     func moverApp(_ path: String, antesDe alvo: String, em id: UUID) {
@@ -256,14 +299,18 @@ final class DockaStore: ObservableObject {
 
     /// Mostra a órbita — o anel de apps em volta do cursor.
     @Published var orbitaControl: Bool { didSet { defaults.set(orbitaControl, forKey: Key.orbita) } }
-    /// Os apps da órbita — lista PRÓPRIA, separada das bandejas.
-    ///
-    /// A primeira versão reaproveitava uma bandeja, mas o anel tem outra
-    /// vocação: poucos apps de alcance rápido, não a fileira inteira. O que a
-    /// bandeja escolhida tinha migra para cá uma única vez, como ponto de
-    /// partida.
-    @Published var orbitaApps: [String] {
-        didSet { defaults.set(orbitaApps, forKey: Key.orbitaApps) }
+    /// Os anéis da órbita — até 8, cada um com nome e itens próprios
+    /// (apps, sites, arquivos e pastas), como na referência.
+    @Published var aneis: [AnelDaOrbita] {
+        didSet {
+            if let dados = try? JSONEncoder().encode(aneis) {
+                defaults.set(dados, forKey: Key.orbitaAneis)
+            }
+        }
+    }
+    /// O anel mostrado ao abrir — o último usado; a rolagem troca.
+    @Published var anelAtivo: UUID? {
+        didSet { defaults.set(anelAtivo?.uuidString ?? "", forKey: Key.orbitaAnelAtivo) }
     }
     /// Canto da tela que abre a órbita; vazio = só pelo atalho.
     @Published var orbitaCanto: String { didSet { defaults.set(orbitaCanto, forKey: Key.orbitaCanto) } }
@@ -510,23 +557,34 @@ final class DockaStore: ObservableObject {
         volumeEdge = defaults.string(forKey: Key.volumeBorda) ?? TrayEdge.left.rawValue
         volumeAlignment = defaults.string(forKey: Key.volumeAlinhamento) ?? TrayAlignment.center.rawValue
         orbitaControl = defaults.bool(forKey: Key.orbita)
-        if let lista = defaults.stringArray(forKey: Key.orbitaApps) {
-            orbitaApps = lista
+        if let dados = defaults.data(forKey: Key.orbitaAneis),
+           let gravados = try? JSONDecoder().decode([AnelDaOrbita].self, from: dados) {
+            aneis = gravados
         } else {
-            // migração: a órbita reaproveitava uma bandeja; o conteúdo daquela
-            // bandeja vira o ponto de partida da lista própria
-            let docksGravadas: [DockConfig] = (defaults.data(forKey: Key.docks)
-                .flatMap { try? JSONDecoder().decode([DockConfig].self, from: $0) }) ?? []
-            let escolhida = defaults.string(forKey: Key.orbitaBandeja) ?? ""
-            let fonte = docksGravadas.first { $0.id.uuidString == escolhida } ?? docksGravadas.first
-            let semente = fonte?.apps ?? []
-            orbitaApps = semente
-            // gravação explícita: didSet NÃO dispara durante o init, então sem
-            // esta linha a migração viveria só na memória e rodaria de novo a
-            // cada início — e a lista continuaria acompanhando a bandeja, que é
-            // justamente o vínculo que a lista própria corta
-            defaults.set(semente, forKey: Key.orbitaApps)
+            // migração encadeada: a lista plana de apps (ou, antes dela, a
+            // bandeja que a órbita usava) vira o primeiro anel
+            let apps: [String]
+            if let lista = defaults.stringArray(forKey: Key.orbitaApps) {
+                apps = lista
+            } else {
+                let docksGravadas: [DockConfig] = (defaults.data(forKey: Key.docks)
+                    .flatMap { try? JSONDecoder().decode([DockConfig].self, from: $0) }) ?? []
+                let escolhida = defaults.string(forKey: Key.orbitaBandeja) ?? ""
+                apps = (docksGravadas.first { $0.id.uuidString == escolhida }
+                        ?? docksGravadas.first)?.apps ?? []
+            }
+            let primeiro = AnelDaOrbita(
+                nome: "Anel 1",
+                itens: apps.map { ItemDaOrbita(tipo: .app, valor: $0) })
+            aneis = [primeiro]
+            // didSet não dispara no init: sem gravar aqui a migração viveria só
+            // na memória e rodaria de novo a cada início
+            if let dados = try? JSONEncoder().encode([primeiro]) {
+                defaults.set(dados, forKey: Key.orbitaAneis)
+            }
         }
+        anelAtivo = defaults.string(forKey: Key.orbitaAnelAtivo)
+            .flatMap(UUID.init(uuidString:))
         orbitaCanto = defaults.string(forKey: Key.orbitaCanto) ?? ""
         orbitaBotao = defaults.object(forKey: Key.orbitaBotao) as? Int ?? BotaoDoMouse.nenhum
         glassTint = defaults.double(forKey: Key.glassTint)

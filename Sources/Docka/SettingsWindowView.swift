@@ -680,122 +680,250 @@ private struct LinhaSlider: View {
 
 private struct OrbitaSettingsView: View {
     @EnvironmentObject var store: DockaStore
+    /// Item selecionado no anel de prévia — a "zona" da referência.
+    @State private var zona: UUID?
+    @State private var renomeando = false
+    @State private var novoNome = ""
+    @State private var escolhendoApp = false
+    @State private var novoSite = ""
+    @State private var adicionandoSite = false
+
+    private var anel: AnelDaOrbita? {
+        store.aneis.first { $0.id == store.anelAtivo } ?? store.aneis.first
+    }
 
     var body: some View {
         Form {
             Section {
                 Toggle(isOn: $store.orbitaControl) {
                     Text("Órbita")
-                    Text("Um anel com seus apps em volta do cursor. Aponte na direção de um e clique para abrir.")
+                    Text("Um anel com seus itens em volta do cursor. Aponte na direção de um e clique para abrir.")
                 }
             }
 
             if store.orbitaControl {
-                Section("No anel") {
-                    if store.orbitaApps.isEmpty {
-                        ContentUnavailableView("Nenhum app no anel",
-                                               systemImage: "circle.dashed",
-                                               description: Text("Escolha abaixo os apps que ficam na órbita."))
-                    } else {
-                        ForEach(store.appsDaOrbita) { app in
-                            LabeledContent {
-                                Button {
-                                    withAnimation { store.alternarAppDaOrbita(app.path) }
-                                } label: {
-                                    Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
-                                }
-                                .buttonStyle(.borderless)
-                                .accessibilityLabel("Remover \(app.name) da órbita")
-                            } label: {
-                                Label {
-                                    Text(app.name)
-                                } icon: {
-                                    Image(nsImage: app.icon).resizable().frame(width: 20, height: 20)
-                                }
-                            }
-                        }
-                    }
+                secaoDeAneis
+                if let anel {
+                    secaoDaPrevia(anel)
+                    secaoDaZona(anel)
+                    secaoAdicionar(anel)
                 }
-
-                Section("Aplicativos instalados") {
-                    AppPickerGrid(estaSelecionado: { store.orbitaApps.contains($0) },
-                                  alternar: { store.alternarAppDaOrbita($0) })
-                        .frame(minHeight: 260)
-                        .listRowInsets(EdgeInsets())
-                }
-
-                Section {
-                    Picker("Canto da tela", selection: $store.orbitaCanto) {
-                        Text("Nenhum").tag("")
-                        ForEach(CantoDaTela.allCases, id: \.self) {
-                            Text($0.titulo).tag($0.rawValue)
-                        }
-                    }
-                    LabeledContent {
-                        CapturaDeBotaoView()
-                    } label: {
-                        Text("Botão do mouse")
-                        Text("Aperte para abrir. Segure, aponte e solte para lançar de uma vez.")
-                    }
-                    if let recusa = BotaoDoMouse.recusa(store.orbitaBotao) {
-                        Label(recusa, systemImage: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
-                            .font(.callout)
-                    }
-                } header: {
-                    Text("Como abrir")
-                } footer: {
-                    Text("Cravar o cursor na quina abre a órbita ali mesmo. O atalho global faz o mesmo e abre onde o cursor estiver — configure na aba Atalhos.\n\nO botão do mouse é observado, não interceptado: interceptar exigiria a permissão de Monitoramento de Entrada, que o Docka não pede. Ou seja, o clique CONTINUA chegando no app embaixo do cursor — num navegador, o botão lateral vai voltar uma página junto. Escolha um botão que você não use para outra coisa.")
-                }
-
             }
         }
         .formStyle(.grouped)
+        .sheet(isPresented: $escolhendoApp) { folhaDeApps }
+    }
+
+    // MARK: anéis
+
+    private var secaoDeAneis: some View {
+        Section {
+            Picker("Anel", selection: Binding(
+                get: { anel?.id ?? UUID() },
+                set: { store.anelAtivo = $0; zona = nil })) {
+                ForEach(store.aneis) { a in
+                    Text("\(a.nome) — \(a.itens.count) \(a.itens.count == 1 ? "item" : "itens")")
+                        .tag(a.id)
+                }
+            }
+            HStack {
+                Button("Novo anel") { store.adicionarAnel(); zona = nil }
+                    .disabled(!Aneis.podeCriar(store.aneis))
+                Button("Renomear…") {
+                    novoNome = anel?.nome ?? ""
+                    renomeando = true
+                }
+                Spacer()
+                Button("Apagar anel", role: .destructive) {
+                    if let anel { store.removerAnel(anel.id); zona = nil }
+                }
+                .disabled(store.aneis.count <= 1)
+            }
+        } header: {
+            Text("Anéis")
+        } footer: {
+            Text("Até \(Aneis.maximo) anéis — Trabalho, Design, Estudo… Com a órbita aberta, a rolagem do mouse troca de anel.")
+        }
+        .alert("Renomear anel", isPresented: $renomeando) {
+            TextField("Nome", text: $novoNome)
+            Button("Renomear") {
+                if let anel { store.renomearAnel(anel.id, para: novoNome) }
+            }
+            Button("Cancelar", role: .cancel) {}
+        }
+    }
+
+    // MARK: prévia clicável
+
+    private func secaoDaPrevia(_ anel: AnelDaOrbita) -> some View {
+        Section {
+            PreviaDoAnel(anel: anel, zona: $zona)
+                .frame(maxWidth: .infinity, minHeight: 250)
+                .padding(.vertical, 6)
+        } footer: {
+            if anel.itens.isEmpty {
+                Text("O anel está vazio — adicione itens abaixo.")
+            } else {
+                Text("Clique num item para ver e editar a zona dele.")
+            }
+        }
+    }
+
+    // MARK: a zona selecionada
+
+    @ViewBuilder
+    private func secaoDaZona(_ anel: AnelDaOrbita) -> some View {
+        if let zona, let i = anel.itens.firstIndex(where: { $0.id == zona }) {
+            let item = anel.itens[i]
+            Section("Zona \(i + 1)") {
+                LabeledContent {
+                    Button("Remover do anel", role: .destructive) {
+                        store.removerItem(item.id, de: anel.id)
+                        self.zona = nil
+                    }
+                } label: {
+                    Label {
+                        Text(ItemVisual.nome(item))
+                        Text(item.tipo.titulo + (item.tipo == .site ? " — \(item.valor)" : ""))
+                    } icon: {
+                        Image(nsImage: ItemVisual.icone(item))
+                            .resizable().frame(width: 28, height: 28)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: adicionar
+
+    private func secaoAdicionar(_ anel: AnelDaOrbita) -> some View {
+        Section {
+            HStack(spacing: 10) {
+                Button { escolhendoApp = true } label: {
+                    Label("Aplicativo", systemImage: TipoDeItem.app.simbolo)
+                }
+                Button { adicionandoSite = true } label: {
+                    Label("Site", systemImage: TipoDeItem.site.simbolo)
+                }
+                Button { escolherDoDisco(.arquivo, em: anel.id) } label: {
+                    Label("Arquivo", systemImage: TipoDeItem.arquivo.simbolo)
+                }
+                Button { escolherDoDisco(.pasta, em: anel.id) } label: {
+                    Label("Pasta", systemImage: TipoDeItem.pasta.simbolo)
+                }
+            }
+            .disabled(anel.itens.count >= Aneis.maximoDeItens)
+        } header: {
+            Text("Adicionar ao anel")
+        } footer: {
+            Text(anel.itens.count >= Aneis.maximoDeItens
+                 ? "O anel está cheio (\(Aneis.maximoDeItens) itens) — com mais, os setores ficam finos demais para apontar."
+                 : "Aplicativo, site, arquivo ou pasta — cada um abre do jeito próprio: app lança, site vai ao navegador, arquivo abre no app padrão, pasta abre no Finder.")
+        }
+        .alert("Adicionar site", isPresented: $adicionandoSite) {
+            TextField("exemplo.com", text: $novoSite)
+            Button("Adicionar") {
+                if let url = ItemDaOrbita.urlDeSite(novoSite) {
+                    store.adicionarItem(ItemDaOrbita(tipo: .site, valor: url), em: anel.id)
+                }
+                novoSite = ""
+            }
+            Button("Cancelar", role: .cancel) { novoSite = "" }
+        } message: {
+            Text("Sem https:// também vale — o Docka completa.")
+        }
+    }
+
+    /// Painel do sistema para arquivo ou pasta — o "Browse" da referência.
+    private func escolherDoDisco(_ tipo: TipoDeItem, em id: UUID) {
+        let painel = NSOpenPanel()
+        painel.canChooseFiles = tipo == .arquivo
+        painel.canChooseDirectories = tipo == .pasta
+        painel.allowsMultipleSelection = true
+        painel.prompt = "Adicionar"
+        guard painel.runModal() == .OK else { return }
+        for url in painel.urls {
+            store.adicionarItem(ItemDaOrbita(tipo: tipo, valor: url.path), em: id)
+        }
+    }
+
+    private var folhaDeApps: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Aplicativos").font(.headline)
+                Spacer()
+                Button("Concluído") { escolhendoApp = false }
+            }
+            .padding()
+            AppPickerGrid(
+                estaSelecionado: { caminho in
+                    anel?.itens.contains { $0.tipo == .app && $0.valor == caminho } ?? false
+                },
+                alternar: { caminho in
+                    guard let anel else { return }
+                    if let existente = anel.itens.first(where: { $0.tipo == .app && $0.valor == caminho }) {
+                        store.removerItem(existente.id, de: anel.id)
+                    } else {
+                        store.adicionarItem(ItemDaOrbita(tipo: .app, valor: caminho), em: anel.id)
+                    }
+                })
+                .environmentObject(store)
+        }
+        .frame(width: 560, height: 480)
     }
 }
 
-/// Captura o botão que o usuário apertar.
-private struct CapturaDeBotaoView: View {
-    @EnvironmentObject var store: DockaStore
-    @State private var capturando = false
-    @State private var captura = CapturaDeBotao()
+/// O anel desenhado nos ajustes, com cada item clicável — o editor visual da
+/// referência: vê-se o anel como ele vai aparecer, e clicar num item abre a
+/// configuração daquela zona.
+private struct PreviaDoAnel: View {
+    let anel: AnelDaOrbita
+    @Binding var zona: UUID?
+
+    private var itens: [ItemDaOrbita] { anel.itens }
 
     var body: some View {
-        HStack(spacing: 8) {
-            Button { capturando ? parar() : comecar() } label: {
-                Text(capturando ? "Aperte um botão…" : BotaoDoMouse.nome(store.orbitaBotao))
-                    .frame(minWidth: 170)
-            }
-            .buttonStyle(.bordered)
-            .tint(capturando ? .accentColor : nil)
-            .accessibilityLabel("Botão do mouse que abre a órbita")
-            .accessibilityValue(BotaoDoMouse.nome(store.orbitaBotao))
+        GeometryReader { geo in
+            let lado = min(geo.size.width, geo.size.height)
+            // prévia em escala: o anel real usa a geometria da Orbita, aqui só
+            // reduzimos tudo pelo mesmo fator para caber na janela
+            let fator = lado / Orbita.tamanhoDoPainel(total: max(1, itens.count))
+            let r = Orbita.raio(total: itens.count) * fator
+            let icone = Orbita.tamanhoItem * fator
+            let centro = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
 
-            if store.orbitaBotao != BotaoDoMouse.nenhum && !capturando {
-                Button { store.orbitaBotao = BotaoDoMouse.nenhum } label: {
-                    Image(systemName: "xmark.circle.fill")
+            ZStack {
+                Anel(raioInterno: Orbita.raioInterno * fator)
+                    .fill(Color(nsColor: .quaternaryLabelColor), style: FillStyle(eoFill: true))
+                    .frame(width: 2 * r + icone, height: 2 * r + icone)
+                    .position(centro)
+
+                ForEach(Array(itens.enumerated()), id: \.element.id) { i, item in
+                    let p = Orbita.posicao(indice: i, total: itens.count)
+                    Button {
+                        zona = zona == item.id ? nil : item.id
+                    } label: {
+                        Image(nsImage: ItemVisual.icone(item))
+                            .resizable()
+                            .frame(width: icone, height: icone)
+                            .padding(4)
+                            .background(
+                                Circle().fill(zona == item.id
+                                              ? Color.accentColor.opacity(0.25) : .clear))
+                    }
+                    .buttonStyle(.plain)
+                    .position(x: centro.x + p.x * fator, y: centro.y + p.y * fator)
+                    .accessibilityLabel("Zona \(i + 1): \(ItemVisual.nome(item))")
                 }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.secondary)
-                .help("Remover o botão")
+
+                if itens.isEmpty {
+                    Image(systemName: "circle.dashed")
+                        .font(.system(size: 44))
+                        .foregroundStyle(.tertiary)
+                        .position(centro)
+                }
             }
         }
-        .onDisappear { parar() }
-    }
-
-    private func comecar() {
-        capturando = true
-        captura.comecar { n in
-            // o esquerdo e o direito nunca entram: sequestrá-los no sistema
-            // inteiro deixaria o Mac inutilizável
-            if BotaoDoMouse.valido(n) { store.orbitaBotao = n }
-            capturando = false
-        }
-    }
-
-    private func parar() {
-        captura.parar()
-        capturando = false
     }
 }
 
