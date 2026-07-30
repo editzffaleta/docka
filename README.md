@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/demo.gif" width="780" alt="Docka — bandeja com magnificação de ícones estilo Dock" />
+  <img src="assets/demo.gif" width="780" alt="Docka — a bandeja revelada na borda, com a ampliação e o balão de nome" />
 </p>
 
 ---
@@ -61,7 +61,11 @@ Perfeito para quem mantém o Dock enxuto mas quer um segundo escalão de apps, s
 
 ### Órbita
 
-Um anel com seus apps em volta do cursor. Aponte na direção de um e clique — não é preciso acertar o ícone, a direção basta.
+Um anel com seus itens em volta do cursor. Aponte na direção de um e clique — não é preciso acertar o ícone, a direção basta.
+
+<p align="center">
+  <img src="assets/orbita.gif" width="520" alt="Órbita — o anel em volta do cursor, com o item apontado crescendo e o nome no miolo" />
+</p>
 
 | Recurso | Descrição |
 |---------|-----------|
@@ -99,7 +103,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 | **Abrir no login** | O Docka sobe sozinho quando você entra no Mac, via `SMAppService` — sem helper, sem permissão, e você pode desligar direto nas Configurações do Sistema |
 | **Vive na barra de menus** | Sem ícone no Dock e fora do ⌘Tab; a janela de configurações aparece só quando você pede |
 | **Pressure Zone** | Modo opcional que só revela a bandeja quando você empurra o cursor contra o canto de propósito — evita aberturas acidentais em apps de tela cheia |
-| **Calibração ao vivo** | Distância da borda e tamanho dos ícones ajustáveis por slider, com efeito imediato na bandeja |
+| **Calibração ao vivo** | Tamanho dos ícones, ampliação, alcance, Tom e material do vidro por slider — com efeito imediato na bandeja, sem reiniciar |
 | **Atalhos por ação** | Grave as combinações na aba Atalhos — uma por bandeja, brilho, volume, órbita e cada anel; conflito entre ações do Docka é apontado pelo nome |
 | **Acessibilidade** | Respeita **Reduzir Movimento** do sistema (sem partículas, sem deslize, sem quique) e rotula a bandeja para o VoiceOver |
 | **Onboarding em 3 passos** | Boas-vindas → escolha de apps (grade com busca) → modo de revelação |
@@ -178,8 +182,16 @@ moram no `DockaCore`, onde `swift test` alcança.
 A maioria dos utilitários de borda de tela pede Acessibilidade ou Monitoramento de Entrada. O Docka evita as duas:
 
 - A posição do cursor vem de **`NSEvent.mouseLocation`**, uma API pública que não exige permissão — lida por um timer leve, 20 vezes por segundo.
-- O atalho global usa **Carbon `RegisterEventHotKey`**, o mecanismo clássico de hotkeys do macOS, também livre de permissões.
-- A bandeja é um **`NSPanel` não-ativante**: aparece sobre qualquer app sem roubar o foco da janela em que você está trabalhando.
+- Os atalhos globais usam **Carbon `RegisterEventHotKey`**, o mecanismo clássico de hotkeys do macOS, também livre de permissões.
+- O botão lateral do mouse e a rolagem entre anéis vêm de um **monitor global de eventos de MOUSE**, que o macOS libera sem permissão — ao contrário do de teclado. A diferença é entre observar e interceptar: um monitor é apenas avisado, nunca consome o evento. Interceptar exigiria Monitoramento de Entrada, e por isso o Docka não intercepta.
+- O brilho é lido e escrito pelo **DisplayServices**, um framework do sistema. É API não documentada — o preço por não pedir Acessibilidade, que a alternativa (tecla de mídia) exigiria. Se uma atualização do macOS removê-la, o app esconde o controle em vez de fingir que funciona.
+- Cada painel é um **`NSPanel` não-ativante**: aparece sobre qualquer app sem roubar o foco da janela em que você está trabalhando.
+
+### E a rede?
+
+O Docka faz **uma** conexão de saída, e só quando você pede: ao adicionar um **site** à órbita, ele busca a logo daquele site (`apple-touch-icon` ou `favicon.ico`) **no próprio site** — nunca num resolvedor de terceiros, que receberia sua lista de sites de brinde. Sessão efêmera (sem cookies), resposta limitada a 1 MB, resultado em cache local. Sem rede, o anel usa um globo desenhado localmente e nada quebra.
+
+Fora isso: **nenhuma** conexão. Sem telemetria, sem verificação de atualização, sem analytics.
 
 ## Instalação
 
@@ -205,15 +217,21 @@ Depois, empurre o cursor até a borda configurada — ou pressione **⇧⌘D**. 
 
 ### Regenerar a logo e o demo
 
-A logo é arte gerada por código, e o GIF de demonstração é capturado do app real
-rodando em modo demo (`--demo` fixa a bandeja aberta com um hover simulado):
+A logo é arte gerada por código — mudar a identidade é editar números em
+`render_logo.swift` e rodar, sem caçar arquivo-fonte de PNG. Os GIFs são
+capturados do app real rodando:
 
 ```bash
-swift scripts/render_logo.swift Sources/Docka/Assets/logo.png A   # logo (variante A = teal, B = noturna)
-.build/debug/Docka --demo &                                       # bandeja em modo demo
-# capture frames com screencapture -R e depois:
-swift scripts/make_gif.swift <pasta-dos-frames> assets/demo.gif
-./scripts/make_dmg.sh 1.1.0                                       # Docka.app + instalador DMG
+# logo em 1024 (variante A = teal, B = noturna); depois reduza para o -256
+swift scripts/render_logo.swift Sources/Docka/Assets/logo.png A
+sips -z 256 256 Sources/Docka/Assets/logo.png --out Sources/Docka/Assets/logo-256.png
+
+# demo: o app fixa bandeja e réguas abertas, com um hover simulado varrendo os ícones
+.build/debug/Docka --demo &
+# capture frames com screencapture -o -x -R<x,y,w,h> e depois:
+swift scripts/make_gif.swift <pasta-dos-frames> assets/demo.gif 780
+
+./scripts/make_dmg.sh 1.1.0     # Docka.app com o AppIcon.icns gerado + instalador DMG
 ```
 
 O `make_dmg.sh` também sabe assinar e notarizar: com uma conta Apple Developer,
