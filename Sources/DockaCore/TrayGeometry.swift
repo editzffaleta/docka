@@ -34,18 +34,10 @@ public enum TrayGeometry {
     public static func paddingTop(size: CGFloat) -> CGFloat { size * 0.108 }
     /// Vidro abaixo da bolinha de execução, que quase encosta na borda.
     public static func paddingBottom(size: CGFloat) -> CGFloat { size * 0.055 }
-    /// Espaço extra no fim da fileira.
-    ///
-    /// Zero: a bandeja não tem mais separador nem engrenagem — as configurações
-    /// abrem pela barra de menus ou pelo clique-direito na própria bandeja.
-    /// A conversão do cursor para o espaço da fileira depende deste valor.
-    public static func trailingWidth(size: CGFloat) -> CGFloat { 0 }
-
     /// Largura da fileira inteira em repouso, vidro incluído.
     public static func restingRowWidth(appCount: Int, size: CGFloat) -> CGFloat {
         2 * padding(size: size)
             + restingContentWidth(appCount: appCount, size: size)
-            + trailingWidth(size: size)
     }
 
     /// Altura do vidro — calculada com o ícone **em repouso**, de propósito.
@@ -157,7 +149,7 @@ public enum TrayGeometry {
         let ampliada = magnifiedContentWidth(appCount: appCount, size: size,
                                              maxScale: maxScale, maxRange: alcance)
         return repouso + 2 * (ampliada - repouso)
-            + 2 * padding(size: size) + trailingWidth(size: size)
+            + 2 * padding(size: size)
     }
 
     /// Linha de base da bandeja.
