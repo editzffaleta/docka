@@ -11,6 +11,7 @@ final class TrayController {
     private let store = DockaStore.shared
     private var hideDelay: TimeInterval = 0
     private var cancellable: Any?
+    private var screenObserver: NSObjectProtocol?
 
     private let trayHeight: CGFloat = 170
 
@@ -19,6 +20,14 @@ final class TrayController {
         // repõe o painel quando a lista de apps ou ajustes mudam
         cancellable = store.objectWillChange.sink { [weak self] in
             DispatchQueue.main.async { self?.layoutPanel() }
+        }
+        // "Seguir mudanças do Dock": o macOS publica esta notificação quando o Dock
+        // muda de tamanho ou de lado, e também ao ligar/desligar um monitor.
+        screenObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.layoutPanel()
         }
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
             self?.tick()
@@ -52,6 +61,13 @@ final class TrayController {
         return NSScreen.screens.first { NSMouseInRect(loc, $0.frame, false) } ?? NSScreen.main
     }
 
+    // Linha de base da bandeja. Com "Seguir mudanças do Dock" ligado usamos
+    // visibleFrame, que já desconta o Dock — assim a bandeja assenta em cima dele
+    // em vez de ficar por baixo, e se realinha quando o Dock muda de tamanho.
+    private func baseY(of screen: NSScreen) -> CGFloat {
+        store.followDock ? screen.visibleFrame.minY : screen.frame.minY
+    }
+
     private func layoutPanel() {
         guard let screen = currentScreen else { return }
         let count = max(1, store.apps.count)
@@ -64,7 +80,7 @@ final class TrayController {
         case "center": x = screen.frame.midX - width / 2
         default:       x = screen.frame.maxX - width - store.offsetX
         }
-        panel.setFrame(NSRect(x: x, y: screen.frame.minY, width: width, height: trayHeight),
+        panel.setFrame(NSRect(x: x, y: baseY(of: screen), width: width, height: trayHeight),
                        display: true)
     }
 
@@ -94,9 +110,10 @@ final class TrayController {
             }
             if shouldReveal { reveal() }
         } else if !store.pinnedOpen {
-            // esconde quando o cursor sai da região da bandeja (exceto se fixada por atalho)
+            // esconde quando o cursor sai da região da bandeja (exceto se fixada por atalho).
+            // f.maxY, e não a borda da tela: a bandeja pode estar assentada em cima do Dock.
             let inside = loc.x >= f.minX - 30 && loc.x <= f.maxX + 30
-                && loc.y <= bottomY + trayHeight + 30
+                && loc.y <= f.maxY + 30
             if inside {
                 hideDelay = 0
             } else {
@@ -167,9 +184,20 @@ struct TrayView: View {
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
+        .onAppear { refreshRunning() }
         .onChange(of: store.trayVisible) { _, visible in
             if visible { refreshRunning() }
         }
+        // o macOS avisa quando qualquer app abre ou fecha: sem isso a bolinha
+        // continuava acesa depois de encerrar o app com a bandeja aberta
+        .onReceive(NSWorkspace.shared.notificationCenter
+            .publisher(for: NSWorkspace.didLaunchApplicationNotification)) { _ in
+                refreshRunning()
+            }
+        .onReceive(NSWorkspace.shared.notificationCenter
+            .publisher(for: NSWorkspace.didTerminateApplicationNotification)) { _ in
+                refreshRunning()
+            }
     }
 
     private func refreshRunning() {
@@ -191,7 +219,6 @@ struct TrayView: View {
                          bounceEnabled: store.bounceOnLaunch) {
                     store.playSound("Tink")
                     app.launch()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { refreshRunning() }
                 }
                 // arrastar o ícone (reordenar) — o payload é a URL do próprio .app
                 .draggable(URL(fileURLWithPath: app.path))
