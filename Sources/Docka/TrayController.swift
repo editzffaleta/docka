@@ -340,6 +340,7 @@ final class TrayManager {
         case .volume:          volume?.toggleFromHotKey()
         case .ajustes:         SettingsWindowController.shared.show()
         case .orbita:          orbita?.alternar()
+        case .anel(let id):    orbita?.alternarNoAnel(id)
         }
     }
 

@@ -86,3 +86,43 @@ struct ItemDaOrbitaTests {
         #expect(volta == [anel])
     }
 }
+
+@Suite("Reordenação no anel")
+struct MoverItemTests {
+    private func anelCom(_ n: Int) -> AnelDaOrbita {
+        AnelDaOrbita(nome: "x", itens: (0..<n).map {
+            ItemDaOrbita(tipo: .app, valor: "/a/\($0).app")
+        })
+    }
+
+    @Test("Move uma casa em cada sentido")
+    func umaCasa() {
+        var anel = anelCom(3)
+        let meio = anel.itens[1].id
+        anel.mover(meio, passo: 1)
+        #expect(anel.itens[2].id == meio)
+        anel.mover(meio, passo: -1)
+        #expect(anel.itens[1].id == meio)
+    }
+
+    @Test("Nas pontas ele para — não dá a volta")
+    func naoDaAVolta() {
+        // num anel, atravessar a ponta ao reordenar confunde mais do que ajuda
+        var anel = anelCom(3)
+        let primeiro = anel.itens[0].id
+        let antes = anel.itens
+        anel.mover(primeiro, passo: -1)
+        #expect(anel.itens == antes)
+        let ultimo = anel.itens[2].id
+        anel.mover(ultimo, passo: 1)
+        #expect(anel.itens == antes)
+    }
+
+    @Test("Item desconhecido não mexe em nada")
+    func desconhecidoNaoMexe() {
+        var anel = anelCom(3)
+        let antes = anel.itens
+        anel.mover(UUID(), passo: 1)
+        #expect(anel.itens == antes)
+    }
+}

@@ -14,8 +14,10 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case volume
     /// Abre a janela de ajustes.
     case ajustes
-    /// Abre a órbita no cursor.
+    /// Abre a órbita no cursor, no último anel usado.
     case orbita
+    /// Abre a órbita já num anel específico.
+    case anel(UUID)
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -25,6 +27,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .volume:            return "volume"
         case .ajustes:           return "ajustes"
         case .orbita:            return "orbita"
+        case .anel(let uuid):    return "anel:\(uuid.uuidString)"
         }
     }
 
@@ -35,10 +38,15 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "ajustes": self = .ajustes
         case "orbita":  self = .orbita
         default:
-            guard id.hasPrefix("bandeja:"),
-                  let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count)))
-            else { return nil }
-            self = .bandeja(uuid)
+            if id.hasPrefix("bandeja:"),
+               let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {
+                self = .bandeja(uuid)
+            } else if id.hasPrefix("anel:"),
+                      let uuid = UUID(uuidString: String(id.dropFirst("anel:".count))) {
+                self = .anel(uuid)
+            } else {
+                return nil
+            }
         }
     }
 }
@@ -57,16 +65,21 @@ public enum Atalhos {
         mapa.first { $0.key != acao && $0.value == atalho }?.key
     }
 
-    /// Só as ações que ainda existem — bandeja apagada leva o atalho junto.
+    /// Só as ações que ainda existem — bandeja ou anel apagado leva o atalho
+    /// junto.
     ///
-    /// Sem esta limpeza, o atalho de uma bandeja removida continuaria registrado
-    /// no sistema, ocupando a combinação e sem fazer nada ao ser pressionado.
+    /// Sem esta limpeza, o atalho de algo removido continuaria registrado no
+    /// sistema, ocupando a combinação e sem fazer nada ao ser pressionado.
     public static func limpar(_ mapa: [String: Shortcut],
-                              bandejasExistentes: Set<UUID>) -> [String: Shortcut] {
+                              bandejasExistentes: Set<UUID>,
+                              aneisExistentes: Set<UUID> = []) -> [String: Shortcut] {
         mapa.filter { chave, _ in
             guard let acao = AcaoDeAtalho(id: chave) else { return false }
-            if case .bandeja(let uuid) = acao { return bandejasExistentes.contains(uuid) }
-            return true
+            switch acao {
+            case .bandeja(let uuid): return bandejasExistentes.contains(uuid)
+            case .anel(let uuid):    return aneisExistentes.contains(uuid)
+            default:                 return true
+            }
         }
     }
 }
