@@ -792,6 +792,12 @@ private struct OrbitaSettingsView: View {
                         .disabled(i == anel.itens.count - 1)
                         .help("Mover no sentido horário")
                         .accessibilityLabel("Mover \(ItemVisual.nome(item)) no sentido horário")
+                        if item.tipo == .site {
+                            Button("Atualizar logo") {
+                                FaviconStore.shared.rebuscar(item.valor)
+                            }
+                            .help("Baixa a logo de novo — para site que trocou de identidade")
+                        }
                         Divider().frame(height: 16)
                         Button("Remover do anel", role: .destructive) {
                             store.removerItem(item.id, de: anel.id)

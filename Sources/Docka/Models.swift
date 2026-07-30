@@ -130,6 +130,7 @@ final class DockaStore: ObservableObject {
         static let volumeNivel = "docka.volumeLevel"
         static let volumeBorda = "docka.volumeEdge"
         static let volumeAlinhamento = "docka.volumeAlignment"
+        static let volumeAntesDoMudo = "docka.volumeBeforeMute"
         static let glassTint = "docka.glassTint"
         static let appearance = "docka.appearance"
         static let atalhoTecla = "docka.hotkey.keyCode"
@@ -301,6 +302,11 @@ final class DockaStore: ObservableObject {
     @Published var volumeControl: Bool { didSet { defaults.set(volumeControl, forKey: Key.volume) } }
     /// Volume da saída de áudio, lido do sistema.
     @Published var volumeLevel: Double { didSet { defaults.set(volumeLevel, forKey: Key.volumeNivel) } }
+    /// Nível de antes do mudo — o toque no botão volta para ele.
+    var volumeAntesDoMudo: Double {
+        get { defaults.double(forKey: Key.volumeAntesDoMudo) }
+        set { defaults.set(newValue, forKey: Key.volumeAntesDoMudo) }
+    }
 
     /// Mostra a órbita — o anel de apps em volta do cursor.
     @Published var orbitaControl: Bool { didSet { defaults.set(orbitaControl, forKey: Key.orbita) } }

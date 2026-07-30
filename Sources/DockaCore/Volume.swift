@@ -95,4 +95,19 @@ public enum Volume {
 
     /// Está mudo? Serve para o texto de acessibilidade e para o ícone.
     public static func mudo(level: Double) -> Bool { clamp(level) == 0 }
+
+    /// O toque no botão alterna o mudo — o que se espera de um alto-falante.
+    ///
+    /// Devolve o nível novo e o que guardar para a volta: mutar guarda o nível
+    /// atual e vai a zero; desmutar volta ao guardado. Se o guardado for
+    /// inaudível (mutou já no zero, ou nunca guardou), volta a 50% — desmutar
+    /// para o silêncio seria um botão que não faz nada.
+    public static func alternarMudo(atual: Double, guardado: Double)
+        -> (novo: Double, guardar: Double) {
+        if mudo(level: atual) {
+            let volta = clamp(guardado)
+            return (volta > 0 ? volta : 0.5, guardado)
+        }
+        return (0, clamp(atual))
+    }
 }

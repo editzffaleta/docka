@@ -85,3 +85,34 @@ struct DesvioTests {
         #expect(Deslizante.desviar(pedido, de: ocupado, dentro: telinha) == pedido)
     }
 }
+
+@Suite("Mudo pelo toque")
+struct MudoTests {
+
+    @Test("Tocar com som guarda o nível e silencia")
+    func mutaGuardando() {
+        let r = Volume.alternarMudo(atual: 0.7, guardado: 0.3)
+        #expect(r.novo == 0)
+        #expect(r.guardar == 0.7)
+    }
+
+    @Test("Tocar no mudo volta ao nível guardado")
+    func desmutaParaOGuardado() {
+        let r = Volume.alternarMudo(atual: 0, guardado: 0.7)
+        #expect(r.novo == 0.7)
+    }
+
+    @Test("Desmutar sem nível guardado audível vai a 50%")
+    func desmutarSemGuardadoVaiAMeio() {
+        // desmutar para o silêncio seria um botão que não faz nada
+        #expect(Volume.alternarMudo(atual: 0, guardado: 0).novo == 0.5)
+        #expect(Volume.alternarMudo(atual: 0, guardado: -1).novo == 0.5)
+    }
+
+    @Test("Ida e volta preserva o nível original")
+    func idaEVolta() {
+        let mutado = Volume.alternarMudo(atual: 0.65, guardado: 0)
+        let devolta = Volume.alternarMudo(atual: mutado.novo, guardado: mutado.guardar)
+        #expect(devolta.novo == 0.65)
+    }
+}
