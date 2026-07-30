@@ -259,16 +259,44 @@ struct OrbitaView: View {
             Vibrancia(material: GlassTint.material(for: store.glassTint).appKit)
             let escurecer = GlassTint.overlayOpacity(store.glassTint)
             if escurecer > 0 { Color.black.opacity(escurecer) }
+            // O banho de luz que faz o vidro parecer CURVO: claro no topo,
+            // neutro no meio, uma sombra rasa embaixo. Sem ele a vibrância é
+            // uma chapa — foi exatamente a reclamação.
+            LinearGradient(stops: [
+                .init(color: .white.opacity(0.14), location: 0),
+                .init(color: .white.opacity(0.03), location: 0.35),
+                .init(color: .clear, location: 0.62),
+                .init(color: .black.opacity(0.10), location: 1),
+            ], startPoint: .top, endPoint: .bottom)
         }
         .frame(width: externo, height: externo)
         .clipShape(forma, style: FillStyle(eoFill: true))
-        // o brilho de contorno que o vidro do sistema não desenha sozinho
+        // O aro — no contorno externo E no furo, porque o caminho tem os dois
+        // círculos. Mais grosso que o hairline da bandeja: neste diâmetro,
+        // 0,8 pt simplesmente desaparecia.
         .overlay(
             forma.stroke(
-                LinearGradient(colors: [.white.opacity(0.32), .white.opacity(0.06)],
+                LinearGradient(colors: [.white.opacity(0.45), .white.opacity(0.05)],
                                startPoint: .top, endPoint: .bottom),
-                lineWidth: 0.8)
-                .frame(width: externo, height: externo)
+                lineWidth: 1.4)
+                .allowsHitTesting(false)
+        )
+        // Brilho especular: um facho desfocado no topo do aro, como a luz de
+        // teto bateria numa borda de vidro de verdade.
+        .overlay(
+            forma.stroke(Color.white.opacity(0.55), lineWidth: 3)
+                .blur(radius: 3)
+                .mask(LinearGradient(colors: [.white, .clear],
+                                     startPoint: .top, endPoint: .center))
+                .allowsHitTesting(false)
+        )
+        // Espessura: uma meia-sombra interna na base, onde o vidro "assenta".
+        .overlay(
+            forma.stroke(Color.black.opacity(0.30), lineWidth: 2)
+                .blur(radius: 2.5)
+                .mask(LinearGradient(colors: [.clear, .black],
+                                     startPoint: .center, endPoint: .bottom))
+                .allowsHitTesting(false)
         )
         .shadow(color: .black.opacity(0.30), radius: 18, y: 6)
         .overlay(
@@ -288,7 +316,11 @@ struct OrbitaView: View {
             .resizable()
             .frame(width: Orbita.tamanhoItem, height: Orbita.tamanhoItem)
             .scaleEffect(escala)
-            .shadow(color: .black.opacity(selecao.indice == i ? 0.35 : 0), radius: 8, y: 3)
+            // sombra de repouso: sem ela os ícones parecem impressos no vidro,
+            // não pousados sobre ele; a do apontado é mais funda
+            .shadow(color: .black.opacity(selecao.indice == i ? 0.35 : 0.20),
+                    radius: selecao.indice == i ? 8 : 3,
+                    y: selecao.indice == i ? 3 : 1.5)
             .offset(x: p.x, y: p.y)
             .animation(reduceMotion ? nil : .spring(response: 0.24, dampingFraction: 0.7),
                        value: escala)
