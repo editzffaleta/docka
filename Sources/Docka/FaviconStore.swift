@@ -54,6 +54,19 @@ final class FaviconStore {
         }
     }
 
+    /// Joga fora o cache e busca de novo — o "Atualizar logo" dos ajustes.
+    ///
+    /// Sem isto a logo era eterna: site que trocasse de identidade ficaria com
+    /// a antiga para sempre, e não havia como pedir outra.
+    func rebuscar(_ site: String) {
+        guard let nome = Favicon.nomeDoCache(para: site) else { return }
+        DispatchQueue.main.async { [self] in
+            try? FileManager.default.removeItem(at: pasta.appendingPathComponent(nome))
+            ocupados.remove(nome)   // a falha antiga não pode vetar a tentativa nova
+            buscarSePreciso(site)
+        }
+    }
+
     /// Busca para a PRÉVIA dos ajustes: devolve a imagem (do cache ou da rede).
     func buscarParaPrevia(_ site: String, resultado: @escaping (NSImage?) -> Void) {
         if let pronta = icone(para: site) { resultado(pronta); return }

@@ -35,6 +35,10 @@ struct Deslizador {
     let ler: () -> Double?
     let escrever: (Double) -> Void
     let tique: () -> Void
+    /// O que o TOQUE no botão faz (arrastar sempre ajusta o nível).
+    /// No brilho abre os ajustes; no volume alterna o mudo — o que se espera
+    /// de um alto-falante. Recebe e devolve o nível, para poder mudá-lo.
+    let aoTocar: (Double) -> Double
 
     func bordaAtual(_ store: DockaStore) -> TrayEdge {
         Deslizante.edge(persisted: store[keyPath: borda], padrao: bordaPadrao)
@@ -57,13 +61,17 @@ struct Deslizador {
         disponivel: { BrightnessBackend.disponivel },
         ler: { BrightnessBackend.ler() },
         escrever: { BrightnessBackend.escrever($0) },
-        tique: { DockaStore.shared.tiqueDeBrilho() })
+        tique: { DockaStore.shared.tiqueDeBrilho() },
+        aoTocar: { nivel in
+            SettingsWindowController.shared.show()
+            return nivel
+        })
 
     static let volume = Deslizador(
         id: "volume",
         titulo: "Volume",
         rotulo: "Volume da saída de áudio",
-        dica: "Arraste para ajustar o volume; toque para abrir os ajustes",
+        dica: "Arraste para ajustar o volume; toque para silenciar ou devolver o som",
         avisoIndisponivel: "A saída de áudio atual não aceita controle de volume — saída digital e alguns HDMI entregam o volume ao aparelho do outro lado.",
         nota: "O nível é lido da saída de verdade e acompanha a troca de fone. Diferente do brilho, aqui a API é pública (CoreAudio): não pede permissão nenhuma e não corre o risco de sumir numa atualização. Volume zero silencia de fato, e subir a régua tira do mudo.",
         descricao: "Uma régua própria numa lateral da tela, igual à do brilho. Encoste o cursor na borda para revelá-la.",
@@ -78,7 +86,14 @@ struct Deslizador {
         disponivel: { VolumeBackend.disponivel },
         ler: { VolumeBackend.ler() },
         escrever: { VolumeBackend.escrever($0) },
-        tique: { DockaStore.shared.tiqueDeVolume() })
+        tique: { DockaStore.shared.tiqueDeVolume() },
+        aoTocar: { nivel in
+            let store = DockaStore.shared
+            let r = Volume.alternarMudo(atual: nivel, guardado: store.volumeAntesDoMudo)
+            store.volumeAntesDoMudo = r.guardar
+            VolumeBackend.escrever(r.novo)
+            return VolumeBackend.ler() ?? r.novo
+        })
 }
 
 /// Escreve o nível no sistema e devolve o que o sistema de fato assumiu.

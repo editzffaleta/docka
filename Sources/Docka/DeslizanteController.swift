@@ -251,7 +251,8 @@ struct DeslizantePanelView: View {
                     nivelAoIniciar = nil
                     esfregando = false
                     if Deslizante.isTap(translation: d.height) {
-                        SettingsWindowController.shared.show()
+                        store[keyPath: deslizador.nivel] =
+                            deslizador.aoTocar(nivel)
                     }
                 },
                 cursor: .openHand)
