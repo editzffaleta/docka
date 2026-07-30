@@ -138,6 +138,8 @@ final class DockaStore: ObservableObject {
         static let orbita = "docka.orbitaControl"
         static let orbitaBandeja = "docka.orbitaDock"
         static let orbitaCanto = "docka.orbitaCorner"
+        static let orbitaBotao = "docka.orbitaMouseButton"
+        static let orbitaApps = "docka.orbitaApps"
     }
 
     private let defaults = UserDefaults.standard
@@ -188,6 +190,17 @@ final class DockaStore: ObservableObject {
 
     func estaNaBandeja(_ path: String, _ id: UUID) -> Bool {
         dock(id)?.apps.contains(path) ?? false
+    }
+
+    /// Os apps da órbita, resolvidos como os de uma bandeja.
+    var appsDaOrbita: [PinnedApp] {
+        orbitaApps.filter { FileManager.default.fileExists(atPath: $0) }
+                  .map { PinnedApp(path: $0) }
+    }
+
+    func alternarAppDaOrbita(_ path: String) {
+        if let i = orbitaApps.firstIndex(of: path) { orbitaApps.remove(at: i) }
+        else { orbitaApps.append(path) }
     }
 
     func moverApp(_ path: String, antesDe alvo: String, em id: UUID) {
@@ -243,10 +256,19 @@ final class DockaStore: ObservableObject {
 
     /// Mostra a órbita — o anel de apps em volta do cursor.
     @Published var orbitaControl: Bool { didSet { defaults.set(orbitaControl, forKey: Key.orbita) } }
-    /// Qual bandeja alimenta a órbita (UUID em texto; vazio = a primeira).
-    @Published var orbitaBandeja: String { didSet { defaults.set(orbitaBandeja, forKey: Key.orbitaBandeja) } }
+    /// Os apps da órbita — lista PRÓPRIA, separada das bandejas.
+    ///
+    /// A primeira versão reaproveitava uma bandeja, mas o anel tem outra
+    /// vocação: poucos apps de alcance rápido, não a fileira inteira. O que a
+    /// bandeja escolhida tinha migra para cá uma única vez, como ponto de
+    /// partida.
+    @Published var orbitaApps: [String] {
+        didSet { defaults.set(orbitaApps, forKey: Key.orbitaApps) }
+    }
     /// Canto da tela que abre a órbita; vazio = só pelo atalho.
     @Published var orbitaCanto: String { didSet { defaults.set(orbitaCanto, forKey: Key.orbitaCanto) } }
+    /// Botão extra do mouse que abre a órbita; -1 = nenhum.
+    @Published var orbitaBotao: Int { didSet { defaults.set(orbitaBotao, forKey: Key.orbitaBotao) } }
 
     /// Tonalização do vidro (0 = transparente, 1 = tonalizado), como o slider
     /// Liquid Glass das Configurações do Sistema.
@@ -459,8 +481,9 @@ final class DockaStore: ObservableObject {
             Key.volumeBorda: TrayEdge.left.rawValue,
             Key.volumeAlinhamento: TrayAlignment.center.rawValue,
             Key.orbita: false,
-            Key.orbitaBandeja: "",
+
             Key.orbitaCanto: "",
+            Key.orbitaBotao: BotaoDoMouse.nenhum,
             Key.glassTint: GlassTint.systemNeutral,   // nasce translúcido, como o Dock
             Key.appearance: TrayAppearance.automatico.rawValue,
             Key.atalhoTecla: Int(Shortcut.padrao.keyCode),
@@ -487,8 +510,25 @@ final class DockaStore: ObservableObject {
         volumeEdge = defaults.string(forKey: Key.volumeBorda) ?? TrayEdge.left.rawValue
         volumeAlignment = defaults.string(forKey: Key.volumeAlinhamento) ?? TrayAlignment.center.rawValue
         orbitaControl = defaults.bool(forKey: Key.orbita)
-        orbitaBandeja = defaults.string(forKey: Key.orbitaBandeja) ?? ""
+        if let lista = defaults.stringArray(forKey: Key.orbitaApps) {
+            orbitaApps = lista
+        } else {
+            // migração: a órbita reaproveitava uma bandeja; o conteúdo daquela
+            // bandeja vira o ponto de partida da lista própria
+            let docksGravadas: [DockConfig] = (defaults.data(forKey: Key.docks)
+                .flatMap { try? JSONDecoder().decode([DockConfig].self, from: $0) }) ?? []
+            let escolhida = defaults.string(forKey: Key.orbitaBandeja) ?? ""
+            let fonte = docksGravadas.first { $0.id.uuidString == escolhida } ?? docksGravadas.first
+            let semente = fonte?.apps ?? []
+            orbitaApps = semente
+            // gravação explícita: didSet NÃO dispara durante o init, então sem
+            // esta linha a migração viveria só na memória e rodaria de novo a
+            // cada início — e a lista continuaria acompanhando a bandeja, que é
+            // justamente o vínculo que a lista própria corta
+            defaults.set(semente, forKey: Key.orbitaApps)
+        }
         orbitaCanto = defaults.string(forKey: Key.orbitaCanto) ?? ""
+        orbitaBotao = defaults.object(forKey: Key.orbitaBotao) as? Int ?? BotaoDoMouse.nenhum
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 

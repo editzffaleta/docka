@@ -21,15 +21,8 @@ final class OrbitaController {
 
     init() { buildPanel() }
 
-    /// Os apps que a órbita mostra: os da bandeja escolhida nos ajustes.
-    ///
-    /// Reaproveitar uma bandeja evita uma segunda lista de apps para manter — o
-    /// usuário organiza num lugar só e escolhe qual delas orbita.
-    private var apps: [PinnedApp] {
-        guard let dock = store.docks.first(where: { $0.id.uuidString == store.orbitaBandeja })
-                ?? store.docks.first else { return [] }
-        return dock.apps.map(PinnedApp.init(path:))
-    }
+    /// Os apps que a órbita mostra: a lista própria dela, dos ajustes.
+    private var apps: [PinnedApp] { store.appsDaOrbita }
 
     private func buildPanel() {
         // Nasce já do tamanho certo, e não em .zero: uma janela de tamanho zero
@@ -110,6 +103,9 @@ final class OrbitaController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: item)
     }
 
+    /// Há um item apontado agora? O botão do mouse consulta isto ao soltar.
+    var temSelecao: Bool { state.visible && selecao.indice != nil }
+
     /// Lança o que estiver apontado e fecha. Chamado pelo clique.
     func escolher() {
         let lista = apps
@@ -172,11 +168,7 @@ struct OrbitaView: View {
     @EnvironmentObject var selecao: SelecaoDaOrbita
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var apps: [PinnedApp] {
-        guard let dock = store.docks.first(where: { $0.id.uuidString == store.orbitaBandeja })
-                ?? store.docks.first else { return [] }
-        return dock.apps.map(PinnedApp.init(path:))
-    }
+    private var apps: [PinnedApp] { store.appsDaOrbita }
 
     var body: some View {
         ZStack {

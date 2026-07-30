@@ -66,9 +66,12 @@ Um anel com seus apps em volta do cursor. Aponte na direção de um e clique —
 |---------|-----------|
 | **Aponte e solte** | O item do setor para onde o cursor aponta cresce e mostra o nome no miolo; o clique abre. Vale a direção, não a distância |
 | **Zona morta no centro** | O buraco do anel não seleciona nada, então ele nunca nasce com um app já escolhido debaixo do cursor |
-| **Reaproveita uma bandeja** | Mostra os apps de uma bandeja que você já organizou, em vez de pedir uma segunda lista para manter |
+| **Lista própria** | O anel tem os apps DELE, escolhidos nos ajustes — separados das bandejas, porque a órbita pede poucos apps de alcance rápido, não a fileira inteira |
+| **Botão lateral do mouse** | Um dos botões extras abre o anel. Aperte para abrir; segure, aponte e solte para lançar de uma vez |
 | **Abre pela quina ou pelo atalho** | Cravar o cursor na quina escolhida abre o anel ali; o atalho global abre onde o cursor estiver. Esc fecha |
 
+> O botão do mouse é **observado, não interceptado** — interceptar exigiria Monitoramento de Entrada. Ou seja, o clique continua chegando no app embaixo do cursor: num navegador, o botão lateral vai voltar uma página junto. Escolha um botão que você não use para outra coisa.
+>
 > Apps parecidos abrem o anel com um gesto de mouse em qualquer ponto da tela. Isso exige a permissão de **Monitoramento de Entrada**, e o Docka não pede permissão nenhuma — daí a quina e o atalho, que a leitura de posição do cursor e o Carbon já permitem sem pedir nada.
 
 ### Controles de borda

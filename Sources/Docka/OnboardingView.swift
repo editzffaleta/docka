@@ -161,10 +161,26 @@ struct OnboardingView: View {
 // MARK: - Grade de seleção de apps
 
 struct AppPickerGrid: View {
-    let dockID: UUID
+    /// A grade serve as bandejas E a órbita: quem decide o que "selecionado"
+    /// significa é quem a cria, por estes dois fechamentos.
+    let estaSelecionado: (String) -> Bool
+    let alternar: (String) -> Void
     @EnvironmentObject var store: DockaStore
     @State private var query = ""
     private let all = DockaStore.installedApps()
+
+    /// A forma histórica: a grade de uma bandeja.
+    init(dockID: UUID) {
+        let store = DockaStore.shared
+        estaSelecionado = { store.estaNaBandeja($0, dockID) }
+        alternar = { store.alternarApp($0, em: dockID) }
+    }
+
+    init(estaSelecionado: @escaping (String) -> Bool,
+         alternar: @escaping (String) -> Void) {
+        self.estaSelecionado = estaSelecionado
+        self.alternar = alternar
+    }
 
     private var filtered: [PinnedApp] {
         query.isEmpty ? all : all.filter { $0.name.localizedCaseInsensitiveContains(query) }
@@ -189,9 +205,9 @@ struct AppPickerGrid: View {
                           spacing: 10) {
                     ForEach(filtered) { app in
                         AppPickCell(app: app,
-                                    selected: store.estaNaBandeja(app.path, dockID)) {
+                                    selected: estaSelecionado(app.path)) {
                             withAnimation(.spring(duration: 0.3)) {
-                                store.alternarApp(app.path, em: dockID)
+                                alternar(app.path)
                             }
                             store.playSound("Tink")
                         }

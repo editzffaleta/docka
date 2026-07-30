@@ -200,6 +200,7 @@ final class TrayManager {
     private var brilho: DeslizanteController?
     private var volume: DeslizanteController?
     private var orbita: OrbitaController?
+    private var botaoDaOrbita: MonitorDeBotao?
     /// Evita reabrir sem parar enquanto o cursor fica parado na quina.
     private var cantoArmado = true
     private var timer: Timer?
@@ -254,9 +255,12 @@ final class TrayManager {
         }
         if store.orbitaControl {
             if orbita == nil { orbita = OrbitaController() }
+            sincronizarBotao()
         } else if orbita != nil {
             orbita?.encerrar()
             orbita = nil
+            botaoDaOrbita?.desligar()
+            botaoDaOrbita = nil
         }
         if store.volumeControl {
             if volume == nil { volume = DeslizanteController(.volume) }
@@ -280,6 +284,30 @@ final class TrayManager {
             bandejasRegistradas = atuais
             store.ativarAtalhos()
         }
+    }
+
+    /// Liga (ou desliga) o botão do mouse que abre a órbita.
+    ///
+    /// Apertar abre; soltar depois de segurar lança o que estiver apontado, o
+    /// que faz o botão lateral virar um menu radial. Um toque rápido só deixa
+    /// o anel aberto, para escolher com calma — os dois convivem sem o usuário
+    /// precisar decidir antes qual vai usar.
+    private func sincronizarBotao() {
+        let n = store.orbitaBotao
+        guard BotaoDoMouse.valido(n) else {
+            botaoDaOrbita?.desligar(); botaoDaOrbita = nil; return
+        }
+        if let m = botaoDaOrbita, m.botao == n { return }
+        botaoDaOrbita?.desligar()
+        let m = MonitorDeBotao(botao: n)
+        m.aoApertar = { [weak self] in self?.orbita?.alternar() }
+        m.aoSoltar = { [weak self] duracao in
+            guard let orbita = self?.orbita else { return }
+            if BotaoDoMouse.soltouEscolhendo(duracao: duracao, temSelecao: orbita.temSelecao) {
+                orbita.escolher()
+            }
+        }
+        botaoDaOrbita = m
     }
 
     /// Abre a órbita quando o cursor crava na quina escolhida.

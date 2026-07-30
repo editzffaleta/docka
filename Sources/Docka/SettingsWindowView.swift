@@ -681,10 +681,6 @@ private struct LinhaSlider: View {
 private struct OrbitaSettingsView: View {
     @EnvironmentObject var store: DockaStore
 
-    private var bandejaEscolhida: DockConfig? {
-        store.docks.first { $0.id.uuidString == store.orbitaBandeja } ?? store.docks.first
-    }
-
     var body: some View {
         Form {
             Section {
@@ -695,15 +691,37 @@ private struct OrbitaSettingsView: View {
             }
 
             if store.orbitaControl {
-                Section {
-                    Picker("Apps da", selection: $store.orbitaBandeja) {
-                        ForEach(Array(store.docks.enumerated()), id: \.element.id) { i, d in
-                            Text("Bandeja \(i + 1) — \(d.apps.count) \(d.apps.count == 1 ? "app" : "apps")")
-                                .tag(d.id.uuidString)
+                Section("No anel") {
+                    if store.orbitaApps.isEmpty {
+                        ContentUnavailableView("Nenhum app no anel",
+                                               systemImage: "circle.dashed",
+                                               description: Text("Escolha abaixo os apps que ficam na órbita."))
+                    } else {
+                        ForEach(store.appsDaOrbita) { app in
+                            LabeledContent {
+                                Button {
+                                    withAnimation { store.alternarAppDaOrbita(app.path) }
+                                } label: {
+                                    Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.borderless)
+                                .accessibilityLabel("Remover \(app.name) da órbita")
+                            } label: {
+                                Label {
+                                    Text(app.name)
+                                } icon: {
+                                    Image(nsImage: app.icon).resizable().frame(width: 20, height: 20)
+                                }
+                            }
                         }
                     }
-                } footer: {
-                    Text("A órbita mostra os apps de uma bandeja que você já organizou, em vez de pedir uma segunda lista para manter.")
+                }
+
+                Section("Aplicativos instalados") {
+                    AppPickerGrid(estaSelecionado: { store.orbitaApps.contains($0) },
+                                  alternar: { store.alternarAppDaOrbita($0) })
+                        .frame(minHeight: 260)
+                        .listRowInsets(EdgeInsets())
                 }
 
                 Section {
@@ -713,22 +731,71 @@ private struct OrbitaSettingsView: View {
                             Text($0.titulo).tag($0.rawValue)
                         }
                     }
+                    LabeledContent {
+                        CapturaDeBotaoView()
+                    } label: {
+                        Text("Botão do mouse")
+                        Text("Aperte para abrir. Segure, aponte e solte para lançar de uma vez.")
+                    }
+                    if let recusa = BotaoDoMouse.recusa(store.orbitaBotao) {
+                        Label(recusa, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                            .font(.callout)
+                    }
                 } header: {
                     Text("Como abrir")
                 } footer: {
-                    Text("Cravar o cursor na quina abre a órbita ali mesmo. O atalho global faz o mesmo e abre onde o cursor estiver — configure na aba Atalhos.\n\nO gesto de mouse em qualquer lugar da tela, como fazem apps parecidos, exigiria a permissão de Monitoramento de Entrada. O Docka não pede permissão nenhuma, então o gatilho é a quina ou o atalho.")
+                    Text("Cravar o cursor na quina abre a órbita ali mesmo. O atalho global faz o mesmo e abre onde o cursor estiver — configure na aba Atalhos.\n\nO botão do mouse é observado, não interceptado: interceptar exigiria a permissão de Monitoramento de Entrada, que o Docka não pede. Ou seja, o clique CONTINUA chegando no app embaixo do cursor — num navegador, o botão lateral vai voltar uma página junto. Escolha um botão que você não use para outra coisa.")
                 }
 
-                if let d = bandejaEscolhida, d.apps.isEmpty {
-                    Section {
-                        Label("Essa bandeja está sem apps — a órbita não tem o que mostrar.",
-                              systemImage: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
-                    }
-                }
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// Captura o botão que o usuário apertar.
+private struct CapturaDeBotaoView: View {
+    @EnvironmentObject var store: DockaStore
+    @State private var capturando = false
+    @State private var captura = CapturaDeBotao()
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button { capturando ? parar() : comecar() } label: {
+                Text(capturando ? "Aperte um botão…" : BotaoDoMouse.nome(store.orbitaBotao))
+                    .frame(minWidth: 170)
+            }
+            .buttonStyle(.bordered)
+            .tint(capturando ? .accentColor : nil)
+            .accessibilityLabel("Botão do mouse que abre a órbita")
+            .accessibilityValue(BotaoDoMouse.nome(store.orbitaBotao))
+
+            if store.orbitaBotao != BotaoDoMouse.nenhum && !capturando {
+                Button { store.orbitaBotao = BotaoDoMouse.nenhum } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
+                .help("Remover o botão")
+            }
+        }
+        .onDisappear { parar() }
+    }
+
+    private func comecar() {
+        capturando = true
+        captura.comecar { n in
+            // o esquerdo e o direito nunca entram: sequestrá-los no sistema
+            // inteiro deixaria o Mac inutilizável
+            if BotaoDoMouse.valido(n) { store.orbitaBotao = n }
+            capturando = false
+        }
+    }
+
+    private func parar() {
+        captura.parar()
+        capturando = false
     }
 }
 
