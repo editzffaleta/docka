@@ -4,6 +4,31 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
+## [1.1.1] — 2026-07-30
+
+Sem mudança de comportamento: o app funciona exatamente como a 1.1.0. O que
+muda é a cara e a documentação.
+
+### Identidade
+
+- Logo redesenhada: squircle com a margem que o macOS pede (a antiga ia de
+  borda a borda), gradiente teal mais profundo com luz no topo, prateleira de
+  vidro e a rampa da ampliação — vizinhos translúcidos e o apontado opaco,
+  bem acima da prateleira.
+- A logo passa a ser **renderizada por código** (`scripts/render_logo.swift`):
+  mudar a identidade vira editar números e rodar o script.
+
+### Documentação
+
+- README atualizado para o que o app virou — a versão publicada com a 1.1.0
+  ainda descrevia o gerenciador "de três abas" e a bandeja única.
+- GIF do topo refeito (o anterior era de antes de tudo) e a Órbita ganhou a
+  animação que faltava.
+- Seção **"E a rede?"**: o app faz uma conexão de saída desde a 1.1.0 — a
+  busca da logo de um site — e a página que fala de confiança não podia
+  calar sobre isso. Agora diz qual, quando, para onde e o que acontece sem
+  rede.
+
 ## [1.1.0] — 2026-07-30
 
 A maior versão desde o início: o Docka deixa de ser só uma bandeja e vira um
