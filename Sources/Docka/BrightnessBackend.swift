@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import CoreGraphics
 
@@ -35,18 +36,32 @@ enum BrightnessBackend {
     /// O sistema desta máquina expõe o controle?
     static var disponivel: Bool { getFn != nil && setFn != nil }
 
-    /// Brilho atual (0…1), ou nil se não der para ler.
-    static func ler(_ display: CGDirectDisplayID = CGMainDisplayID()) -> Double? {
+    /// A tela sob o cursor — é nela que o brilho age.
+    ///
+    /// Antes tudo ia para `CGMainDisplayID()`: com dois monitores, a régua
+    /// aberta no secundário ajustava o brilho do principal. O cursor está
+    /// sempre na tela do painel que o usuário está usando (é ele que revela o
+    /// painel), então "a tela sob o cursor" acerta nos dois mundos — e com um
+    /// monitor só, é idêntico ao comportamento antigo.
+    private static func telaSobOCursor() -> CGDirectDisplayID {
+        let loc = NSEvent.mouseLocation
+        let tela = NSScreen.screens.first { NSMouseInRect(loc, $0.frame, false) }
+        return (tela?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
+                as? CGDirectDisplayID) ?? CGMainDisplayID()
+    }
+
+    /// Brilho atual (0…1) da tela sob o cursor, ou nil se não der para ler.
+    static func ler(_ display: CGDirectDisplayID? = nil) -> Double? {
         guard let getFn else { return nil }
         var v: Float = 0
-        guard getFn(display, &v) == 0 else { return nil }
+        guard getFn(display ?? telaSobOCursor(), &v) == 0 else { return nil }
         return Double(v)
     }
 
     @discardableResult
-    static func escrever(_ nivel: Double, _ display: CGDirectDisplayID = CGMainDisplayID()) -> Bool {
+    static func escrever(_ nivel: Double, _ display: CGDirectDisplayID? = nil) -> Bool {
         guard let setFn else { return false }
-        return setFn(display, Float(max(0, min(1, nivel)))) == 0
+        return setFn(display ?? telaSobOCursor(), Float(max(0, min(1, nivel)))) == 0
     }
 
     /// Autoteste: lê, mexe, confere e devolve. Roda DENTRO do app, que é o único
