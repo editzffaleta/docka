@@ -11,20 +11,39 @@ enum ItemVisual {
     private static let cache = NSCache<NSString, NSImage>()
 
     /// Ícone do item. Apps, arquivos e pastas usam o ícone real do Finder;
-    /// site vira um ladrilho com o globo — favicon exigiria REDE, e a regra do
-    /// projeto é zero rede.
+    /// site usa a logo baixada do PRÓPRIO site — a única exceção à regra de
+    /// zero rede, pedida pelo usuário — e o globo desenhado enquanto (ou se)
+    /// ela não chega.
     static func icone(_ item: ItemDaOrbita) -> NSImage {
+        if item.tipo == .site {
+            // sem NSCache aqui, de propósito: a logo chega DEPOIS que o anel já
+            // desenhou o globo, e um cache por chave congelaria o globo
+            if let logo = FaviconStore.shared.icone(para: item.valor) {
+                return ladrilho(com: logo)
+            }
+            FaviconStore.shared.buscarSePreciso(item.valor)
+            return ladrilhoDoGlobo()
+        }
         let chave = "\(item.tipo.rawValue):\(item.valor)" as NSString
         if let pronto = cache.object(forKey: chave) { return pronto }
-        let imagem: NSImage
-        switch item.tipo {
-        case .app, .arquivo, .pasta:
-            imagem = NSWorkspace.shared.icon(forFile: item.valor)
-        case .site:
-            imagem = ladrilhoDeSite()
-        }
+        let imagem = NSWorkspace.shared.icon(forFile: item.valor)
         cache.setObject(imagem, forKey: chave)
         return imagem
+    }
+
+    /// A logo do site num ladrilho branco arredondado, do feitio de um ícone
+    /// de app — favicons vêm em formatos variados, e soltos no anel destoam.
+    private static func ladrilho(com logo: NSImage) -> NSImage {
+        let lado: CGFloat = 128
+        return NSImage(size: NSSize(width: lado, height: lado), flipped: false) { rect in
+            let forma = NSBezierPath(roundedRect: rect.insetBy(dx: 10, dy: 10),
+                                     xRadius: 26, yRadius: 26)
+            NSColor.white.setFill()
+            forma.fill()
+            forma.addClip()
+            logo.draw(in: rect.insetBy(dx: 26, dy: 26))
+            return true
+        }
     }
 
     /// Nome de exibição: apps e arquivos usam o nome do Finder (localizado);
@@ -58,9 +77,9 @@ enum ItemVisual {
         }
     }
 
-    /// O globo num ladrilho arredondado, do feitio de um ícone de app —
-    /// desenhado uma vez e cacheado.
-    private static func ladrilhoDeSite() -> NSImage {
+    /// O globo num ladrilho arredondado — o provisório enquanto a logo não
+    /// chega, e o definitivo para site sem favicon (ou sem rede).
+    private static func ladrilhoDoGlobo() -> NSImage {
         let lado: CGFloat = 128
         return NSImage(size: NSSize(width: lado, height: lado), flipped: false) { rect in
             let forma = NSBezierPath(roundedRect: rect.insetBy(dx: 10, dy: 10),

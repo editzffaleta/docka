@@ -45,7 +45,11 @@ Modo demo (bandeja fixa com hover simulado, útil para testar visual e capturas)
    PRs que adicionem pacotes externos serão recusados.
 2. **Zero permissões** — nada de Acessibilidade, Input Monitoring ou similares.
    Se a feature exige permissão TCC, ela não entra.
-3. **Zero rede** — o app não faz nenhuma conexão de saída.
+3. **Rede só para a logo do site** — a única conexão de saída permitida é
+   buscar o ícone (favicon/apple-touch-icon) de um site que o usuário adicionou
+   à órbita, direto naquele site. Nada de telemetria, nada de resolvedores de
+   terceiros, nada de atualização automática; PRs com qualquer outra conexão
+   serão recusados.
 4. **Leve** — a bandeja precisa responder instantaneamente; evite trabalho
    pesado no timer de polling (roda 20×/s).
 

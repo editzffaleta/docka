@@ -820,17 +820,10 @@ private struct OrbitaSettingsView: View {
                  ? "O anel está cheio (\(Aneis.maximoDeItens) itens) — com mais, os setores ficam finos demais para apontar."
                  : "Aplicativo, site, arquivo ou pasta — cada um abre do jeito próprio: app lança, site vai ao navegador, arquivo abre no app padrão, pasta abre no Finder.")
         }
-        .alert("Adicionar site", isPresented: $adicionandoSite) {
-            TextField("exemplo.com", text: $novoSite)
-            Button("Adicionar") {
-                if let url = ItemDaOrbita.urlDeSite(novoSite) {
-                    store.adicionarItem(ItemDaOrbita(tipo: .site, valor: url), em: anel.id)
-                }
-                novoSite = ""
+        .sheet(isPresented: $adicionandoSite) {
+            FolhaDeSite { url in
+                store.adicionarItem(ItemDaOrbita(tipo: .site, valor: url), em: anel.id)
             }
-            Button("Cancelar", role: .cancel) { novoSite = "" }
-        } message: {
-            Text("Sem https:// também vale — o Docka completa.")
         }
     }
 
@@ -870,6 +863,100 @@ private struct OrbitaSettingsView: View {
                 .environmentObject(store)
         }
         .frame(width: 560, height: 480)
+    }
+}
+
+/// Adicionar site com a logo aparecendo na hora: digitou a URL, a busca parte
+/// para o próprio site e a prévia mostra o que o anel vai mostrar.
+private struct FolhaDeSite: View {
+    let adicionar: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var texto = ""
+    @State private var logo: NSImage?
+    @State private var buscando = false
+    /// Carimbo da última busca: só a resposta MAIS RECENTE pode pintar a
+    /// prévia — sem isso, a logo de uma URL antiga que demorou atropela a nova.
+    @State private var geracao = 0
+
+    private var url: String? { ItemDaOrbita.urlDeSite(texto) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Adicionar site").font(.headline)
+
+            TextField("exemplo.com", text: $texto)
+                .textFieldStyle(.roundedBorder)
+                .onSubmit { confirmar() }
+                .onChange(of: texto) { _, _ in buscarPrevia() }
+
+            HStack(spacing: 12) {
+                Group {
+                    if let logo {
+                        Image(nsImage: logo).resizable()
+                    } else {
+                        Image(systemName: "globe")
+                            .font(.system(size: 20))
+                            .foregroundStyle(url == nil ? Color.secondary : .blue)
+                    }
+                }
+                .frame(width: 40, height: 40)
+                .background(RoundedRectangle(cornerRadius: 9)
+                    .fill(Color(nsColor: .textBackgroundColor)))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(url.flatMap { URL(string: $0)?.host } ?? "—")
+                        .font(.system(size: 13, weight: .medium))
+                    Text(estado).font(.callout).foregroundStyle(.secondary)
+                }
+                Spacer()
+                if buscando { ProgressView().controlSize(.small) }
+            }
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 10)
+                .fill(Color(nsColor: .controlBackgroundColor)))
+
+            HStack {
+                Text("Sem https:// também vale — o Docka completa.")
+                    .font(.callout).foregroundStyle(.secondary)
+                Spacer()
+                Button("Cancelar") { dismiss() }
+                Button("Adicionar") { confirmar() }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(url == nil)
+            }
+        }
+        .padding(20)
+        .frame(width: 420)
+    }
+
+    private var estado: String {
+        if url == nil { return texto.isEmpty ? "Digite o endereço" : "Endereço inválido" }
+        if buscando { return "Buscando a logo no site…" }
+        return logo == nil ? "Sem logo — o anel usa o globo" : "Logo encontrada"
+    }
+
+    /// A busca parte assim que a URL fica válida, com um respiro para o
+    /// usuário terminar de digitar — senão cada tecla dispara uma requisição.
+    private func buscarPrevia() {
+        logo = nil
+        geracao += 1
+        guard let url else { buscando = false; return }
+        let minha = geracao
+        buscando = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            guard minha == geracao else { return }
+            FaviconStore.shared.buscarParaPrevia(url) { imagem in
+                guard minha == geracao else { return }
+                logo = imagem
+                buscando = false
+            }
+        }
+    }
+
+    private func confirmar() {
+        guard let url else { return }
+        adicionar(url)
+        dismiss()
     }
 }
 
