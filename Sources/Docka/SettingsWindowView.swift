@@ -10,11 +10,11 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, orbita, brilho, volume, atalho, sobre
+    case geral, apps, aparencia, bandeja, orbita, brilho, volume, energia, atalho, sobre
     var id: String { rawValue }
 
     /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .brilho, .volume, .atalho], [.sobre]]
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .brilho, .volume, .energia, .atalho], [.sobre]]
 
     var titulo: String {
         switch self {
@@ -25,6 +25,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .orbita:    return "Órbita"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
+        case .energia:   return "Energia"
         case .atalho:    return "Atalhos"
         case .sobre:     return "Sobre"
         }
@@ -39,6 +40,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .orbita:    return "circle.circle.fill"
         case .brilho:    return "sun.max.fill"
         case .volume:    return "speaker.wave.2.fill"
+        case .energia:   return "cup.and.saucer.fill"
         case .atalho:    return "keyboard.fill"
         case .sobre:     return "info"
         }
@@ -54,6 +56,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .orbita:    return .purple
         case .brilho:    return .yellow
         case .volume:    return .pink
+        case .energia:   return .brown
         case .atalho:    return .orange
         case .sobre:     return .secondary
         }
@@ -173,6 +176,7 @@ struct SettingsWindowView: View {
         case .orbita:    OrbitaSettingsView()
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
+        case .energia:   EnergiaView()
         case .atalho:    AtalhoView()
         case .sobre:     SobreView()
         }
@@ -1147,6 +1151,47 @@ private struct DeslizadorView: View {
     }
 }
 
+// MARK: - Energia
+
+private struct EnergiaView: View {
+    @EnvironmentObject var store: DockaStore
+    @ObservedObject private var sessao = AcordadoSessao.shared
+
+    var body: some View {
+        Form {
+            Section {
+                LabeledContent {
+                    if sessao.ativo {
+                        Button("Desligar") { sessao.desligar() }
+                    } else {
+                        Button("Ligar") { store.alternarAcordado() }
+                    }
+                } label: {
+                    Text("Manter acordado")
+                    Text(sessao.ativo
+                         ? "Ligado — \(sessao.fim == nil ? "até você desligar" : "faltam \(sessao.restante)")."
+                         : "Impede o Mac de dormir sozinho enquanto estiver ligado.")
+                }
+
+                Picker(selection: $store.acordadoDuracao) {
+                    ForEach(DuracaoAcordado.allCases) { d in Text(d.titulo).tag(d) }
+                } label: {
+                    Text("Duração padrão")
+                    Text("Usada pelo atalho e pelo botão acima. O menu da barra oferece todas.")
+                }
+
+                Toggle(isOn: $store.acordadoTelaAcesa) {
+                    Text("Manter a tela acesa")
+                    Text("Desligado, só o sistema fica acordado: downloads e builds continuam, mas a tela apaga.")
+                }
+            } footer: {
+                Text("Usa a mesma asserção de energia do caffeinate, sem permissão. Encerrar o Docka libera o Mac na hora; fechar a tampa ainda faz o Mac dormir.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
 // MARK: - Atalhos
 
 private struct AtalhoView: View {
@@ -1192,6 +1237,13 @@ private struct AtalhoView: View {
                 } header: {
                     Text("Controles de borda")
                 }
+            }
+
+            Section {
+                linha(.acordado, titulo: "Manter acordado",
+                      detalhe: "Liga com a duração padrão; o segundo toque desliga")
+            } header: {
+                Text("Energia")
             }
 
             Section {

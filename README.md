@@ -104,7 +104,8 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 | **Vive na barra de menus** | Sem ícone no Dock e fora do ⌘Tab; a janela de configurações aparece só quando você pede |
 | **Pressure Zone** | Modo opcional que só revela a bandeja quando você empurra o cursor contra o canto de propósito — evita aberturas acidentais em apps de tela cheia |
 | **Calibração ao vivo** | Tamanho dos ícones, ampliação, alcance, Tom e material do vidro por slider — com efeito imediato na bandeja, sem reiniciar |
-| **Atalhos por ação** | Grave as combinações na aba Atalhos — uma por bandeja, brilho, volume, órbita e cada anel; conflito entre ações do Docka é apontado pelo nome |
+| **Manter acordado** | Impede o Mac de dormir por um tempo escolhido (15 min a 5 h) ou até desligar, com ou sem tela acesa. No menu da barra, na seção Energia e num atalho próprio; a xícara na barra avisa que está ligado |
+| **Atalhos por ação** | Grave as combinações na aba Atalhos — uma por bandeja, brilho, volume, órbita, cada anel e o Manter acordado; conflito entre ações do Docka é apontado pelo nome |
 | **Acessibilidade** | Respeita **Reduzir Movimento** do sistema (sem partículas, sem deslize, sem quique) e rotula a bandeja para o VoiceOver |
 | **Onboarding em 3 passos** | Boas-vindas → escolha de apps (grade com busca) → modo de revelação |
 | **Barra de menus** | Ícone com atalhos rápidos: sons, Pressure Zone, abrir no login, configurações e encerrar |
@@ -118,7 +119,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 No formato dos **Ajustes do Sistema**: barra lateral com busca e navegação com
 histórico, e uma seção por assunto — **Geral**, **Apps**, **Aparência** (Tom e
 material do painel com prévia simulada), **Bandeja**, **Órbita** (com o editor
-visual do anel), **Brilho**, **Volume**, **Atalhos** e **Sobre**.
+visual do anel), **Brilho**, **Volume**, **Energia**, **Atalhos** e **Sobre**.
 
 ## Arquitetura
 
@@ -131,6 +132,7 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 ├── AnelDaOrbita.swift       — anéis nomeados e itens (app, site, arquivo, pasta)
 ├── Deslizante.swift         — a matemática comum das réguas de brilho e volume
 ├── Favicon.swift            — onde procurar a logo de um site (só no próprio site)
+├── Acordado.swift           — durações do Manter acordado, fim e tempo restante
 ├── AcaoDeAtalho.swift       — uma combinação por ação, com limpeza de órfãos
 ├── Shortcut.swift           — atalho global: validação e exibição
 └── AppScanner.swift         — varredura de /Applications, nome do app, reordenação
@@ -143,6 +145,7 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── DeslizanteController.swift — as réguas de brilho e volume nas laterais
 ├── BrightnessBackend.swift  — DisplayServices: ler/escrever o brilho da tela sob o cursor
 ├── VolumeBackend.swift      — CoreAudio: volume e mudo da saída padrão
+├── AcordadoBackend.swift    — IOKit: asserção de energia do Manter acordado
 ├── FaviconStore.swift       — a logo do site, baixada do próprio site e cacheada
 ├── ArrastoAppKit.swift      — arrasto e clique que funcionam em painel não-ativante
 ├── HotKey.swift             — atalhos globais (Carbon, sem permissões)
@@ -175,6 +178,7 @@ moram no `DockaCore`, onde `swift test` alcança.
 | Arrastar e soltar | `Transferable` (`.draggable`/`.dropDestination`) com payload de URL |
 | Persistência | `UserDefaults` publicado via `@Published` (caminhos dos apps e preferências) |
 | Abrir no login | `SMAppService.mainApp` — sem helper e sem permissão |
+| Manter acordado | `IOPMAssertionCreateWithName` (IOKit, público) — a mesma do `caffeinate`, sem permissão |
 | Testes | swift-testing (`@Test`/`#expect`) sobre o alvo `DockaCore` |
 
 ### Por que nenhuma permissão?

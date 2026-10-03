@@ -143,6 +143,8 @@ final class DockaStore: ObservableObject {
         static let orbitaApps = "docka.orbitaApps"
         static let orbitaAneis = "docka.orbitaRings"
         static let orbitaAnelAtivo = "docka.orbitaActiveRing"
+        static let acordadoDuracao = "docka.keepAwakeDuration"
+        static let acordadoTela = "docka.keepAwakeDisplay"
     }
 
     private let defaults = UserDefaults.standard
@@ -328,6 +330,25 @@ final class DockaStore: ObservableObject {
     /// Botão extra do mouse que abre a órbita; -1 = nenhum.
     @Published var orbitaBotao: Int { didSet { defaults.set(orbitaBotao, forKey: Key.orbitaBotao) } }
 
+    /// Duração usada pelo atalho e pelo clique direto em "Manter acordado".
+    @Published var acordadoDuracao: DuracaoAcordado {
+        didSet { defaults.set(acordadoDuracao.rawValue, forKey: Key.acordadoDuracao) }
+    }
+    /// Manter acordado segura também a tela acesa, não só o sistema.
+    @Published var acordadoTelaAcesa: Bool {
+        didSet {
+            defaults.set(acordadoTelaAcesa, forKey: Key.acordadoTela)
+            AcordadoSessao.shared.trocarTela(acesa: acordadoTelaAcesa)
+        }
+    }
+
+    /// Liga com a duração escolhida, ou desliga se já estiver ligado.
+    func alternarAcordado() {
+        let sessao = AcordadoSessao.shared
+        if sessao.ativo { sessao.desligar() }
+        else { sessao.ligar(acordadoDuracao, telaAcesa: acordadoTelaAcesa) }
+    }
+
     /// Tonalização do vidro (0 = transparente, 1 = tonalizado), como o slider
     /// Liquid Glass das Configurações do Sistema.
     @Published var glassTint: Double { didSet { defaults.set(glassTint, forKey: Key.glassTint) } }
@@ -426,6 +447,7 @@ final class DockaStore: ObservableObject {
         case .volume:  return "Controle de volume"
         case .ajustes: return "Abrir os ajustes"
         case .orbita:  return "Órbita"
+        case .acordado: return "Manter acordado"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -544,6 +566,8 @@ final class DockaStore: ObservableObject {
             Key.volumeBorda: TrayEdge.left.rawValue,
             Key.volumeAlinhamento: TrayAlignment.center.rawValue,
             Key.orbita: false,
+            Key.acordadoDuracao: DuracaoAcordado.umaHora.rawValue,
+            Key.acordadoTela: true,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -603,6 +627,8 @@ final class DockaStore: ObservableObject {
             .flatMap(UUID.init(uuidString:))
         orbitaCanto = defaults.string(forKey: Key.orbitaCanto) ?? ""
         orbitaBotao = defaults.object(forKey: Key.orbitaBotao) as? Int ?? BotaoDoMouse.nenhum
+        acordadoDuracao = DuracaoAcordado(persisted: defaults.integer(forKey: Key.acordadoDuracao))
+        acordadoTelaAcesa = defaults.bool(forKey: Key.acordadoTela)
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 

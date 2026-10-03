@@ -341,6 +341,7 @@ final class TrayManager {
         case .ajustes:         SettingsWindowController.shared.show()
         case .orbita:          orbita?.alternar()
         case .anel(let id):    orbita?.alternarNoAnel(id)
+        case .acordado:        store.alternarAcordado()
         }
     }
 

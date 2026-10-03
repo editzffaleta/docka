@@ -4,6 +4,19 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
+## [Não lançado]
+
+### Novo
+
+- **Manter acordado**: impede o Mac de dormir por 15 min, 30 min, 1 h, 2 h,
+  5 h ou até você desligar. Fica no menu da barra (que mostra o tempo
+  restante e troca o ícone por uma xícara enquanto está ligado), na nova
+  seção **Energia** dos ajustes e num atalho global próprio. Opcionalmente
+  deixa a tela apagar e segura só o sistema. Usa a mesma asserção de energia
+  do `caffeinate`: API pública, sem permissão, e liberada na hora se o Docka
+  for encerrado.
+- Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
 ## [1.1.2] — 2026-07-30
 
 ### Identidade

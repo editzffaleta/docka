@@ -1,7 +1,8 @@
 # Contribuindo com o Docka
 
 Obrigado pelo interesse! O Docka é pequeno de propósito — contribuições são
-bem-vindas desde que mantenham o app leve, sem dependências e sem permissões.
+bem-vindas desde que mantenham o app leve, sem dependências e com o núcleo sem
+permissões.
 
 ## Antes de começar
 
@@ -43,8 +44,16 @@ Modo demo (bandeja fixa com hover simulado, útil para testar visual e capturas)
 
 1. **Zero dependências** — apenas SwiftUI, AppKit e frameworks do sistema.
    PRs que adicionem pacotes externos serão recusados.
-2. **Zero permissões** — nada de Acessibilidade, Input Monitoring ou similares.
-   Se a feature exige permissão TCC, ela não entra.
+2. **Núcleo sem permissões; módulos opcionais pedem só quando ligados** — as
+   bandejas, a órbita, as réguas e tudo que vem ligado por padrão continuam sem
+   Acessibilidade, Monitoramento de Entrada, Gravação de Tela ou similares.
+   Um recurso que precisa de permissão TCC só entra como **módulo opcional**:
+   - nasce **desligado**, e desligado não carrega monitor, timer nem painel;
+   - pede a permissão **só quando o usuário liga** o módulo, explicando antes
+     para que ela serve;
+   - sem a permissão, o módulo avisa e se recolhe — nada do resto do app
+     depende dele;
+   - cada módulo lista, nos ajustes e no README, qual permissão usa e por quê.
 3. **Rede só para a logo do site** — a única conexão de saída permitida é
    buscar o ícone (favicon/apple-touch-icon) de um site que o usuário adicionou
    à órbita, direto naquele site. Nada de telemetria, nada de resolvedores de
@@ -87,7 +96,8 @@ Modo demo (bandeja fixa com hover simulado, útil para testar visual e capturas)
    - [ ] `swift build` limpo, sem warnings novos
    - [ ] `swift test` verde (e teste novo para bug corrigido no `DockaCore`)
    - [ ] App roda e a bandeja funciona (revelar, magnificar, abrir app, esconder)
-   - [ ] Nenhuma dependência ou permissão nova
+   - [ ] Nenhuma dependência nova
+   - [ ] Nenhuma permissão nova no núcleo; módulo com permissão segue a regra 2
    - [ ] Mudanças visuais seguem o design system (e inclua um screenshot no PR)
 4. Descreva no PR: o problema, a solução e como testar.
 5. PRs são revisados assim que possível; ajustes podem ser pedidos antes do merge.

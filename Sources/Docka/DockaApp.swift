@@ -110,6 +110,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--acordado-selftest") {
+            let saida = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"]
+                ?? "/tmp/docka-acordado-selftest.txt"
+            print("acordado: \(AcordadoBackend.autoteste(paraArquivo: saida))")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
         if CommandLine.arguments.contains("--demo") {
             TrayManager.shared.startDemo()
         }
@@ -129,21 +138,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 struct DockaApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var store = DockaStore.shared
+    @StateObject private var acordado = AcordadoSessao.shared
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBarContent().environmentObject(store)
+            MenuBarContent().environmentObject(store).environmentObject(acordado)
         } label: {
-            Image(systemName: "tray.full.fill")
+            // a xícara avisa que o Mac está sendo segurado acordado — sem ela,
+            // é fácil esquecer ligado e estranhar a bateria no fim do dia
+            Image(systemName: acordado.ativo ? "cup.and.saucer.fill" : "tray.full.fill")
         }
     }
 }
 
 struct MenuBarContent: View {
     @EnvironmentObject var store: DockaStore
+    @EnvironmentObject var acordado: AcordadoSessao
 
     var body: some View {
         Button("Abrir Configurações") { SettingsWindowController.shared.show() }
+        Divider()
+        menuAcordado
         Divider()
         Toggle("Sons", isOn: $store.soundsEnabled)
         Toggle("Pressure Zone", isOn: $store.pressureZone)
@@ -151,5 +166,26 @@ struct MenuBarContent: View {
                                                set: { store.setLaunchAtLogin($0) }))
         Divider()
         Button("Encerrar o Docka") { NSApp.terminate(nil) }
+    }
+
+    @ViewBuilder
+    private var menuAcordado: some View {
+        if acordado.ativo {
+            Menu("Acordado — \(acordado.restante)") {
+                Button("Desligar") { acordado.desligar() }
+                Divider()
+                duracoes(titulo: "Recomeçar com")
+            }
+        } else {
+            Menu("Manter acordado") { duracoes(titulo: nil) }
+        }
+    }
+
+    @ViewBuilder
+    private func duracoes(titulo: String?) -> some View {
+        if let titulo { Text(titulo) }
+        ForEach(DuracaoAcordado.allCases) { d in
+            Button(d.titulo) { acordado.ligar(d, telaAcesa: store.acordadoTelaAcesa) }
+        }
     }
 }

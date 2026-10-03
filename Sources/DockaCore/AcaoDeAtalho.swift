@@ -18,6 +18,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case orbita
     /// Abre a órbita já num anel específico.
     case anel(UUID)
+    /// Liga/desliga o "manter acordado" com a duração padrão.
+    case acordado
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -28,6 +30,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .ajustes:           return "ajustes"
         case .orbita:            return "orbita"
         case .anel(let uuid):    return "anel:\(uuid.uuidString)"
+        case .acordado:          return "acordado"
         }
     }
 
@@ -37,6 +40,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "volume":  self = .volume
         case "ajustes": self = .ajustes
         case "orbita":  self = .orbita
+        case "acordado": self = .acordado
         default:
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {
