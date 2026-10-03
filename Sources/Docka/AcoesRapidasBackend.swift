@@ -97,11 +97,24 @@ enum AcoesRapidasBackend {
 
     // MARK: ícones da mesa
 
-    /// Lido uma vez e mantido em memória: o menu da barra é reavaliado a cada
-    /// mudança no store, e cada leitura seria um processo `defaults` novo.
-    private(set) static var iconesDaMesaVisiveis: Bool =
-        IconesDaMesa.visiveis(valorGravado: saida("/usr/bin/defaults",
-                                                  ["read", "com.apple.finder", "CreateDesktop"]))
+    /// Lido direto das preferências do Finder, pelo CFPreferences.
+    ///
+    /// NUNCA por um processo `defaults` com `waitUntilExit`: esperar um
+    /// processo gira o run loop, e este valor é lido no meio da montagem do
+    /// menu da barra — o SwiftUI recebia uma segunda atualização dentro da
+    /// primeira e o AttributeGraph abortava o app no primeiro clique no ícone.
+    static var iconesDaMesaVisiveis: Bool {
+        let valor = CFPreferencesCopyAppValue("CreateDesktop" as CFString, finder)
+        let texto: String?
+        switch valor {
+        case let b as Bool:   texto = b ? "1" : "0"
+        case let s as String: texto = s
+        default:              texto = nil
+        }
+        return IconesDaMesa.visiveis(valorGravado: texto)
+    }
+
+    private static let finder = "com.apple.finder" as CFString
 
     /// Título que diz o que o clique VAI fazer, como nos menus do sistema.
     static func titulo(_ acao: AcaoRapida) -> String {
@@ -113,39 +126,23 @@ enum AcoesRapidasBackend {
     /// reler o `CreateDesktop`. As janelas abertas do Finder voltam sozinhas.
     private static func alternarIconesDaMesa() {
         let mostrar = !iconesDaMesaVisiveis
-        rodar("/usr/bin/defaults", ["write", "com.apple.finder", "CreateDesktop", "-bool",
-                                    mostrar ? "true" : "false"])
+        CFPreferencesSetAppValue("CreateDesktop" as CFString, mostrar as CFBoolean, finder)
+        // grava já no cfprefsd: o Finder que vai nascer relê dali
+        CFPreferencesAppSynchronize(finder)
         rodar("/usr/bin/killall", ["Finder"])
-        iconesDaMesaVisiveis = mostrar
     }
 
     // MARK: utilidades
 
+    /// Dispara o comando e segue, sem esperar. Esperar (`waitUntilExit`) gira
+    /// o run loop, e nenhum destes comandos tem resposta que importe.
     private static func rodar(_ caminho: String, _ argumentos: [String]) {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: caminho)
         p.arguments = argumentos
         p.standardOutput = FileHandle.nullDevice
         p.standardError = FileHandle.nullDevice
-        do {
-            try p.run()
-            p.waitUntilExit()
-        } catch {
-            NSSound.beep()
-        }
-    }
-
-    private static func saida(_ caminho: String, _ argumentos: [String]) -> String? {
-        let p = Process()
-        let cano = Pipe()
-        p.executableURL = URL(fileURLWithPath: caminho)
-        p.arguments = argumentos
-        p.standardOutput = cano
-        p.standardError = FileHandle.nullDevice
-        guard (try? p.run()) != nil else { return nil }
-        p.waitUntilExit()
-        guard p.terminationStatus == 0 else { return nil }
-        return String(data: cano.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)
+        do { try p.run() } catch { NSSound.beep() }
     }
 
     /// Aviso simples e sem permissão: notificações exigiriam pedir autorização.
