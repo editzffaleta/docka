@@ -150,6 +150,9 @@ final class DockaStore: ObservableObject {
         static let prateleiraBorda = "docka.shelfEdge"
         static let prateleiraAlinhamento = "docka.shelfAlignment"
         static let prateleiraAoArrastar = "docka.shelfOnDrag"
+        static let notas = "docka.notes"
+        static let notasBorda = "docka.notesEdge"
+        static let notasAlinhamento = "docka.notesAlignment"
     }
 
     private let defaults = UserDefaults.standard
@@ -355,6 +358,11 @@ final class DockaStore: ObservableObject {
     /// Abre a prateleira sozinha quando um arrasto começa em qualquer lugar.
     @Published var prateleiraAoArrastar: Bool { didSet { defaults.set(prateleiraAoArrastar, forKey: Key.prateleiraAoArrastar) } }
 
+    /// Liga o bloco de notas de borda.
+    @Published var notasControl: Bool { didSet { defaults.set(notasControl, forKey: Key.notas) } }
+    @Published var notasBorda: String { didSet { defaults.set(notasBorda, forKey: Key.notasBorda) } }
+    @Published var notasAlinhamento: String { didSet { defaults.set(notasAlinhamento, forKey: Key.notasAlinhamento) } }
+
     /// Mostra o submenu "Ações rápidas" na barra de menus.
     @Published var acoesRapidas: Bool { didSet { defaults.set(acoesRapidas, forKey: Key.acoesRapidas) } }
 
@@ -466,6 +474,7 @@ final class DockaStore: ObservableObject {
         case .acordado: return "Manter acordado"
         case .rapida(let a): return a.titulo
         case .prateleira: return "Prateleira"
+        case .blocoDeNotas: return "Bloco de notas"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -591,6 +600,10 @@ final class DockaStore: ObservableObject {
             Key.prateleiraBorda: TrayEdge.right.rawValue,
             Key.prateleiraAlinhamento: TrayAlignment.start.rawValue,
             Key.prateleiraAoArrastar: true,
+            Key.notas: false,
+            // a prateleira nasce na direita: as notas nascem do outro lado
+            Key.notasBorda: TrayEdge.left.rawValue,
+            Key.notasAlinhamento: TrayAlignment.center.rawValue,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -657,6 +670,9 @@ final class DockaStore: ObservableObject {
         prateleiraBorda = defaults.string(forKey: Key.prateleiraBorda) ?? TrayEdge.right.rawValue
         prateleiraAlinhamento = defaults.string(forKey: Key.prateleiraAlinhamento) ?? TrayAlignment.start.rawValue
         prateleiraAoArrastar = defaults.bool(forKey: Key.prateleiraAoArrastar)
+        notasControl = defaults.bool(forKey: Key.notas)
+        notasBorda = defaults.string(forKey: Key.notasBorda) ?? TrayEdge.left.rawValue
+        notasAlinhamento = defaults.string(forKey: Key.notasAlinhamento) ?? TrayAlignment.center.rawValue
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 

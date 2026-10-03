@@ -92,11 +92,24 @@ depois onde quiser — como deixar um papel na mesa enquanto troca de pasta.
 |---------|-----------|
 | **Abre ao arrastar** | Comece a arrastar qualquer coisa, em qualquer app, e a prateleira aparece na lateral. Também abre encostando na borda ou pelo atalho |
 | **Arquivos, textos e links** | Cada item é guardado na forma mais específica: um arquivo do Finder vira arquivo (não o texto de dentro dele), um endereço web vira link |
-| **Devolver** | Clique abre (texto é copiado); arraste um item para levá-lo, ou a alça **Tudo** para levar todos de uma vez |
+| **Devolver** | Clique abre (texto é copiado); arraste um item para levá-lo, ou a alça **Tudo** para levar todos de uma vez (havendo arquivos, ela leva só os arquivos: o Finder recusa a soltura inteira quando eles vêm misturados com texto) |
 | **Só referências** | A prateleira não copia nada. Um arquivo movido para outra pasta a partir dela, ou apagado, some da lista sozinho |
 | **Limite** | Até 40 itens, guardados entre aberturas do Docka; os mais antigos saem primeiro |
 
 > Perceber que um arrasto começou sem Monitoramento de Entrada: o macOS escreve o que está sendo arrastado numa área de transferência própria, e o contador dela muda a cada arrasto. O Docka lê esse contador junto com a posição do cursor — leitura pura, nada é interceptado.
+
+### Bloco de notas
+
+Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Digita sem roubar o foco** | O bloco recebe o teclado como o Spotlight: o app em que você estava continua o ativo. Enquanto você escreve ele não some, mesmo com o cursor longe; Esc devolve o teclado |
+| **Abas** | Até 12 notas; o nome de cada aba é a primeira linha da nota — quem escreve "# Compras" já deu nome a ela |
+| **Salva sozinho** | Meio segundo depois da última tecla, num arquivo próprio em `~/Library/Application Support/Docka/notas.json` |
+| **Markdown** | Pré-visualização com títulos, listas, citações, código e tarefas (`- [ ]`) que se marcam com um clique |
+| **Atalho** | Abre já pronto para digitar; o segundo toque esconde. Também abre encostando na borda |
+| **Exportar** | Copia a nota ou salva como `.md` |
 
 ### Controles de borda
 
@@ -121,7 +134,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 | **Calibração ao vivo** | Tamanho dos ícones, ampliação, alcance, Tom e material do vidro por slider — com efeito imediato na bandeja, sem reiniciar |
 | **Manter acordado** | Impede o Mac de dormir por um tempo escolhido (15 min a 5 h) ou até desligar, com ou sem tela acesa. No menu da barra, na seção Energia e num atalho próprio; a xícara na barra avisa que está ligado |
 | **Ações rápidas** | Travar a tela, apagar as telas, proteção de tela, repouso, ejetar todos os discos e ocultar os ícones da mesa — num submenu opcional da barra e com atalho próprio cada uma |
-| **Atalhos por ação** | Grave as combinações na aba Atalhos — uma por bandeja, brilho, volume, órbita, cada anel, prateleira, o Manter acordado e cada ação rápida; conflito entre ações do Docka é apontado pelo nome |
+| **Atalhos por ação** | Grave as combinações na aba Atalhos — uma por bandeja, brilho, volume, órbita, cada anel, prateleira, bloco de notas, o Manter acordado e cada ação rápida; conflito entre ações do Docka é apontado pelo nome |
 | **Acessibilidade** | Respeita **Reduzir Movimento** do sistema (sem partículas, sem deslize, sem quique) e rotula a bandeja para o VoiceOver |
 | **Onboarding em 3 passos** | Boas-vindas → escolha de apps (grade com busca) → modo de revelação |
 | **Barra de menus** | Ícone com atalhos rápidos: sons, Pressure Zone, abrir no login, configurações e encerrar |
@@ -135,7 +148,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 No formato dos **Ajustes do Sistema**: barra lateral com busca e navegação com
 histórico, e uma seção por assunto — **Geral**, **Apps**, **Aparência** (Tom e
 material do painel com prévia simulada), **Bandeja**, **Órbita** (com o editor
-visual do anel), **Prateleira**, **Brilho**, **Volume**, **Energia**, **Ações rápidas**, **Atalhos** e **Sobre**.
+visual do anel), **Prateleira**, **Bloco de notas**, **Brilho**, **Volume**, **Energia**, **Ações rápidas**, **Atalhos** e **Sobre**.
 
 ## Arquitetura
 
@@ -151,6 +164,7 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 ├── Acordado.swift           — durações do Manter acordado, fim e tempo restante
 ├── AcaoRapida.swift         — as ações rápidas e quais discos o "Ejetar todos" leva
 ├── Prateleira.swift         — itens da prateleira, classificação, limite e arrasto
+├── BlocoDeNotas.swift       — notas, título da aba, tarefas e Markdown por blocos
 ├── AcaoDeAtalho.swift       — uma combinação por ação, com limpeza de órfãos
 ├── Shortcut.swift           — atalho global: validação e exibição
 └── AppScanner.swift         — varredura de /Applications, nome do app, reordenação
@@ -166,6 +180,7 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── AcordadoBackend.swift    — IOKit: asserção de energia do Manter acordado
 ├── AcoesRapidasBackend.swift — pmset, NSWorkspace e login.framework: as ações rápidas
 ├── PrateleiraController.swift — o painel da prateleira, soltar e arrastar para fora
+├── NotasController.swift    — o bloco de notas: painel com teclado, abas e gravação
 ├── FaviconStore.swift       — a logo do site, baixada do próprio site e cacheada
 ├── ArrastoAppKit.swift      — arrasto e clique que funcionam em painel não-ativante
 ├── HotKey.swift             — atalhos globais (Carbon, sem permissões)

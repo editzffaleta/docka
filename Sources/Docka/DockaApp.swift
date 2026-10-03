@@ -124,6 +124,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    // o bloco de notas grava meio segundo depois da última tecla: encerrar
+    // nesse meio-tempo perderia o fim do que foi escrito
+    func applicationWillTerminate(_ notification: Notification) {
+        NotasModelo.shared.gravarAgora()
+    }
+
     // a bandeja continua viva com a janela fechada — é o ponto do app
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 

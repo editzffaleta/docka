@@ -201,6 +201,7 @@ final class TrayManager {
     private var volume: DeslizanteController?
     private var orbita: OrbitaController?
     private var prateleira: PrateleiraController?
+    private var notas: NotasController?
     private var botaoDaOrbita: MonitorDeBotao?
     /// Evita reabrir sem parar enquanto o cursor fica parado na quina.
     private var cantoArmado = true
@@ -225,6 +226,7 @@ final class TrayManager {
             self?.brilho?.layout()
             self?.volume?.layout()
             self?.prateleira?.layout()
+            self?.notas?.layout()
         }
         // um timer só para todas as bandejas: N timers a 20 Hz seria desperdício
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
@@ -233,6 +235,7 @@ final class TrayManager {
             self?.volume?.tick()
             self?.orbita?.tick()
             self?.prateleira?.tick()
+            self?.notas?.tick()
             self?.verificarCanto()
         }
         RunLoop.main.add(timer!, forMode: .common)
@@ -283,6 +286,14 @@ final class TrayManager {
             prateleira = nil
         }
         prateleira?.layout()
+
+        if store.notasControl {
+            if notas == nil { notas = NotasController() }
+        } else if notas != nil {
+            notas?.encerrar()
+            notas = nil
+        }
+        notas?.layout()
 
         // o layout do brilho vem antes: o do volume consulta o quadro dele
         brilho?.layout()
@@ -355,6 +366,7 @@ final class TrayManager {
         case .acordado:        store.alternarAcordado()
         case .rapida(let a):   AcoesRapidasBackend.executar(a)
         case .prateleira:      prateleira?.toggleFromHotKey()
+        case .blocoDeNotas:    notas?.toggleFromHotKey()
         }
     }
 

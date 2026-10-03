@@ -328,13 +328,16 @@ struct PrateleiraView: View {
             if !modelo.itens.isEmpty {
                 // a alça leva TUDO de uma vez — soltar dez arquivos numa pasta
                 // não deveria custar dez arrastos
-                ArrastoDeSaida(itens: modelo.itens, estado: state) {
-                    Label("Tudo", systemImage: "hand.draw")
-                        .font(.system(size: 11, weight: .medium))
-                        .padding(.horizontal, 7).padding(.vertical, 3)
-                        .background(Capsule().fill(Color.primary.opacity(0.08)))
-                }
-                .help("Arraste para levar todos os itens")
+                Label("Tudo", systemImage: "hand.draw")
+                    .font(.system(size: 11, weight: .medium))
+                    .padding(.horizontal, 7).padding(.vertical, 3)
+                    .background(Capsule().fill(Color.primary.opacity(0.08)))
+                    .overlay(ArrastoDeSaida(itens: Prateleira.paraLevarTudo(modelo.itens),
+                                            estado: state))
+                .help(modelo.itens.contains { $0.tipo == .arquivo }
+                      && modelo.itens.contains { $0.tipo != .arquivo }
+                      ? "Arraste para levar todos os arquivos (textos e links vão um por um)"
+                      : "Arraste para levar todos os itens")
                 Button {
                     modelo.esvaziar()
                 } label: {
@@ -377,23 +380,22 @@ private struct LinhaDaPrateleira: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            ArrastoDeSaida(itens: [item], estado: state,
-                           aoClicar: { PrateleiraModelo.abrir(item) }, preencher: true) {
-                HStack(spacing: 8) {
-                    icone.frame(width: 28, height: 28)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(item.titulo)
-                            .font(.system(size: 12, weight: .medium))
-                            .lineLimit(1).truncationMode(.middle)
-                        Text(item.detalhe)
-                            .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1).truncationMode(.middle)
-                    }
-                    Spacer(minLength: 0)
+            HStack(spacing: 8) {
+                icone.frame(width: 28, height: 28)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(item.titulo)
+                        .font(.system(size: 12, weight: .medium))
+                        .lineLimit(1).truncationMode(.middle)
+                    Text(item.detalhe)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1).truncationMode(.middle)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                Spacer(minLength: 0)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(ArrastoDeSaida(itens: [item], estado: state,
+                                    aoClicar: { PrateleiraModelo.abrir(item) }))
             Button {
                 modelo.remover(item.id)
             } label: {
@@ -401,7 +403,10 @@ private struct LinhaDaPrateleira: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .opacity(sobre ? 1 : 0)
+            // sempre à vista, só mais forte com o mouse em cima: num painel que
+            // não é janela-chave o onHover pode não disparar, e um ✕ que só
+            // aparece no hover ficaria inalcançável
+            .opacity(sobre ? 1 : 0.45)
             .help("Tirar da prateleira")
         }
         .padding(.horizontal, 8)
@@ -484,37 +489,30 @@ final class ConteinerDaPrateleira: NSView {
 
 // MARK: - Arrastar para fora
 
-/// Origem de arrasto em AppKit, com clique.
+/// Origem de arrasto em AppKit, com clique — uma camada POR CIMA do conteúdo.
 ///
 /// O `.draggable` do SwiftUI leva um item só, e o "Tudo" precisa levar
 /// vários numa sessão. Além disso, num painel não-ativante o gesto do SwiftUI
 /// não recebe clique (ver `ArrastoAppKit`) — aqui a própria `NSView` decide
 /// entre clique e arrasto.
-struct ArrastoDeSaida<Conteudo: View>: NSViewRepresentable {
+///
+/// Camada por cima, e não um `NSHostingView` com o conteúdo dentro: um
+/// SwiftUI hospedado dentro de outro faz o de fora atualizar o de dentro no
+/// meio da própria atualização, e o AttributeGraph aborta o app
+/// ("precondition failure" em `value_set`). Foi o que derrubou o Docka ao
+/// mexer na lista com a prateleira aberta.
+struct ArrastoDeSaida: NSViewRepresentable {
     let itens: [ItemDaPrateleira]
     let estado: PrateleiraEstado
     var aoClicar: (() -> Void)? = nil
-    /// Ocupa a largura oferecida (as linhas) em vez da do conteúdo (a alça).
-    var preencher = false
-    @ViewBuilder let conteudo: () -> Conteudo
 
     final class V: NSView, NSDraggingSource {
         var itens: [ItemDaPrateleira] = []
         var estado: PrateleiraEstado?
         var aoClicar: (() -> Void)?
-        var hospede: NSHostingView<Conteudo>?
         private var inicio: NSPoint?
 
         override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-        // o conteúdo SwiftUI é só desenho: os eventos são desta view
-        override func hitTest(_ point: NSPoint) -> NSView? {
-            frame.contains(point) ? self : nil
-        }
-
-        override func layout() {
-            super.layout()
-            hospede?.frame = bounds
-        }
 
         override func mouseDown(with e: NSEvent) { inicio = e.locationInWindow }
 
@@ -523,17 +521,15 @@ struct ArrastoDeSaida<Conteudo: View>: NSViewRepresentable {
             let d = hypot(e.locationInWindow.x - inicio.x, e.locationInWindow.y - inicio.y)
             guard d > 4 else { return }
             self.inicio = nil
-            let imagem = bitmapImageRepForCachingDisplay(in: bounds).map { rep -> NSImage in
-                cacheDisplay(in: bounds, to: rep)
-                let img = NSImage(size: bounds.size)
-                img.addRepresentation(rep)
-                return img
-            }
+            let ponto = convert(e.locationInWindow, from: nil)
             let itensDeArrasto = itens.enumerated().map { i, item -> NSDraggingItem in
                 let d = NSDraggingItem(pasteboardWriter: PrateleiraModelo.escritor(item))
-                // empilha levemente as cópias quando são várias
-                let quadro = bounds.offsetBy(dx: CGFloat(i) * 3, dy: CGFloat(-i) * 3)
-                d.setDraggingFrame(quadro, contents: i < 3 ? imagem : nil)
+                // o ícone segue o cursor; as cópias se empilham levemente
+                let lado: CGFloat = 40
+                let quadro = NSRect(x: ponto.x - lado / 2 + CGFloat(i) * 4,
+                                    y: ponto.y - lado / 2 - CGFloat(i) * 4,
+                                    width: lado, height: lado)
+                d.setDraggingFrame(quadro, contents: i < 3 ? Self.imagem(de: item) : nil)
                 return d
             }
             estado?.arrastandoParaFora = true
@@ -543,6 +539,16 @@ struct ArrastoDeSaida<Conteudo: View>: NSViewRepresentable {
         override func mouseUp(with e: NSEvent) {
             if inicio != nil { aoClicar?() }
             inicio = nil
+        }
+
+        /// O ícone do arquivo, ou um símbolo para texto e link — como o Finder
+        /// mostra o que está sendo levado.
+        static func imagem(de item: ItemDaPrateleira) -> NSImage? {
+            if let icone = PrateleiraModelo.icone(item) { return icone }
+            let nome = item.tipo == .link ? "link" : "text.alignleft"
+            let conf = NSImage.SymbolConfiguration(pointSize: 28, weight: .medium)
+            return NSImage(systemSymbolName: nome, accessibilityDescription: nil)?
+                .withSymbolConfiguration(conf)
         }
 
         func draggingSession(_ s: NSDraggingSession,
@@ -562,27 +568,19 @@ struct ArrastoDeSaida<Conteudo: View>: NSViewRepresentable {
 
     func makeNSView(context: Context) -> V {
         let v = V()
-        let h = NSHostingView(rootView: conteudo())
-        v.addSubview(h)
-        v.hospede = h
+        // alfa mínimo para receber clique: num painel transparente o servidor
+        // de janelas decide o clique pelo alfa do pixel (ver ArrastoAppKit)
+        v.wantsLayer = true
+        v.layer?.backgroundColor = NSColor(white: 1, alpha: 0.02).cgColor
         atualizar(v)
         return v
     }
 
-    func updateNSView(_ v: V, context: Context) {
-        v.hospede?.rootView = conteudo()
-        atualizar(v)
-    }
+    func updateNSView(_ v: V, context: Context) { atualizar(v) }
 
     private func atualizar(_ v: V) {
         v.itens = itens
         v.estado = estado
         v.aoClicar = aoClicar
-    }
-
-    func sizeThatFits(_ proposal: ProposedViewSize, nsView: V, context: Context) -> CGSize? {
-        guard let natural = nsView.hospede?.fittingSize else { return nil }
-        guard preencher, let largura = proposal.width else { return natural }
-        return CGSize(width: largura, height: natural.height)
     }
 }

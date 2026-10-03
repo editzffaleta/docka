@@ -64,6 +64,16 @@ struct PrateleiraTests {
         #expect(l.titulo == "www.apple.com")
     }
 
+    @Test("\"Tudo\" leva só os arquivos quando há arquivos")
+    func levarTudo() {
+        let t = ItemDaPrateleira(tipo: .texto, valor: "oi")
+        let l = ItemDaPrateleira(tipo: .link, valor: "https://a.com")
+        let misto = [arquivo("/a"), t, arquivo("/b"), l]
+        #expect(Prateleira.paraLevarTudo(misto).map(\.valor) == ["/a", "/b"])
+        #expect(Prateleira.paraLevarTudo([t, l]).count == 2)
+        #expect(Prateleira.paraLevarTudo([]).isEmpty)
+    }
+
     @Test("Só laterais")
     func bordas() {
         #expect(Prateleira.edge(persisted: "left") == .left)

@@ -91,6 +91,16 @@ public enum Prateleira {
         itens.filter { $0.tipo != .arquivo || existe($0.valor) }
     }
 
+    /// O que a alça "Tudo" leva.
+    ///
+    /// Havendo arquivos, só eles: o Finder recusa a soltura INTEIRA quando
+    /// arquivos chegam misturados com texto ou link — a pessoa arrastava cinco
+    /// itens e nada acontecia. Sem arquivos, vai tudo.
+    public static func paraLevarTudo(_ itens: [ItemDaPrateleira]) -> [ItemDaPrateleira] {
+        let arquivos = itens.filter { $0.tipo == .arquivo }
+        return arquivos.isEmpty ? itens : arquivos
+    }
+
     public static func encurtar(_ s: String, ate n: Int) -> String {
         s.count <= n ? s : String(s.prefix(n - 1)) + "…"
     }

@@ -28,6 +28,13 @@ todo o resto por aqui.
   numa só sessão. Arquivos são só referenciados — movido ou apagado, o item
   sai sozinho. Sem permissão: o arrasto é percebido pelo contador da área
   de arrasto do sistema, que qualquer app pode ler.
+- **Bloco de notas**: notas em abas numa lateral (a esquerda, por padrão,
+  longe da prateleira), salvas sozinhas meio segundo depois da última
+  tecla num arquivo próprio em Application Support. Aceita digitação sem
+  tirar o foco do app em que você está; enquanto você escreve, não some
+  com o cursor longe, e Esc devolve o teclado. O atalho abre já pronto para
+  digitar. Pré-visualização de Markdown com títulos, listas, citações,
+  código e tarefas que se marcam com um clique; exporta a nota como `.md`.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30

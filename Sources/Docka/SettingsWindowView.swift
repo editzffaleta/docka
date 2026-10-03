@@ -10,11 +10,11 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, orbita, prateleira, brilho, volume, energia, acoes, atalho, sobre
+    case geral, apps, aparencia, bandeja, orbita, prateleira, notas, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .notas, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
 
     var titulo: String {
         switch self {
@@ -24,6 +24,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .bandeja:   return "Bandeja"
         case .orbita:    return "Órbita"
         case .prateleira: return "Prateleira"
+        case .notas:     return "Bloco de notas"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
         case .energia:   return "Energia"
@@ -41,6 +42,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .bandeja:   return "dock.rectangle"
         case .orbita:    return "circle.circle.fill"
         case .prateleira: return "tray.and.arrow.down.fill"
+        case .notas:     return "note.text"
         case .brilho:    return "sun.max.fill"
         case .volume:    return "speaker.wave.2.fill"
         case .energia:   return "cup.and.saucer.fill"
@@ -59,6 +61,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .bandeja:   return .teal
         case .orbita:    return .purple
         case .prateleira: return .green
+        case .notas:     return .yellow
         case .brilho:    return .yellow
         case .volume:    return .pink
         case .energia:   return .brown
@@ -181,6 +184,7 @@ struct SettingsWindowView: View {
         case .bandeja:   BandejaView()
         case .orbita:    OrbitaSettingsView()
         case .prateleira: PrateleiraSettingsView()
+        case .notas:     NotasSettingsView()
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
         case .energia:   EnergiaView()
@@ -1100,6 +1104,57 @@ private struct PrateleiraSettingsView: View {
     }
 }
 
+// MARK: - Bloco de notas
+
+private struct NotasSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @ObservedObject private var modelo = NotasModelo.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.notasControl) {
+                    Text("Bloco de notas")
+                    Text("Notas em abas numa lateral, salvas sozinhas enquanto você escreve, com pré-visualização de Markdown.")
+                }
+            }
+
+            if store.notasControl {
+                Section {
+                    Picker("Lateral", selection: $store.notasBorda) {
+                        ForEach(BlocoDeNotas.bordasPermitidas, id: \.self) {
+                            Text($0.titulo).tag($0.rawValue)
+                        }
+                    }
+                    Picker("Posição", selection: $store.notasAlinhamento) {
+                        ForEach(TrayAlignment.allCases, id: \.self) {
+                            Text($0.titulo(for: .left)).tag($0.rawValue)
+                        }
+                    }
+                } footer: {
+                    Text(store.prateleiraControl && store.prateleiraBorda == store.notasBorda
+                         ? "A prateleira está na mesma lateral: as duas abrem pela mesma borda e uma pode cobrir a outra. Prefira lados opostos."
+                         : "Abre encostando o cursor na borda. Com o atalho, já abre pronto para digitar.")
+                }
+
+                Section {
+                    LabeledContent {
+                        Button("Mostrar no Finder") {
+                            NSWorkspace.shared.activateFileViewerSelecting([NotasModelo.arquivo])
+                        }
+                    } label: {
+                        Text("Notas guardadas")
+                        Text("\(modelo.notas.count) de até \(BlocoDeNotas.maximoDeNotas), num arquivo próprio em Application Support.")
+                    }
+                } footer: {
+                    Text("Enquanto você escreve o bloco não some, mesmo com o cursor longe; Esc ou clicar em outro app devolve o teclado. O nome de cada aba é a primeira linha da nota.")
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
 // MARK: - Brilho e volume
 
 /// A mesma página para os dois controles de borda: o que muda entre eles cabe
@@ -1312,7 +1367,7 @@ private struct AtalhoView: View {
             }
 
             if store.brightnessControl || store.volumeControl || store.orbitaControl
-                || store.prateleiraControl {
+                || store.prateleiraControl || store.notasControl {
                 Section {
                     if store.brightnessControl {
                         linha(.brilho, titulo: "Controle de brilho",
@@ -1321,6 +1376,10 @@ private struct AtalhoView: View {
                     if store.volumeControl {
                         linha(.volume, titulo: "Controle de volume",
                               detalhe: "Abre a régua fixada, sem precisar encostar na borda")
+                    }
+                    if store.notasControl {
+                        linha(.blocoDeNotas, titulo: "Bloco de notas",
+                              detalhe: "Abre pronto para digitar; o segundo toque esconde")
                     }
                     if store.prateleiraControl {
                         linha(.prateleira, titulo: "Prateleira",
