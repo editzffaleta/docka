@@ -823,7 +823,8 @@ private struct OrbitaSettingsView: View {
                 } label: {
                     Label {
                         Text(ItemVisual.nome(item))
-                        Text(item.tipo.titulo + (item.tipo == .site ? " — \(item.valor)" : ""))
+                        Text(item.tipo.titulo + (item.tipo == .site ? " — \(item.valor)" : "")
+                             + (item.tipo == .anel ? " — abre o anel \(ItemVisual.nome(item))" : ""))
                     } icon: {
                         Image(nsImage: ItemVisual.icone(item))
                             .resizable().frame(width: 28, height: 28)
@@ -851,13 +852,40 @@ private struct OrbitaSettingsView: View {
                     Label("Pasta", systemImage: TipoDeItem.pasta.simbolo)
                 }
             }
+            HStack(spacing: 10) {
+                let destinos = Aneis.destinosDeSubmenu(de: anel, em: store.aneis)
+                Menu {
+                    ForEach(destinos) { d in
+                        Button(d.nome) {
+                            store.adicionarItem(ItemDaOrbita(tipo: .anel, valor: d.id.uuidString),
+                                                em: anel.id)
+                        }
+                    }
+                } label: {
+                    Label("Submenu", systemImage: TipoDeItem.anel.simbolo)
+                }
+                .fixedSize()
+                .disabled(destinos.isEmpty)
+                .help(destinos.isEmpty ? "Crie outro anel para usá-lo como submenu" : "Um item que abre outro anel no mesmo lugar")
+                Menu {
+                    ForEach(AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)) { a in
+                        Button(a.titulo) {
+                            store.adicionarItem(ItemDaOrbita(tipo: .acao, valor: a.rawValue),
+                                                em: anel.id)
+                        }
+                    }
+                } label: {
+                    Label("Ação rápida", systemImage: TipoDeItem.acao.simbolo)
+                }
+                .fixedSize()
+            }
             .disabled(anel.itens.count >= Aneis.maximoDeItens)
         } header: {
             Text("Adicionar ao anel")
         } footer: {
             Text(anel.itens.count >= Aneis.maximoDeItens
                  ? "O anel está cheio (\(Aneis.maximoDeItens) itens) — com mais, os setores ficam finos demais para apontar."
-                 : "Aplicativo, site, arquivo ou pasta — cada um abre do jeito próprio: app lança, site vai ao navegador, arquivo abre no app padrão, pasta abre no Finder.")
+                 : "Aplicativo, site, arquivo ou pasta — cada um abre do jeito próprio: app lança, site vai ao navegador, arquivo abre no app padrão, pasta abre no Finder. Um submenu abre outro anel no mesmo lugar (clique no miolo ou Esc para voltar); uma ação rápida trava a tela, ejeta discos e afins.")
         }
         .sheet(isPresented: $adicionandoSite) {
             FolhaDeSite { url in

@@ -35,6 +35,11 @@ todo o resto por aqui.
   com o cursor longe, e Esc devolve o teclado. O atalho abre já pronto para
   digitar. Pré-visualização de Markdown com títulos, listas, citações,
   código e tarefas que se marcam com um clique; exporta a nota como `.md`.
+- **Órbita com submenus e ações rápidas**: dois tipos novos de item no
+  anel. **Submenu** abre outro anel no mesmo lugar, sem trocar o anel
+  ativo; clique no miolo ou Esc volta um nível, e só fecha no anel de
+  partida. **Ação rápida** trava a tela, ejeta discos e afins direto do
+  anel. Apagar um anel leva junto os submenus que apontavam para ele.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30

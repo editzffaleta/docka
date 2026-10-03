@@ -27,7 +27,7 @@ identidade visual do Vorssaint.
 | Ações rápidas | ✅ pronto | travar tela, apagar telas, proteção de tela, repouso, ejetar discos, ocultar ícones da mesa |
 | Prateleira (Shelf) | ✅ pronto | painel de borda que segura arquivos, textos e links arrastados |
 | Bloco de notas | ✅ pronto | painel de borda com abas, salvamento automático e Markdown |
-| Órbita com submenus | ⏳ | item do tipo "anel" que abre outro anel; ações rápidas como item |
+| Órbita com submenus | ✅ pronto | item do tipo "anel" que abre outro anel; ações rápidas como item |
 
 ## Fase 2 — Sistema e energia (sem permissão)
 

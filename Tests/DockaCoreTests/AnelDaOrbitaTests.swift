@@ -126,3 +126,69 @@ struct MoverItemTests {
         #expect(anel.itens == antes)
     }
 }
+
+@Suite("Submenus da órbita")
+struct SubmenusDaOrbitaTests {
+
+    @Test("Entrar e voltar pelos submenus")
+    func navegar() {
+        let a = UUID(), b = UUID(), c = UUID()
+        var n = NavegacaoDaOrbita()
+        #expect(!n.emSubmenu)
+        n.entrar(b, vindoDe: a)
+        #expect(n.exibido == b)
+        n.entrar(c, vindoDe: b)
+        #expect(n.exibido == c)
+        let voltou1 = n.voltar()
+        #expect(voltou1)
+        #expect(n.exibido == b)
+        let voltou2 = n.voltar()
+        #expect(voltou2)
+        // de volta ao anel de partida: não é mais submenu
+        #expect(n.exibido == nil)
+        let voltou3 = n.voltar()
+        #expect(!voltou3)
+    }
+
+    @Test("Entrar no próprio anel não faz nada")
+    func mesmoAnel() {
+        let a = UUID()
+        var n = NavegacaoDaOrbita()
+        n.entrar(a, vindoDe: a)
+        #expect(!n.emSubmenu)
+    }
+
+    @Test("Submenus em roda não estouram a pilha")
+    func emRoda() {
+        let a = UUID(), b = UUID()
+        var n = NavegacaoDaOrbita()
+        for k in 0..<50 { n.entrar(k % 2 == 0 ? b : a, vindoDe: k % 2 == 0 ? a : b) }
+        #expect(n.pilha.count == NavegacaoDaOrbita.profundidade)
+    }
+
+    @Test("Destinos de submenu excluem o próprio anel e os que já estão nele")
+    func destinos() {
+        let b = AnelDaOrbita(nome: "B"), c = AnelDaOrbita(nome: "C")
+        let a = AnelDaOrbita(nome: "A", itens: [ItemDaOrbita(tipo: .anel, valor: b.id.uuidString)])
+        #expect(Aneis.destinosDeSubmenu(de: a, em: [a, b, c]).map(\.nome) == ["C"])
+    }
+
+    @Test("Apagar um anel leva junto os itens que abriam ele")
+    func removerAnel() {
+        let b = AnelDaOrbita(nome: "B")
+        let app = ItemDaOrbita(tipo: .app, valor: "/Applications/Safari.app")
+        let a = AnelDaOrbita(nome: "A", itens: [app, ItemDaOrbita(tipo: .anel, valor: b.id.uuidString)])
+        let r = Aneis.removendo(b.id, de: [a, b])
+        #expect(r.map(\.nome) == ["A"])
+        #expect(r[0].itens == [app])
+    }
+
+    @Test("Nome de ação rápida e tipos antigos continuam lendo")
+    func compatibilidade() throws {
+        #expect(ItemDaOrbita(tipo: .acao, valor: "travarTela").nomeDerivado == "Travar a tela")
+        // um anel gravado antes dos tipos novos continua decodificando
+        let antigo = #"{"id":"6B1E5C1A-3A33-4C9B-9E43-1A2B3C4D5E6F","tipo":"pasta","valor":"/tmp"}"#
+        let item = try JSONDecoder().decode(ItemDaOrbita.self, from: Data(antigo.utf8))
+        #expect(item.tipo == .pasta)
+    }
+}

@@ -211,8 +211,13 @@ final class DockaStore: ObservableObject {
     }
 
     /// Os itens do anel em uso que ainda existem no disco.
-    var itensDaOrbita: [ItemDaOrbita] {
-        (anelEmUso?.itens ?? []).filter { ItemVisual.existe($0) }
+    var itensDaOrbita: [ItemDaOrbita] { itens(doAnel: nil) }
+
+    /// Os itens de um anel (`nil` = o em uso) que ainda existem — os submenus
+    /// mostram outro anel sem trocar o ativo.
+    func itens(doAnel id: UUID?) -> [ItemDaOrbita] {
+        let anel = id.flatMap { i in aneis.first { $0.id == i } } ?? anelEmUso
+        return (anel?.itens ?? []).filter { ItemVisual.existe($0) }
     }
 
     private func atualizarAnel(_ id: UUID, _ mudanca: (inout AnelDaOrbita) -> Void) {
@@ -229,7 +234,7 @@ final class DockaStore: ObservableObject {
 
     func removerAnel(_ id: UUID) {
         guard aneis.count > 1 else { return }   // sempre sobra um
-        aneis.removeAll { $0.id == id }
+        aneis = Aneis.removendo(id, de: aneis)
         if anelAtivo == id { anelAtivo = aneis.first?.id }
     }
 
