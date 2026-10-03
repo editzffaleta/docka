@@ -10,11 +10,11 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, orbita, brilho, volume, energia, atalho, sobre
+    case geral, apps, aparencia, bandeja, orbita, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .brilho, .volume, .energia, .atalho], [.sobre]]
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
 
     var titulo: String {
         switch self {
@@ -26,6 +26,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
         case .energia:   return "Energia"
+        case .acoes:     return "Ações rápidas"
         case .atalho:    return "Atalhos"
         case .sobre:     return "Sobre"
         }
@@ -41,6 +42,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .brilho:    return "sun.max.fill"
         case .volume:    return "speaker.wave.2.fill"
         case .energia:   return "cup.and.saucer.fill"
+        case .acoes:     return "bolt.fill"
         case .atalho:    return "keyboard.fill"
         case .sobre:     return "info"
         }
@@ -57,6 +59,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .brilho:    return .yellow
         case .volume:    return .pink
         case .energia:   return .brown
+        case .acoes:     return .red
         case .atalho:    return .orange
         case .sobre:     return .secondary
         }
@@ -177,6 +180,7 @@ struct SettingsWindowView: View {
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
         case .energia:   EnergiaView()
+        case .acoes:     AcoesRapidasView()
         case .atalho:    AtalhoView()
         case .sobre:     SobreView()
         }
@@ -1192,6 +1196,45 @@ private struct EnergiaView: View {
     }
 }
 
+// MARK: - Ações rápidas
+
+private struct AcoesRapidasView: View {
+    @EnvironmentObject var store: DockaStore
+
+    private var disponiveis: [AcaoRapida] {
+        AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.acoesRapidas) {
+                    Text("Mostrar no menu da barra")
+                    Text("Um submenu com as ações abaixo. Os atalhos funcionam mesmo com ele desligado.")
+                }
+            }
+
+            Section {
+                ForEach(disponiveis) { a in
+                    LabeledContent {
+                        Button("Executar") { AcoesRapidasBackend.executar(a) }
+                    } label: {
+                        Label {
+                            Text(AcoesRapidasBackend.titulo(a))
+                            Text(a.descricao)
+                        } icon: {
+                            Image(systemName: a.simbolo)
+                        }
+                    }
+                }
+            } footer: {
+                Text("Nenhuma pede permissão. Esvaziar o Lixo e trocar claro/escuro ficaram de fora porque exigiriam autorizar o Docka a controlar o Finder e os Eventos do Sistema.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
 // MARK: - Atalhos
 
 private struct AtalhoView: View {
@@ -1244,6 +1287,14 @@ private struct AtalhoView: View {
                       detalhe: "Liga com a duração padrão; o segundo toque desliga")
             } header: {
                 Text("Energia")
+            }
+
+            Section {
+                ForEach(AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)) { a in
+                    linha(.rapida(a), titulo: a.titulo, detalhe: a.descricao)
+                }
+            } header: {
+                Text("Ações rápidas")
             }
 
             Section {

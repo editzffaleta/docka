@@ -145,6 +145,7 @@ final class DockaStore: ObservableObject {
         static let orbitaAnelAtivo = "docka.orbitaActiveRing"
         static let acordadoDuracao = "docka.keepAwakeDuration"
         static let acordadoTela = "docka.keepAwakeDisplay"
+        static let acoesRapidas = "docka.quickActions"
     }
 
     private let defaults = UserDefaults.standard
@@ -342,6 +343,9 @@ final class DockaStore: ObservableObject {
         }
     }
 
+    /// Mostra o submenu "Ações rápidas" na barra de menus.
+    @Published var acoesRapidas: Bool { didSet { defaults.set(acoesRapidas, forKey: Key.acoesRapidas) } }
+
     /// Liga com a duração escolhida, ou desliga se já estiver ligado.
     func alternarAcordado() {
         let sessao = AcordadoSessao.shared
@@ -448,6 +452,7 @@ final class DockaStore: ObservableObject {
         case .ajustes: return "Abrir os ajustes"
         case .orbita:  return "Órbita"
         case .acordado: return "Manter acordado"
+        case .rapida(let a): return a.titulo
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -568,6 +573,7 @@ final class DockaStore: ObservableObject {
             Key.orbita: false,
             Key.acordadoDuracao: DuracaoAcordado.umaHora.rawValue,
             Key.acordadoTela: true,
+            Key.acoesRapidas: false,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -629,6 +635,7 @@ final class DockaStore: ObservableObject {
         orbitaBotao = defaults.object(forKey: Key.orbitaBotao) as? Int ?? BotaoDoMouse.nenhum
         acordadoDuracao = DuracaoAcordado(persisted: defaults.integer(forKey: Key.acordadoDuracao))
         acordadoTelaAcesa = defaults.bool(forKey: Key.acordadoTela)
+        acoesRapidas = defaults.bool(forKey: Key.acoesRapidas)
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 

@@ -159,6 +159,17 @@ struct MenuBarContent: View {
         Button("Abrir Configurações") { SettingsWindowController.shared.show() }
         Divider()
         menuAcordado
+        if store.acoesRapidas {
+            Menu("Ações rápidas") {
+                ForEach(AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)) { a in
+                    Button {
+                        AcoesRapidasBackend.executar(a)
+                    } label: {
+                        Label(AcoesRapidasBackend.titulo(a), systemImage: a.simbolo)
+                    }
+                }
+            }
+        }
         Divider()
         Toggle("Sons", isOn: $store.soundsEnabled)
         Toggle("Pressure Zone", isOn: $store.pressureZone)

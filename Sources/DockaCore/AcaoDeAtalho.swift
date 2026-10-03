@@ -20,6 +20,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case anel(UUID)
     /// Liga/desliga o "manter acordado" com a duração padrão.
     case acordado
+    /// Executa uma ação rápida (travar a tela, ejetar discos…).
+    case rapida(AcaoRapida)
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -31,6 +33,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .orbita:            return "orbita"
         case .anel(let uuid):    return "anel:\(uuid.uuidString)"
         case .acordado:          return "acordado"
+        case .rapida(let a):     return "rapida:\(a.rawValue)"
         }
     }
 
@@ -45,6 +48,9 @@ public enum AcaoDeAtalho: Hashable, Sendable {
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {
                 self = .bandeja(uuid)
+            } else if id.hasPrefix("rapida:"),
+                      let a = AcaoRapida(rawValue: String(id.dropFirst("rapida:".count))) {
+                self = .rapida(a)
             } else if id.hasPrefix("anel:"),
                       let uuid = UUID(uuidString: String(id.dropFirst("anel:".count))) {
                 self = .anel(uuid)

@@ -342,6 +342,7 @@ final class TrayManager {
         case .orbita:          orbita?.alternar()
         case .anel(let id):    orbita?.alternarNoAnel(id)
         case .acordado:        store.alternarAcordado()
+        case .rapida(let a):   AcoesRapidasBackend.executar(a)
         }
     }
 

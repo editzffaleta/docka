@@ -15,6 +15,12 @@ todo o resto por aqui.
   deixa a tela apagar e segura só o sistema. Usa a mesma asserção de energia
   do `caffeinate`: API pública, sem permissão, e liberada na hora se o Docka
   for encerrado.
+- **Ações rápidas**: travar a tela, apagar as telas, proteção de tela,
+  repouso, ejetar todos os discos e ocultar/mostrar os ícones da mesa. Ficam
+  num submenu opcional da barra, numa seção própria dos ajustes e cada uma
+  pode ter atalho global. Nenhuma pede permissão. "Ejetar todos" leva o que
+  não for o disco interno — inclusive SSD externo que não se declara
+  ejetável — e só mostra aviso quando algum disco em uso não sai.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30
