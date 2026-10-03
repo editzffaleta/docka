@@ -22,6 +22,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case acordado
     /// Executa uma ação rápida (travar a tela, ejetar discos…).
     case rapida(AcaoRapida)
+    /// Fixa/esconde a prateleira.
+    case prateleira
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -34,6 +36,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .anel(let uuid):    return "anel:\(uuid.uuidString)"
         case .acordado:          return "acordado"
         case .rapida(let a):     return "rapida:\(a.rawValue)"
+        case .prateleira:        return "prateleira"
         }
     }
 
@@ -44,6 +47,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "ajustes": self = .ajustes
         case "orbita":  self = .orbita
         case "acordado": self = .acordado
+        case "prateleira": self = .prateleira
         default:
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {

@@ -200,6 +200,7 @@ final class TrayManager {
     private var brilho: DeslizanteController?
     private var volume: DeslizanteController?
     private var orbita: OrbitaController?
+    private var prateleira: PrateleiraController?
     private var botaoDaOrbita: MonitorDeBotao?
     /// Evita reabrir sem parar enquanto o cursor fica parado na quina.
     private var cantoArmado = true
@@ -223,6 +224,7 @@ final class TrayManager {
             self?.controllers.values.forEach { $0.layout() }
             self?.brilho?.layout()
             self?.volume?.layout()
+            self?.prateleira?.layout()
         }
         // um timer só para todas as bandejas: N timers a 20 Hz seria desperdício
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
@@ -230,6 +232,7 @@ final class TrayManager {
             self?.brilho?.tick()
             self?.volume?.tick()
             self?.orbita?.tick()
+            self?.prateleira?.tick()
             self?.verificarCanto()
         }
         RunLoop.main.add(timer!, forMode: .common)
@@ -273,6 +276,14 @@ final class TrayManager {
             volume?.encerrar()
             volume = nil
         }
+        if store.prateleiraControl {
+            if prateleira == nil { prateleira = PrateleiraController() }
+        } else if prateleira != nil {
+            prateleira?.encerrar()
+            prateleira = nil
+        }
+        prateleira?.layout()
+
         // o layout do brilho vem antes: o do volume consulta o quadro dele
         brilho?.layout()
         volume?.layout()
@@ -343,6 +354,7 @@ final class TrayManager {
         case .anel(let id):    orbita?.alternarNoAnel(id)
         case .acordado:        store.alternarAcordado()
         case .rapida(let a):   AcoesRapidasBackend.executar(a)
+        case .prateleira:      prateleira?.toggleFromHotKey()
         }
     }
 

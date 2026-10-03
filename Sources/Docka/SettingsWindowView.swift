@@ -10,11 +10,11 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, orbita, brilho, volume, energia, acoes, atalho, sobre
+    case geral, apps, aparencia, bandeja, orbita, prateleira, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
 
     var titulo: String {
         switch self {
@@ -23,6 +23,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .aparencia: return "Aparência"
         case .bandeja:   return "Bandeja"
         case .orbita:    return "Órbita"
+        case .prateleira: return "Prateleira"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
         case .energia:   return "Energia"
@@ -39,6 +40,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .aparencia: return "circle.lefthalf.filled"
         case .bandeja:   return "dock.rectangle"
         case .orbita:    return "circle.circle.fill"
+        case .prateleira: return "tray.and.arrow.down.fill"
         case .brilho:    return "sun.max.fill"
         case .volume:    return "speaker.wave.2.fill"
         case .energia:   return "cup.and.saucer.fill"
@@ -56,6 +58,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .aparencia: return .indigo
         case .bandeja:   return .teal
         case .orbita:    return .purple
+        case .prateleira: return .green
         case .brilho:    return .yellow
         case .volume:    return .pink
         case .energia:   return .brown
@@ -177,6 +180,7 @@ struct SettingsWindowView: View {
         case .aparencia: AparenciaView()
         case .bandeja:   BandejaView()
         case .orbita:    OrbitaSettingsView()
+        case .prateleira: PrateleiraSettingsView()
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
         case .energia:   EnergiaView()
@@ -1045,6 +1049,57 @@ private struct PreviaDoAnel: View {
     }
 }
 
+// MARK: - Prateleira
+
+private struct PrateleiraSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @ObservedObject private var modelo = PrateleiraModelo.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.prateleiraControl) {
+                    Text("Prateleira")
+                    Text("Um painel na lateral para estacionar arquivos, textos e links enquanto você arrasta, e soltar depois onde quiser.")
+                }
+            }
+
+            if store.prateleiraControl {
+                Section {
+                    Picker("Lateral", selection: $store.prateleiraBorda) {
+                        ForEach(Prateleira.bordasPermitidas, id: \.self) {
+                            Text($0.titulo).tag($0.rawValue)
+                        }
+                    }
+                    Picker("Posição", selection: $store.prateleiraAlinhamento) {
+                        ForEach(TrayAlignment.allCases, id: \.self) {
+                            Text($0.titulo(for: .left)).tag($0.rawValue)
+                        }
+                    }
+                    Toggle(isOn: $store.prateleiraAoArrastar) {
+                        Text("Abrir ao começar a arrastar")
+                        Text("Qualquer arrasto, em qualquer app, traz a prateleira. Desligado, ela só aparece encostando o cursor na borda ou pelo atalho.")
+                    }
+                }
+
+                Section {
+                    LabeledContent {
+                        Button("Esvaziar") { modelo.esvaziar() }
+                            .disabled(modelo.itens.isEmpty)
+                    } label: {
+                        Text("Itens guardados")
+                        Text(modelo.itens.isEmpty ? "Nenhum."
+                             : "\(modelo.itens.count) de até \(Prateleira.maximoDeItens). Os mais antigos saem quando passa disso.")
+                    }
+                } footer: {
+                    Text("Clique num item para abrir (texto é copiado); arraste para levar. A alça \"Tudo\" leva todos de uma vez. Arquivos são só referenciados: a prateleira não copia nada, e um arquivo movido ou apagado some dela sozinho.")
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
 // MARK: - Brilho e volume
 
 /// A mesma página para os dois controles de borda: o que muda entre eles cabe
@@ -1256,7 +1311,8 @@ private struct AtalhoView: View {
                      : "O atalho fixa a bandeja aberta e a esconde no segundo toque.")
             }
 
-            if store.brightnessControl || store.volumeControl || store.orbitaControl {
+            if store.brightnessControl || store.volumeControl || store.orbitaControl
+                || store.prateleiraControl {
                 Section {
                     if store.brightnessControl {
                         linha(.brilho, titulo: "Controle de brilho",
@@ -1265,6 +1321,10 @@ private struct AtalhoView: View {
                     if store.volumeControl {
                         linha(.volume, titulo: "Controle de volume",
                               detalhe: "Abre a régua fixada, sem precisar encostar na borda")
+                    }
+                    if store.prateleiraControl {
+                        linha(.prateleira, titulo: "Prateleira",
+                              detalhe: "Fixa a prateleira aberta; o segundo toque esconde")
                     }
                     if store.orbitaControl {
                         linha(.orbita, titulo: "Órbita",

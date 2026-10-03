@@ -21,6 +21,13 @@ todo o resto por aqui.
   pode ter atalho global. Nenhuma pede permissão. "Ejetar todos" leva o que
   não for o disco interno — inclusive SSD externo que não se declara
   ejetável — e só mostra aviso quando algum disco em uso não sai.
+- **Prateleira**: painel numa lateral para estacionar arquivos, textos e
+  links. Abre sozinha quando qualquer arrasto começa (ou encostando na
+  borda, ou pelo atalho), recebe vários itens de uma vez e devolve: clique
+  abre (texto é copiado), arrastar leva um item, e a alça "Tudo" leva todos
+  numa só sessão. Arquivos são só referenciados — movido ou apagado, o item
+  sai sozinho. Sem permissão: o arrasto é percebido pelo contador da área
+  de arrasto do sistema, que qualquer app pode ler.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30

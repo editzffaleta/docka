@@ -146,6 +146,10 @@ final class DockaStore: ObservableObject {
         static let acordadoDuracao = "docka.keepAwakeDuration"
         static let acordadoTela = "docka.keepAwakeDisplay"
         static let acoesRapidas = "docka.quickActions"
+        static let prateleira = "docka.shelf"
+        static let prateleiraBorda = "docka.shelfEdge"
+        static let prateleiraAlinhamento = "docka.shelfAlignment"
+        static let prateleiraAoArrastar = "docka.shelfOnDrag"
     }
 
     private let defaults = UserDefaults.standard
@@ -343,6 +347,14 @@ final class DockaStore: ObservableObject {
         }
     }
 
+    /// Liga a prateleira — o painel de borda que segura arquivos, textos e links.
+    @Published var prateleiraControl: Bool { didSet { defaults.set(prateleiraControl, forKey: Key.prateleira) } }
+    /// Lateral da prateleira.
+    @Published var prateleiraBorda: String { didSet { defaults.set(prateleiraBorda, forKey: Key.prateleiraBorda) } }
+    @Published var prateleiraAlinhamento: String { didSet { defaults.set(prateleiraAlinhamento, forKey: Key.prateleiraAlinhamento) } }
+    /// Abre a prateleira sozinha quando um arrasto começa em qualquer lugar.
+    @Published var prateleiraAoArrastar: Bool { didSet { defaults.set(prateleiraAoArrastar, forKey: Key.prateleiraAoArrastar) } }
+
     /// Mostra o submenu "Ações rápidas" na barra de menus.
     @Published var acoesRapidas: Bool { didSet { defaults.set(acoesRapidas, forKey: Key.acoesRapidas) } }
 
@@ -453,6 +465,7 @@ final class DockaStore: ObservableObject {
         case .orbita:  return "Órbita"
         case .acordado: return "Manter acordado"
         case .rapida(let a): return a.titulo
+        case .prateleira: return "Prateleira"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -574,6 +587,10 @@ final class DockaStore: ObservableObject {
             Key.acordadoDuracao: DuracaoAcordado.umaHora.rawValue,
             Key.acordadoTela: true,
             Key.acoesRapidas: false,
+            Key.prateleira: false,
+            Key.prateleiraBorda: TrayEdge.right.rawValue,
+            Key.prateleiraAlinhamento: TrayAlignment.start.rawValue,
+            Key.prateleiraAoArrastar: true,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -636,6 +653,10 @@ final class DockaStore: ObservableObject {
         acordadoDuracao = DuracaoAcordado(persisted: defaults.integer(forKey: Key.acordadoDuracao))
         acordadoTelaAcesa = defaults.bool(forKey: Key.acordadoTela)
         acoesRapidas = defaults.bool(forKey: Key.acoesRapidas)
+        prateleiraControl = defaults.bool(forKey: Key.prateleira)
+        prateleiraBorda = defaults.string(forKey: Key.prateleiraBorda) ?? TrayEdge.right.rawValue
+        prateleiraAlinhamento = defaults.string(forKey: Key.prateleiraAlinhamento) ?? TrayAlignment.start.rawValue
+        prateleiraAoArrastar = defaults.bool(forKey: Key.prateleiraAoArrastar)
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 

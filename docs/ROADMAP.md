@@ -25,7 +25,7 @@ identidade visual do Vorssaint.
 |---|---|---|
 | Manter acordado | ✅ pronto | `IOPMAssertion` (IOKit, público) com timer; menu, atalho e seção Energia |
 | Ações rápidas | ✅ pronto | travar tela, apagar telas, proteção de tela, repouso, ejetar discos, ocultar ícones da mesa |
-| Prateleira (Shelf) | ⏳ | painel de borda que segura arquivos, textos e links arrastados |
+| Prateleira (Shelf) | ✅ pronto | painel de borda que segura arquivos, textos e links arrastados |
 | Bloco de notas | ⏳ | painel de borda com abas, salvamento automático e Markdown |
 | Órbita com submenus | ⏳ | item do tipo "anel" que abre outro anel; ações rápidas como item |
 
