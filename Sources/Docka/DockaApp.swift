@@ -119,6 +119,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--monitor-selftest") {
+            print("monitor: \(MonitorModelo.autoteste())")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
         if CommandLine.arguments.contains("--demo") {
             TrayManager.shared.startDemo()
         }
@@ -145,6 +152,7 @@ struct DockaApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var store = DockaStore.shared
     @StateObject private var acordado = AcordadoSessao.shared
+    @StateObject private var monitor = MonitorModelo.shared
 
     var body: some Scene {
         MenuBarExtra {
@@ -152,7 +160,14 @@ struct DockaApp: App {
         } label: {
             // a xícara avisa que o Mac está sendo segurado acordado — sem ela,
             // é fácil esquecer ligado e estranhar a bateria no fim do dia
-            Image(systemName: acordado.ativo ? "cup.and.saucer.fill" : "tray.full.fill")
+            let icone = Image(systemName: acordado.ativo ? "cup.and.saucer.fill" : "tray.full.fill")
+            // a barra de menus só desenha um Text ou uma Image: o ícone vai
+            // interpolado no texto para a leitura caber ao lado dele
+            if let leitura = monitor.textoDaBarra(store.leituraDaBarra) {
+                Text("\(icone) \(leitura)").monospacedDigit()
+            } else {
+                icone
+            }
         }
     }
 }

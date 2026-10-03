@@ -40,6 +40,12 @@ todo o resto por aqui.
   ativo; clique no miolo ou Esc volta um nível, e só fecha no anel de
   partida. **Ação rápida** trava a tela, ejeta discos e afins direto do
   anel. Apagar um anel leva junto os submenus que apontavam para ele.
+- **Monitor do sistema**: painel de borda (direita, na base, por padrão)
+  com CPU, memória e rede em gráficos dos últimos dois minutos, disco livre
+  e bateria com tempo restante, e aviso quando o Mac esquenta. Opcionalmente
+  mostra uma leitura ao lado do ícone na barra de menus. Só mede enquanto o
+  painel está aberto ou há leitura na barra. Conferido contra `top`,
+  `vm_stat` e `pmset`; memória em base 1024, como o Monitor de Atividade.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30

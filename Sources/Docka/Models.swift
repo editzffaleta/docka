@@ -153,6 +153,10 @@ final class DockaStore: ObservableObject {
         static let notas = "docka.notes"
         static let notasBorda = "docka.notesEdge"
         static let notasAlinhamento = "docka.notesAlignment"
+        static let monitor = "docka.monitor"
+        static let monitorBorda = "docka.monitorEdge"
+        static let monitorAlinhamento = "docka.monitorAlignment"
+        static let leituraDaBarra = "docka.menuBarReading"
     }
 
     private let defaults = UserDefaults.standard
@@ -368,6 +372,18 @@ final class DockaStore: ObservableObject {
     @Published var notasBorda: String { didSet { defaults.set(notasBorda, forKey: Key.notasBorda) } }
     @Published var notasAlinhamento: String { didSet { defaults.set(notasAlinhamento, forKey: Key.notasAlinhamento) } }
 
+    /// Liga o painel de borda do monitor do sistema.
+    @Published var monitorControl: Bool { didSet { defaults.set(monitorControl, forKey: Key.monitor) } }
+    @Published var monitorBorda: String { didSet { defaults.set(monitorBorda, forKey: Key.monitorBorda) } }
+    @Published var monitorAlinhamento: String { didSet { defaults.set(monitorAlinhamento, forKey: Key.monitorAlinhamento) } }
+    /// O que aparece na barra de menus ao lado do ícone.
+    @Published var leituraDaBarra: LeituraDaBarra {
+        didSet {
+            defaults.set(leituraDaBarra.rawValue, forKey: Key.leituraDaBarra)
+            MonitorModelo.shared.interesse("barra", leituraDaBarra != .nenhuma)
+        }
+    }
+
     /// Mostra o submenu "Ações rápidas" na barra de menus.
     @Published var acoesRapidas: Bool { didSet { defaults.set(acoesRapidas, forKey: Key.acoesRapidas) } }
 
@@ -480,6 +496,7 @@ final class DockaStore: ObservableObject {
         case .rapida(let a): return a.titulo
         case .prateleira: return "Prateleira"
         case .blocoDeNotas: return "Bloco de notas"
+        case .monitor: return "Monitor do sistema"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -609,6 +626,11 @@ final class DockaStore: ObservableObject {
             // a prateleira nasce na direita: as notas nascem do outro lado
             Key.notasBorda: TrayEdge.left.rawValue,
             Key.notasAlinhamento: TrayAlignment.center.rawValue,
+            Key.monitor: false,
+            Key.monitorBorda: TrayEdge.right.rawValue,
+            // a prateleira fica no topo da direita: o monitor, na base
+            Key.monitorAlinhamento: TrayAlignment.end.rawValue,
+            Key.leituraDaBarra: LeituraDaBarra.nenhuma.rawValue,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -678,6 +700,10 @@ final class DockaStore: ObservableObject {
         notasControl = defaults.bool(forKey: Key.notas)
         notasBorda = defaults.string(forKey: Key.notasBorda) ?? TrayEdge.left.rawValue
         notasAlinhamento = defaults.string(forKey: Key.notasAlinhamento) ?? TrayAlignment.center.rawValue
+        monitorControl = defaults.bool(forKey: Key.monitor)
+        monitorBorda = defaults.string(forKey: Key.monitorBorda) ?? TrayEdge.right.rawValue
+        monitorAlinhamento = defaults.string(forKey: Key.monitorAlinhamento) ?? TrayAlignment.end.rawValue
+        leituraDaBarra = LeituraDaBarra(persisted: defaults.string(forKey: Key.leituraDaBarra) ?? "")
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 
@@ -715,6 +741,8 @@ final class DockaStore: ObservableObject {
         }
 
         refreshLaunchAtLogin()
+        // didSet não dispara no init: a leitura gravada liga a coleta aqui
+        MonitorModelo.shared.interesse("barra", leituraDaBarra != .nenhuma)
     }
 
     // MARK: - Apps instalados (para o seletor)

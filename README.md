@@ -112,6 +112,17 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Atalho** | Abre já pronto para digitar; o segundo toque esconde. Também abre encostando na borda |
 | **Exportar** | Copia a nota ou salva como `.md` |
 
+### Monitor do sistema
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Painel de borda** | CPU, memória e rede com gráfico dos últimos dois minutos; disco livre e bateria (com tempo restante); aviso quando o Mac esquenta |
+| **Na barra de menus** | Uma leitura opcional ao lado do ícone: CPU, memória, download ou bateria |
+| **Parado não gasta** | As medições só rodam com o painel aberto ou com leitura na barra |
+| **Números de verdade** | CPU pelo intervalo (não a média desde o boot), memória como o Monitor de Atividade conta, rede só das interfaces físicas — a VPN não conta em dobro |
+
+> Tudo por API pública e sem permissão: Mach (`host_processor_info`, `host_statistics64`) para CPU e memória, IOKit (`IOPowerSources`) para bateria, `getifaddrs` para rede e o `FileManager` para disco.
+
 ### Controles de borda
 
 Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a bandeja — encostando o cursor na borda. Não são itens da bandeja: cada uma tem painel próprio.
@@ -149,7 +160,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 No formato dos **Ajustes do Sistema**: barra lateral com busca e navegação com
 histórico, e uma seção por assunto — **Geral**, **Apps**, **Aparência** (Tom e
 material do painel com prévia simulada), **Bandeja**, **Órbita** (com o editor
-visual do anel), **Prateleira**, **Bloco de notas**, **Brilho**, **Volume**, **Energia**, **Ações rápidas**, **Atalhos** e **Sobre**.
+visual do anel), **Prateleira**, **Bloco de notas**, **Monitor do sistema**, **Brilho**, **Volume**, **Energia**, **Ações rápidas**, **Atalhos** e **Sobre**.
 
 ## Arquitetura
 
@@ -166,6 +177,7 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 ├── AcaoRapida.swift         — as ações rápidas e quais discos o "Ejetar todos" leva
 ├── Prateleira.swift         — itens da prateleira, classificação, limite e arrasto
 ├── BlocoDeNotas.swift       — notas, título da aba, tarefas e Markdown por blocos
+├── Metricas.swift           — CPU, memória e rede a partir dos contadores; histórico
 ├── AcaoDeAtalho.swift       — uma combinação por ação, com limpeza de órfãos
 ├── Shortcut.swift           — atalho global: validação e exibição
 └── AppScanner.swift         — varredura de /Applications, nome do app, reordenação
@@ -182,6 +194,7 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── AcoesRapidasBackend.swift — pmset, NSWorkspace e login.framework: as ações rápidas
 ├── PrateleiraController.swift — o painel da prateleira, soltar e arrastar para fora
 ├── NotasController.swift    — o bloco de notas: painel com teclado, abas e gravação
+├── MonitorController.swift  — leitura dos contadores, painel do sistema e barra de menus
 ├── FaviconStore.swift       — a logo do site, baixada do próprio site e cacheada
 ├── ArrastoAppKit.swift      — arrasto e clique que funcionam em painel não-ativante
 ├── HotKey.swift             — atalhos globais (Carbon, sem permissões)

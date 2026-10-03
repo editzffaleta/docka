@@ -26,6 +26,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case prateleira
     /// Abre o bloco de notas já pronto para digitar; o segundo toque esconde.
     case blocoDeNotas
+    /// Fixa/esconde o monitor do sistema.
+    case monitor
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -40,6 +42,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .rapida(let a):     return "rapida:\(a.rawValue)"
         case .prateleira:        return "prateleira"
         case .blocoDeNotas:      return "notas"
+        case .monitor:           return "monitor"
         }
     }
 
@@ -52,6 +55,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "acordado": self = .acordado
         case "prateleira": self = .prateleira
         case "notas": self = .blocoDeNotas
+        case "monitor": self = .monitor
         default:
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {

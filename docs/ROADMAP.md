@@ -33,8 +33,8 @@ identidade visual do Vorssaint.
 
 | Recurso | Como |
 |---|---|
-| Monitor do sistema | CPU/memória (`host_statistics`), bateria (`IOPowerSources`), disco, rede (`getifaddrs`) — régua ou painel de borda |
-| Leituras na barra de menus | texto curto no `MenuBarExtra` |
+| ✅ Monitor do sistema | CPU/memória (`host_statistics`), bateria (`IOPowerSources`), disco, rede (`getifaddrs`) — régua ou painel de borda |
+| ✅ Leituras na barra de menus | texto curto no `MenuBarExtra` |
 | Alertas | CPU alta contínua, disco cheio, bateria baixa via `UserNotifications` |
 | Brilho por monitor | estender o `BrightnessBackend` para várias telas |
 

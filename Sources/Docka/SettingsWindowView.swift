@@ -10,11 +10,11 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, orbita, prateleira, notas, brilho, volume, energia, acoes, atalho, sobre
+    case geral, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .notas, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .notas, .monitor, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
 
     var titulo: String {
         switch self {
@@ -25,6 +25,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .orbita:    return "Órbita"
         case .prateleira: return "Prateleira"
         case .notas:     return "Bloco de notas"
+        case .monitor:   return "Monitor do sistema"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
         case .energia:   return "Energia"
@@ -43,6 +44,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .orbita:    return "circle.circle.fill"
         case .prateleira: return "tray.and.arrow.down.fill"
         case .notas:     return "note.text"
+        case .monitor:   return "gauge.with.dots.needle.67percent"
         case .brilho:    return "sun.max.fill"
         case .volume:    return "speaker.wave.2.fill"
         case .energia:   return "cup.and.saucer.fill"
@@ -62,6 +64,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .orbita:    return .purple
         case .prateleira: return .green
         case .notas:     return .yellow
+        case .monitor:   return .mint
         case .brilho:    return .yellow
         case .volume:    return .pink
         case .energia:   return .brown
@@ -185,6 +188,7 @@ struct SettingsWindowView: View {
         case .orbita:    OrbitaSettingsView()
         case .prateleira: PrateleiraSettingsView()
         case .notas:     NotasSettingsView()
+        case .monitor:   MonitorSettingsView()
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
         case .energia:   EnergiaView()
@@ -1183,6 +1187,63 @@ private struct NotasSettingsView: View {
     }
 }
 
+// MARK: - Monitor do sistema
+
+private struct MonitorSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.monitorControl) {
+                    Text("Painel do sistema")
+                    Text("CPU, memória e rede com gráfico dos últimos dois minutos, mais disco e bateria, num painel de borda.")
+                }
+                if store.monitorControl {
+                    Picker("Lateral", selection: $store.monitorBorda) {
+                        ForEach(Prateleira.bordasPermitidas, id: \.self) {
+                            Text($0.titulo).tag($0.rawValue)
+                        }
+                    }
+                    Picker("Posição", selection: $store.monitorAlinhamento) {
+                        ForEach(TrayAlignment.allCases, id: \.self) {
+                            Text($0.titulo(for: .left)).tag($0.rawValue)
+                        }
+                    }
+                }
+            } footer: {
+                if store.monitorControl {
+                    Text(conflito ?? "Abre encostando o cursor na borda, ou pelo atalho.")
+                }
+            }
+
+            Section {
+                Picker(selection: $store.leituraDaBarra) {
+                    ForEach(LeituraDaBarra.allCases) { Text($0.titulo).tag($0) }
+                } label: {
+                    Text("Na barra de menus")
+                    Text("Uma leitura ao lado do ícone do Docka, atualizada a cada 2 segundos.")
+                }
+            } footer: {
+                Text("As medições só rodam enquanto o painel está aberto ou há uma leitura na barra — parado, o monitor não gasta nada. Tudo vem de APIs públicas do sistema, sem permissão.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    /// Avisa quando o painel cai no mesmo lugar de outro painel de borda.
+    private var conflito: String? {
+        let lugar = (store.monitorBorda, store.monitorAlinhamento)
+        if store.prateleiraControl && (store.prateleiraBorda, store.prateleiraAlinhamento) == lugar {
+            return "A prateleira está na mesma lateral e posição: um painel cobriria o outro. Mude um deles."
+        }
+        if store.notasControl && (store.notasBorda, store.notasAlinhamento) == lugar {
+            return "O bloco de notas está na mesma lateral e posição: um painel cobriria o outro. Mude um deles."
+        }
+        return nil
+    }
+}
+
 // MARK: - Brilho e volume
 
 /// A mesma página para os dois controles de borda: o que muda entre eles cabe
@@ -1395,7 +1456,7 @@ private struct AtalhoView: View {
             }
 
             if store.brightnessControl || store.volumeControl || store.orbitaControl
-                || store.prateleiraControl || store.notasControl {
+                || store.prateleiraControl || store.notasControl || store.monitorControl {
                 Section {
                     if store.brightnessControl {
                         linha(.brilho, titulo: "Controle de brilho",
@@ -1404,6 +1465,10 @@ private struct AtalhoView: View {
                     if store.volumeControl {
                         linha(.volume, titulo: "Controle de volume",
                               detalhe: "Abre a régua fixada, sem precisar encostar na borda")
+                    }
+                    if store.monitorControl {
+                        linha(.monitor, titulo: "Monitor do sistema",
+                              detalhe: "Fixa o painel aberto; o segundo toque esconde")
                     }
                     if store.notasControl {
                         linha(.blocoDeNotas, titulo: "Bloco de notas",
