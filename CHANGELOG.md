@@ -81,6 +81,13 @@ todo o resto por aqui.
   quartos e terços, maximizar, centralizar, levar para a próxima tela
   (mantendo a proporção) e voltar ao tamanho de antes. Repetir o atalho de
   uma metade alterna a largura entre ½, ⅓ e ⅔.
+- **Alternador de apps**: num atalho próprio (sugestão ⌥Tab), mostra os
+  apps na ordem de uso; segure o modificador, aperte de novo para avançar
+  (⇧ volta, setas também) e solte para trocar. Sem permissão: soltar o
+  modificador é percebido lendo o estado do teclado. Com Acessibilidade,
+  opcionalmente lista cada janela pelo título e traz a escolhida para a
+  frente. A ativação passa pelo LaunchServices, que funciona mesmo com a
+  ativação cooperativa do macOS 14+.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30

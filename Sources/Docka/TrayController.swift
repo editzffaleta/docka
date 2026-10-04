@@ -397,6 +397,7 @@ final class TrayManager {
         case .textoPuro:       HistoricoModelo.shared.soTexto()
         case .snippets:        SnippetsController.shared.alternar()
         case .janela(let l):   JanelasBackend.executar(l)
+        case .alternador:      if store.alternadorControl { AlternadorController.shared.atalho() }
         }
     }
 

@@ -36,6 +36,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case snippets
     /// Encaixa a janela da frente num layout.
     case janela(LayoutDeJanela)
+    /// Abre o alternador de apps, ou avança nele se já estiver aberto.
+    case alternador
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -55,6 +57,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .textoPuro:         return "textoPuro"
         case .snippets:          return "snippets"
         case .janela(let l):     return "janela:\(l.rawValue)"
+        case .alternador:        return "alternador"
         }
     }
 
@@ -71,6 +74,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "historico": self = .historico
         case "textoPuro": self = .textoPuro
         case "snippets": self = .snippets
+        case "alternador": self = .alternador
         default:
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {

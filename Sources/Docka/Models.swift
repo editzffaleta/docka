@@ -174,6 +174,8 @@ final class DockaStore: ObservableObject {
         static let apagarClipboard = "docka.clearClipboardAfter"
         static let colarSozinho = "docka.autoPaste"
         static let janelas = "docka.windowSnapping"
+        static let alternador = "docka.switcher"
+        static let alternadorJanelas = "docka.switcherWindows"
     }
 
     private let defaults = UserDefaults.standard
@@ -448,6 +450,21 @@ final class DockaStore: ObservableObject {
         }
     }
 
+    /// Alternador de apps no atalho próprio (sem permissão).
+    @Published var alternadorControl: Bool {
+        didSet {
+            defaults.set(alternadorControl, forKey: Key.alternador)
+            AlternadorController.shared.ligar(alternadorControl)
+        }
+    }
+    /// Uma entrada por janela no alternador — pede Acessibilidade.
+    @Published var alternadorJanelas: Bool {
+        didSet {
+            defaults.set(alternadorJanelas, forKey: Key.alternadorJanelas)
+            if alternadorJanelas && !Colagem.permitido { Colagem.pedirPermissao() }
+        }
+    }
+
     /// O vigia da área de transferência só roda se algum recurso dele está
     /// ligado — histórico, limpar links ou apagar depois de um tempo.
     func sincronizarClipboard() {
@@ -571,6 +588,7 @@ final class DockaStore: ObservableObject {
         case .textoPuro: return "Colar sem formatação"
         case .snippets: return "Snippets"
         case .janela(let l): return "Janela — \(l.titulo.lowercased())"
+        case .alternador: return "Alternador de apps"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -723,6 +741,8 @@ final class DockaStore: ObservableObject {
             Key.apagarClipboard: 0,
             Key.colarSozinho: false,
             Key.janelas: false,
+            Key.alternador: false,
+            Key.alternadorJanelas: false,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -813,6 +833,8 @@ final class DockaStore: ObservableObject {
         apagarClipboard = defaults.integer(forKey: Key.apagarClipboard)
         colarSozinho = defaults.bool(forKey: Key.colarSozinho)
         janelasControl = defaults.bool(forKey: Key.janelas)
+        alternadorControl = defaults.bool(forKey: Key.alternador)
+        alternadorJanelas = defaults.bool(forKey: Key.alternadorJanelas)
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 
@@ -854,7 +876,10 @@ final class DockaStore: ObservableObject {
         MonitorModelo.shared.interesse("barra", leituraDaBarra != .nenhuma)
         // idem para o vigia da área de transferência — mas fora do init:
         // ele lê o próprio store, que ainda está nascendo
-        DispatchQueue.main.async { DockaStore.shared.sincronizarClipboard() }
+        DispatchQueue.main.async {
+            DockaStore.shared.sincronizarClipboard()
+            AlternadorController.shared.ligar(DockaStore.shared.alternadorControl)
+        }
     }
 
     // MARK: - Apps instalados (para o seletor)

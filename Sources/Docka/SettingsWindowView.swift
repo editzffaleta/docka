@@ -1410,6 +1410,8 @@ private struct JanelasSettingsView: View {
             }
             .onReceive(relogio) { _ in permitido = Colagem.permitido }
 
+            SecaoDoAlternador()
+
             if store.janelasControl {
                 ForEach(LayoutDeJanela.grupos.indices, id: \.self) { g in
                     Section(g == 0 ? "Atalhos" : "") {
@@ -1429,6 +1431,47 @@ private struct JanelasSettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+private struct SecaoDoAlternador: View {
+    @EnvironmentObject var store: DockaStore
+
+    /// ⌥Tab: a sugestão — perto do ⌘Tab na mão, sem tomar o lugar dele.
+    private let sugestao = Shortcut(keyCode: 48, modifiers: [.option])
+
+    var body: some View {
+        Section {
+            Toggle(isOn: $store.alternadorControl) {
+                Text("Alternador de apps")
+                Text("Segure o modificador do atalho, aperte de novo para avançar (⇧ volta) e solte para trocar. Os apps vêm na ordem em que você os usou.")
+            }
+            if store.alternadorControl {
+                LabeledContent {
+                    HStack {
+                        ShortcutRecorder(acao: .alternador)
+                        if store.atalho(de: .alternador) == nil {
+                            Button("Usar ⌥Tab") { store.definirAtalho(sugestao, para: .alternador) }
+                        }
+                    }
+                } label: {
+                    Text("Atalho")
+                    Text("Precisa de ⌘, ⌥ ou ⌃: é soltando ele que a troca acontece.")
+                }
+                if let erro = store.erroDoAtalho(.alternador) {
+                    Label(erro, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange).font(.callout)
+                }
+                Toggle(isOn: $store.alternadorJanelas) {
+                    Text("Mostrar cada janela")
+                    Text("Uma entrada por janela, com o título, e a escolhida vem para a frente. Pede Acessibilidade; sem ela, o alternador troca de app.")
+                }
+            }
+        } header: {
+            Text("Alternador")
+        } footer: {
+            Text("Não substitui o ⌘Tab do sistema — interceptá-lo exigiria ler o teclado inteiro. Prévias ao vivo das janelas pediriam Gravação de Tela e ficam para depois.")
+        }
     }
 }
 
