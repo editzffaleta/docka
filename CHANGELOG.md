@@ -4,9 +4,31 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
-## [Não lançado]
+## [1.2.0] — 2026-10-03
 
-### Novo
+A maior versão do Docka até aqui: mais de vinte recursos novos inspirados no
+[Vorssaint](https://github.com/vorssaint/vorssaint-utils) — reescritos do
+zero, porque ele é GPL-3.0 e o Docka é MIT. Todos nascem **desligados**: quem
+não liga um recurso não paga nada por ele.
+
+### Permissões
+
+O núcleo — bandejas, órbita, réguas e quase tudo desta versão — continua sem
+pedir permissão nenhuma. O que precisa de uma vem como **módulo opcional**:
+desligado por padrão, pede a permissão só ao ser ligado e, sem ela, continua
+funcionando no modo sem permissão. README e `SECURITY.md` listam cada módulo,
+a permissão e para que ela é usada.
+
+| Módulo | Permissão |
+|---|---|
+| Colar sozinho, encaixar janelas, alternador com janelas, ajustes do mouse | Acessibilidade |
+| Texto da tela, captura de área, prévias do alternador | Gravação de Tela |
+| Expandir gatilhos digitados | Monitoramento de Entrada + Acessibilidade |
+
+Com o Docka assinado ad-hoc, o macOS pode pedir a permissão de novo depois da
+atualização.
+
+### Bordas e lançamento
 
 - **Manter acordado**: impede o Mac de dormir por 15 min, 30 min, 1 h, 2 h,
   5 h ou até você desligar. Fica no menu da barra (que mostra o tempo
@@ -40,6 +62,8 @@ todo o resto por aqui.
   ativo; clique no miolo ou Esc volta um nível, e só fecha no anel de
   partida. **Ação rápida** trava a tela, ejeta discos e afins direto do
   anel. Apagar um anel leva junto os submenus que apontavam para ele.
+### Sistema e energia
+
 - **Monitor do sistema**: painel de borda (direita, na base, por padrão)
   com CPU, memória e rede em gráficos dos últimos dois minutos, disco livre
   e bateria com tempo restante, e aviso quando o Mac esquenta. Opcionalmente
@@ -60,6 +84,8 @@ todo o resto por aqui.
   qualquer monitor: onde não há brilho de hardware, ela escurece pela gama.
   O escurecimento para em 80% (a tela nunca fica preta), é lembrado por
   monitor e some sozinho se o Docka encerrar.
+### Área de transferência e texto
+
 - **Histórico da área de transferência**: textos, links e arquivos
   copiados, com busca (sem diferenciar acento), fixar no topo e navegação
   pelo teclado num painel que abre pelo atalho; escolher um item o devolve
@@ -76,6 +102,8 @@ todo o resto por aqui.
   devolve depois o que estava copiado antes. Sem a permissão, tudo continua
   só copiando. README e SECURITY.md passam a listar as permissões por módulo
   e o que fica gravado em disco.
+### Janelas, mouse e captura
+
 - **Encaixar janelas** (módulo opcional, Acessibilidade): atalhos e um
   menu "Janelas" na barra para mandar a janela da frente para metades,
   quartos e terços, maximizar, centralizar, levar para a próxima tela
@@ -110,16 +138,25 @@ todo o resto por aqui.
   hora com os ícones e as miniaturas chegam em seguida; no modo de
   janelas, cada janela casa com a sua miniatura pela posição na tela, não
   pelo título.
-- **Itens pendentes do roteiro**:
-  - **Encaixar arrastando até a borda**, com prévia: laterais dão metades,
-    cantos dão quartos e o topo maximiza.
-  - **Expandir gatilhos digitados** (módulo com Monitoramento de Entrada +
-    Acessibilidade): digitar o gatilho de um snippet troca ele pelo texto.
-    Guarda só os últimos 32 caracteres, na memória; campos de senha nunca
-    chegam. Um gatilho não pode ser o começo de outro.
-  - **Apagar a área de transferência ao travar a tela ou dormir.**
-  - **Apps a ignorar** nos ajustes do mouse.
-- Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
+### Também nesta versão
+
+- **Encaixar arrastando até a borda**, com prévia: laterais dão metades,
+  cantos dão quartos e o topo maximiza.
+- **Expandir gatilhos digitados** (módulo com Monitoramento de Entrada +
+  Acessibilidade): digitar o gatilho de um snippet troca ele pelo texto.
+  Guarda só os últimos 32 caracteres, na memória; campos de senha nunca
+  chegam. Um gatilho não pode ser o começo de outro.
+- **Apagar a área de transferência ao travar a tela ou dormir.**
+- **Apps a ignorar** nos ajustes do mouse.
+
+### Documentação
+
+- Roteiro dos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
+- `CONTRIBUTING.md`: a regra "zero permissões" vira "núcleo sem permissões;
+  módulos opcionais pedem só quando ligados".
+- `SECURITY.md`: permissões por módulo e o que fica gravado em disco (notas,
+  snippets e, opcionalmente, o histórico — JSON sem criptografia em
+  Application Support).
 
 ## [1.1.2] — 2026-07-30
 
