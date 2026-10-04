@@ -22,8 +22,16 @@ final class OrbitaController {
 
     init() { buildPanel() }
 
-    /// Os itens do anel ativo — apps, sites, arquivos e pastas.
-    private var itens: [ItemDaOrbita] { store.itensDaOrbita }
+    /// Os itens do anel mostrado — o ativo, ou o submenu em que se entrou.
+    private var itens: [ItemDaOrbita] { store.itens(doAnel: selecao.navegacao.exibido) }
+
+    /// Refaz o quadro para a quantidade de itens do anel mostrado agora.
+    private func reenquadrar() {
+        if let tela = currentScreen?.frame {
+            panel.setFrame(Orbita.quadro(centro: centro, total: max(1, itens.count),
+                                         tela: tela), display: true)
+        }
+    }
 
     private func buildPanel() {
         // Nasce já do tamanho certo, e não em .zero: uma janela de tamanho zero
@@ -81,10 +89,8 @@ final class OrbitaController {
         store.anelAtivo = id
         if state.visible {
             selecao.indice = nil
-            if let tela = currentScreen?.frame {
-                panel.setFrame(Orbita.quadro(centro: centro, total: max(1, itens.count),
-                                             tela: tela), display: true)
-            }
+            selecao.navegacao.zerar()
+            reenquadrar()
         } else {
             abrir()
         }
@@ -100,6 +106,7 @@ final class OrbitaController {
         aplicarTom()
         retirada?.cancel(); retirada = nil
         selecao.indice = nil
+        selecao.navegacao.zerar()
         panel.setFrame(Orbita.quadro(centro: loc, total: itens.count, tela: tela), display: true)
         panel.orderFrontRegardless()
         withAnimation(reduceMotion ? .easeOut(duration: 0.14)
@@ -112,6 +119,7 @@ final class OrbitaController {
     func fechar() {
         pararMonitor()
         selecao.indice = nil
+        selecao.navegacao.zerar()
         withAnimation(reduceMotion ? .easeOut(duration: 0.12) : .spring(duration: 0.26)) {
             state.visible = false
         }
@@ -127,13 +135,43 @@ final class OrbitaController {
     var temSelecao: Bool { state.visible && selecao.indice != nil }
 
     /// Lança o que estiver apontado e fecha. Chamado pelo clique.
+    ///
+    /// Submenu não fecha: troca o anel no mesmo lugar. Clique no miolo, sem
+    /// nada apontado, volta um nível — e só fecha no anel de partida.
     func escolher() {
         let lista = itens
-        if let i = selecao.indice, lista.indices.contains(i) {
-            store.playSound("Tink")
-            ItemVisual.lancar(lista[i])
+        guard let i = selecao.indice, lista.indices.contains(i) else {
+            voltarOuFechar()
+            return
         }
-        fechar()
+        let item = lista[i]
+        store.playSound("Tink")
+        switch item.tipo {
+        case .anel:
+            guard let destino = UUID(uuidString: item.valor),
+                  let atual = selecao.navegacao.exibido ?? store.anelEmUso?.id else { return }
+            selecao.navegacao.entrar(destino, vindoDe: atual)
+            selecao.indice = nil
+            reenquadrar()
+        case .acao:
+            // a ação roda DEPOIS que o anel sumiu: travar a tela ou apagar as
+            // telas com o anel ainda desenhado o deixaria congelado na volta
+            fechar()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { ItemVisual.lancar(item) }
+        default:
+            ItemVisual.lancar(item)
+            fechar()
+        }
+    }
+
+    private func voltarOuFechar() {
+        if selecao.navegacao.voltar() {
+            selecao.indice = nil
+            store.playSound("Tink", volume: 0.12)
+            reenquadrar()
+        } else {
+            fechar()
+        }
     }
 
     /// Acompanha o cursor a 20 Hz, como o resto do app.
@@ -164,7 +202,7 @@ final class OrbitaController {
         guard monitorDeTecla == nil else { return }
         monitorDeTecla = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in
             guard e.keyCode == 53 else { return e }
-            self?.fechar()
+            self?.voltarOuFechar()
             return nil
         }
         let global = NSEvent.addGlobalMonitorForEvents(matching: .scrollWheel) { [weak self] e in
@@ -190,12 +228,11 @@ final class OrbitaController {
         acumuladoDeRolagem = 0
         store.rolarAnel(passo)
         selecao.indice = nil
+        // a rolagem anda entre os anéis de cima: sai de qualquer submenu
+        selecao.navegacao.zerar()
         store.playSound("Tink", volume: 0.12)
         // a quantidade de itens muda de anel para anel: o quadro acompanha
-        if let tela = currentScreen?.frame {
-            panel.setFrame(Orbita.quadro(centro: centro, total: max(1, itens.count),
-                                         tela: tela), display: true)
-        }
+        reenquadrar()
     }
 
     private func pararMonitor() {
@@ -211,6 +248,8 @@ final class OrbitaController {
 /// leitura do cursor e só interessa à órbita.
 final class SelecaoDaOrbita: ObservableObject {
     @Published var indice: Int?
+    /// Submenus em que se entrou; muda o anel mostrado sem trocar o ativo.
+    @Published var navegacao = NavegacaoDaOrbita()
 }
 
 /// O anel: vidro com um buraco no meio e os ícones em volta.
@@ -221,7 +260,7 @@ struct OrbitaView: View {
     @EnvironmentObject var selecao: SelecaoDaOrbita
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var itens: [ItemDaOrbita] { store.itensDaOrbita }
+    private var itens: [ItemDaOrbita] { store.itens(doAnel: selecao.navegacao.exibido) }
 
     var body: some View {
         ZStack {
@@ -233,7 +272,11 @@ struct OrbitaView: View {
             // sem apontado o nome do ANEL — é como se sabe qual está ativo ao
             // trocar pela rolagem
             if let i = selecao.indice, itens.indices.contains(i) {
-                rotulo(ItemVisual.nome(itens[i]))
+                rotulo(ItemVisual.nome(itens[i]) + (itens[i].tipo == .anel ? " ›" : ""))
+            } else if let sub = selecao.navegacao.exibido,
+                      let anel = store.aneis.first(where: { $0.id == sub }) {
+                // no submenu, o miolo diz onde se está e que clicar ali volta
+                rotulo("‹ \(anel.nome)").opacity(0.85)
             } else if store.aneis.count > 1, let anel = store.anelEmUso {
                 rotulo(anel.nome).opacity(0.8)
             }

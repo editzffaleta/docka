@@ -200,6 +200,10 @@ final class TrayManager {
     private var brilho: DeslizanteController?
     private var volume: DeslizanteController?
     private var orbita: OrbitaController?
+    private var prateleira: PrateleiraController?
+    private var notas: NotasController?
+    private var monitor: MonitorController?
+    private var vigia: VigiaController?
     private var botaoDaOrbita: MonitorDeBotao?
     /// Evita reabrir sem parar enquanto o cursor fica parado na quina.
     private var cantoArmado = true
@@ -209,6 +213,9 @@ final class TrayManager {
     private let store = DockaStore.shared
 
     func start() {
+        // reaplica o escurecimento gravado: a gama volta ao normal quando o
+        // Docka encerra, e precisa ser posta de novo ao abrir
+        _ = TelasDeBrilho.shared
         sincronizar()
         // repõe os painéis quando as bandejas ou os ajustes mudam
         cancellable = store.objectWillChange.sink { [weak self] in
@@ -221,8 +228,13 @@ final class TrayManager {
             object: nil, queue: .main
         ) { [weak self] _ in
             self?.controllers.values.forEach { $0.layout() }
+            // monitor novo: descobre se aceita brilho e reaplica o escurecimento
+            TelasDeBrilho.shared.atualizarTelas()
             self?.brilho?.layout()
             self?.volume?.layout()
+            self?.prateleira?.layout()
+            self?.notas?.layout()
+            self?.monitor?.layout()
         }
         // um timer só para todas as bandejas: N timers a 20 Hz seria desperdício
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
@@ -230,6 +242,9 @@ final class TrayManager {
             self?.brilho?.tick()
             self?.volume?.tick()
             self?.orbita?.tick()
+            self?.prateleira?.tick()
+            self?.notas?.tick()
+            self?.monitor?.tick()
             self?.verificarCanto()
         }
         RunLoop.main.add(timer!, forMode: .common)
@@ -273,6 +288,38 @@ final class TrayManager {
             volume?.encerrar()
             volume = nil
         }
+        if store.prateleiraControl {
+            if prateleira == nil { prateleira = PrateleiraController() }
+        } else if prateleira != nil {
+            prateleira?.encerrar()
+            prateleira = nil
+        }
+        prateleira?.layout()
+
+        if store.notasControl {
+            if notas == nil { notas = NotasController() }
+        } else if notas != nil {
+            notas?.encerrar()
+            notas = nil
+        }
+        notas?.layout()
+
+        if store.monitorControl {
+            if monitor == nil { monitor = MonitorController() }
+        } else if monitor != nil {
+            monitor?.encerrar()
+            monitor = nil
+        }
+        monitor?.layout()
+
+        if store.alertas {
+            if vigia == nil { vigia = VigiaController() }
+            vigia?.atualizarLimites()
+        } else if vigia != nil {
+            vigia?.encerrar()
+            vigia = nil
+        }
+
         // o layout do brilho vem antes: o do volume consulta o quadro dele
         brilho?.layout()
         volume?.layout()
@@ -341,6 +388,19 @@ final class TrayManager {
         case .ajustes:         SettingsWindowController.shared.show()
         case .orbita:          orbita?.alternar()
         case .anel(let id):    orbita?.alternarNoAnel(id)
+        case .acordado:        store.alternarAcordado()
+        case .rapida(let a):   AcoesRapidasBackend.executar(a)
+        case .prateleira:      prateleira?.toggleFromHotKey()
+        case .blocoDeNotas:    notas?.toggleFromHotKey()
+        case .monitor:         monitor?.toggleFromHotKey()
+        case .historico:       if store.historicoControl { HistoricoController.shared.alternar() }
+        case .textoPuro:       HistoricoModelo.shared.soTexto()
+        case .snippets:        SnippetsController.shared.alternar()
+        case .janela(let l):   JanelasBackend.executar(l)
+        case .alternador:      if store.alternadorControl { AlternadorController.shared.atalho() }
+        case .contaGotas:      if store.capturaControl { CapturaController.contaGotas() }
+        case .textoDaTela:     if store.capturaControl { CapturaController.textoDaTela() }
+        case .capturaArea:     if store.capturaControl { CapturaController.capturarArea() }
         }
     }
 

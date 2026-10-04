@@ -10,11 +10,11 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, orbita, brilho, volume, atalho, sobre
+    case geral, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .brilho, .volume, .atalho], [.sobre]]
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .notas, .monitor, .clipboard, .janelas, .mouse, .captura, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
 
     var titulo: String {
         switch self {
@@ -23,8 +23,17 @@ enum Secao: String, CaseIterable, Identifiable {
         case .aparencia: return "Aparência"
         case .bandeja:   return "Bandeja"
         case .orbita:    return "Órbita"
+        case .prateleira: return "Prateleira"
+        case .notas:     return "Bloco de notas"
+        case .monitor:   return "Monitor do sistema"
+        case .clipboard: return "Área de transferência"
+        case .janelas:   return "Janelas"
+        case .mouse:     return "Mouse"
+        case .captura:   return "Captura"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
+        case .energia:   return "Energia"
+        case .acoes:     return "Ações rápidas"
         case .atalho:    return "Atalhos"
         case .sobre:     return "Sobre"
         }
@@ -37,8 +46,17 @@ enum Secao: String, CaseIterable, Identifiable {
         case .aparencia: return "circle.lefthalf.filled"
         case .bandeja:   return "dock.rectangle"
         case .orbita:    return "circle.circle.fill"
+        case .prateleira: return "tray.and.arrow.down.fill"
+        case .notas:     return "note.text"
+        case .monitor:   return "gauge.with.dots.needle.67percent"
+        case .clipboard: return "doc.on.clipboard.fill"
+        case .janelas:   return "rectangle.split.2x1.fill"
+        case .mouse:     return "computermouse.fill"
+        case .captura:   return "camera.viewfinder"
         case .brilho:    return "sun.max.fill"
         case .volume:    return "speaker.wave.2.fill"
+        case .energia:   return "cup.and.saucer.fill"
+        case .acoes:     return "bolt.fill"
         case .atalho:    return "keyboard.fill"
         case .sobre:     return "info"
         }
@@ -52,8 +70,17 @@ enum Secao: String, CaseIterable, Identifiable {
         case .aparencia: return .indigo
         case .bandeja:   return .teal
         case .orbita:    return .purple
+        case .prateleira: return .green
+        case .notas:     return .yellow
+        case .monitor:   return .mint
+        case .clipboard: return .cyan
+        case .janelas:   return .blue
+        case .mouse:     return .gray
+        case .captura:   return .purple
         case .brilho:    return .yellow
         case .volume:    return .pink
+        case .energia:   return .brown
+        case .acoes:     return .red
         case .atalho:    return .orange
         case .sobre:     return .secondary
         }
@@ -171,8 +198,17 @@ struct SettingsWindowView: View {
         case .aparencia: AparenciaView()
         case .bandeja:   BandejaView()
         case .orbita:    OrbitaSettingsView()
+        case .prateleira: PrateleiraSettingsView()
+        case .notas:     NotasSettingsView()
+        case .monitor:   MonitorSettingsView()
+        case .clipboard: ClipboardSettingsView()
+        case .janelas:   JanelasSettingsView()
+        case .mouse:     MouseSettingsView()
+        case .captura:   CapturaSettingsView()
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
+        case .energia:   EnergiaView()
+        case .acoes:     AcoesRapidasView()
         case .atalho:    AtalhoView()
         case .sobre:     SobreView()
         }
@@ -807,7 +843,8 @@ private struct OrbitaSettingsView: View {
                 } label: {
                     Label {
                         Text(ItemVisual.nome(item))
-                        Text(item.tipo.titulo + (item.tipo == .site ? " — \(item.valor)" : ""))
+                        Text(item.tipo.titulo + (item.tipo == .site ? " — \(item.valor)" : "")
+                             + (item.tipo == .anel ? " — abre o anel \(ItemVisual.nome(item))" : ""))
                     } icon: {
                         Image(nsImage: ItemVisual.icone(item))
                             .resizable().frame(width: 28, height: 28)
@@ -835,13 +872,40 @@ private struct OrbitaSettingsView: View {
                     Label("Pasta", systemImage: TipoDeItem.pasta.simbolo)
                 }
             }
+            HStack(spacing: 10) {
+                let destinos = Aneis.destinosDeSubmenu(de: anel, em: store.aneis)
+                Menu {
+                    ForEach(destinos) { d in
+                        Button(d.nome) {
+                            store.adicionarItem(ItemDaOrbita(tipo: .anel, valor: d.id.uuidString),
+                                                em: anel.id)
+                        }
+                    }
+                } label: {
+                    Label("Submenu", systemImage: TipoDeItem.anel.simbolo)
+                }
+                .fixedSize()
+                .disabled(destinos.isEmpty)
+                .help(destinos.isEmpty ? "Crie outro anel para usá-lo como submenu" : "Um item que abre outro anel no mesmo lugar")
+                Menu {
+                    ForEach(AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)) { a in
+                        Button(a.titulo) {
+                            store.adicionarItem(ItemDaOrbita(tipo: .acao, valor: a.rawValue),
+                                                em: anel.id)
+                        }
+                    }
+                } label: {
+                    Label("Ação rápida", systemImage: TipoDeItem.acao.simbolo)
+                }
+                .fixedSize()
+            }
             .disabled(anel.itens.count >= Aneis.maximoDeItens)
         } header: {
             Text("Adicionar ao anel")
         } footer: {
             Text(anel.itens.count >= Aneis.maximoDeItens
                  ? "O anel está cheio (\(Aneis.maximoDeItens) itens) — com mais, os setores ficam finos demais para apontar."
-                 : "Aplicativo, site, arquivo ou pasta — cada um abre do jeito próprio: app lança, site vai ao navegador, arquivo abre no app padrão, pasta abre no Finder.")
+                 : "Aplicativo, site, arquivo ou pasta — cada um abre do jeito próprio: app lança, site vai ao navegador, arquivo abre no app padrão, pasta abre no Finder. Um submenu abre outro anel no mesmo lugar (clique no miolo ou Esc para voltar); uma ação rápida trava a tela, ejeta discos e afins.")
         }
         .sheet(isPresented: $adicionandoSite) {
             FolhaDeSite { url in
@@ -1037,6 +1101,603 @@ private struct PreviaDoAnel: View {
     }
 }
 
+// MARK: - Prateleira
+
+private struct PrateleiraSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @ObservedObject private var modelo = PrateleiraModelo.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.prateleiraControl) {
+                    Text("Prateleira")
+                    Text("Um painel na lateral para estacionar arquivos, textos e links enquanto você arrasta, e soltar depois onde quiser.")
+                }
+            }
+
+            if store.prateleiraControl {
+                Section {
+                    Picker("Lateral", selection: $store.prateleiraBorda) {
+                        ForEach(Prateleira.bordasPermitidas, id: \.self) {
+                            Text($0.titulo).tag($0.rawValue)
+                        }
+                    }
+                    Picker("Posição", selection: $store.prateleiraAlinhamento) {
+                        ForEach(TrayAlignment.allCases, id: \.self) {
+                            Text($0.titulo(for: .left)).tag($0.rawValue)
+                        }
+                    }
+                    Toggle(isOn: $store.prateleiraAoArrastar) {
+                        Text("Abrir ao começar a arrastar")
+                        Text("Qualquer arrasto, em qualquer app, traz a prateleira. Desligado, ela só aparece encostando o cursor na borda ou pelo atalho.")
+                    }
+                }
+
+                Section {
+                    LabeledContent {
+                        Button("Esvaziar") { modelo.esvaziar() }
+                            .disabled(modelo.itens.isEmpty)
+                    } label: {
+                        Text("Itens guardados")
+                        Text(modelo.itens.isEmpty ? "Nenhum."
+                             : "\(modelo.itens.count) de até \(Prateleira.maximoDeItens). Os mais antigos saem quando passa disso.")
+                    }
+                } footer: {
+                    Text("Clique num item para abrir (texto é copiado); arraste para levar. A alça \"Tudo\" leva todos de uma vez. Arquivos são só referenciados: a prateleira não copia nada, e um arquivo movido ou apagado some dela sozinho.")
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Bloco de notas
+
+private struct NotasSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @ObservedObject private var modelo = NotasModelo.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.notasControl) {
+                    Text("Bloco de notas")
+                    Text("Notas em abas numa lateral, salvas sozinhas enquanto você escreve, com pré-visualização de Markdown.")
+                }
+            }
+
+            if store.notasControl {
+                Section {
+                    Picker("Lateral", selection: $store.notasBorda) {
+                        ForEach(BlocoDeNotas.bordasPermitidas, id: \.self) {
+                            Text($0.titulo).tag($0.rawValue)
+                        }
+                    }
+                    Picker("Posição", selection: $store.notasAlinhamento) {
+                        ForEach(TrayAlignment.allCases, id: \.self) {
+                            Text($0.titulo(for: .left)).tag($0.rawValue)
+                        }
+                    }
+                } footer: {
+                    Text(store.prateleiraControl && store.prateleiraBorda == store.notasBorda
+                         ? "A prateleira está na mesma lateral: as duas abrem pela mesma borda e uma pode cobrir a outra. Prefira lados opostos."
+                         : "Abre encostando o cursor na borda. Com o atalho, já abre pronto para digitar.")
+                }
+
+                Section {
+                    LabeledContent {
+                        Button("Mostrar no Finder") {
+                            NSWorkspace.shared.activateFileViewerSelecting([NotasModelo.arquivo])
+                        }
+                    } label: {
+                        Text("Notas guardadas")
+                        Text("\(modelo.notas.count) de até \(BlocoDeNotas.maximoDeNotas), num arquivo próprio em Application Support.")
+                    }
+                } footer: {
+                    Text("Enquanto você escreve o bloco não some, mesmo com o cursor longe; Esc ou clicar em outro app devolve o teclado. O nome de cada aba é a primeira linha da nota.")
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Monitor do sistema
+
+private struct MonitorSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.monitorControl) {
+                    Text("Painel do sistema")
+                    Text("CPU, memória e rede com gráfico dos últimos dois minutos, mais disco e bateria, num painel de borda.")
+                }
+                if store.monitorControl {
+                    Picker("Lateral", selection: $store.monitorBorda) {
+                        ForEach(Prateleira.bordasPermitidas, id: \.self) {
+                            Text($0.titulo).tag($0.rawValue)
+                        }
+                    }
+                    Picker("Posição", selection: $store.monitorAlinhamento) {
+                        ForEach(TrayAlignment.allCases, id: \.self) {
+                            Text($0.titulo(for: .left)).tag($0.rawValue)
+                        }
+                    }
+                }
+            } footer: {
+                if store.monitorControl {
+                    Text(conflito ?? "Abre encostando o cursor na borda, ou pelo atalho.")
+                }
+            }
+
+            Section {
+                Picker(selection: $store.leituraDaBarra) {
+                    ForEach(LeituraDaBarra.allCases) { Text($0.titulo).tag($0) }
+                } label: {
+                    Text("Na barra de menus")
+                    Text("Uma leitura ao lado do ícone do Docka, atualizada a cada 2 segundos.")
+                }
+            } footer: {
+                Text("As medições só rodam enquanto o painel está aberto ou há uma leitura na barra — parado, o monitor não gasta nada. Tudo vem de APIs públicas do sistema, sem permissão.")
+            }
+
+            Section {
+                Toggle(isOn: $store.alertas) {
+                    Text("Alertas")
+                    Text("Um aviso no canto da tela quando algo passa do limite. Cada alerta avisa uma vez e só volta a avisar depois que a situação normaliza.")
+                }
+                if store.alertas {
+                    Toggle("CPU alta", isOn: $store.alertaCPU)
+                    if store.alertaCPU {
+                        Picker("Acima de", selection: $store.alertaCPULimite) {
+                            ForEach([0.70, 0.80, 0.85, 0.90, 0.95], id: \.self) {
+                                Text(Metricas.porcentagem($0)).tag($0)
+                            }
+                        }
+                        Picker("Por", selection: $store.alertaCPUMinutos) {
+                            ForEach([1, 2, 5, 10], id: \.self) { Text("\($0) min seguidos").tag($0) }
+                        }
+                    }
+                    Toggle("Memória apertada", isOn: $store.alertaMemoria)
+                    Toggle("Disco quase cheio", isOn: $store.alertaDisco)
+                    if store.alertaDisco {
+                        Picker("Com menos de", selection: $store.alertaDiscoGB) {
+                            ForEach([5, 10, 20, 50], id: \.self) { Text("\($0) GB livres").tag($0) }
+                        }
+                    }
+                    Toggle("Bateria baixa", isOn: $store.alertaBateria)
+                    if store.alertaBateria {
+                        Picker("Em", selection: $store.alertaBateriaLimite) {
+                            ForEach([0.10, 0.15, 0.20, 0.30], id: \.self) {
+                                Text(Metricas.porcentagem($0)).tag($0)
+                            }
+                        }
+                    }
+                    Toggle("Mac esquentando", isOn: $store.alertaTemperatura)
+                    LabeledContent {
+                        Button("Mostrar um aviso de exemplo") {
+                            AvisoController.shared.mostrar(Alerta(
+                                tipo: .cpu, titulo: "Assim chega um alerta",
+                                mensagem: "Ele some sozinho em alguns segundos, ou no ✕."))
+                        }
+                    } label: {
+                        Text("Prévia")
+                    }
+                }
+            } footer: {
+                if store.alertas {
+                    Text("O aviso é do próprio Docka, e não uma notificação do sistema — as notificações pediriam autorização. CPU, disco e bateria são lidos a cada 10 segundos; memória e temperatura chegam como evento do sistema.")
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    /// Avisa quando o painel cai no mesmo lugar de outro painel de borda.
+    private var conflito: String? {
+        let lugar = (store.monitorBorda, store.monitorAlinhamento)
+        if store.prateleiraControl && (store.prateleiraBorda, store.prateleiraAlinhamento) == lugar {
+            return "A prateleira está na mesma lateral e posição: um painel cobriria o outro. Mude um deles."
+        }
+        if store.notasControl && (store.notasBorda, store.notasAlinhamento) == lugar {
+            return "O bloco de notas está na mesma lateral e posição: um painel cobriria o outro. Mude um deles."
+        }
+        return nil
+    }
+}
+
+// MARK: - Área de transferência
+
+private struct ClipboardSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @ObservedObject private var historico = HistoricoModelo.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.historicoControl) {
+                    Text("Histórico")
+                    Text("Guarda textos, links e arquivos que você copia. O atalho abre a lista com busca; escolher um item o põe de volta na área de transferência, pronto para ⌘V.")
+                }
+                if store.historicoControl {
+                    Picker("Guardar até", selection: $store.historicoLimite) {
+                        ForEach([25, 50, 100, 200], id: \.self) { Text("\($0) itens").tag($0) }
+                    }
+                    Toggle(isOn: $store.historicoLembrar) {
+                        Text("Lembrar entre aberturas")
+                        Text("Grava o histórico num arquivo em Application Support. Desligado, ele vive só enquanto o Docka está aberto.")
+                    }
+                    LabeledContent {
+                        HStack {
+                            Button("Abrir") { HistoricoController.shared.abrir() }
+                            Button("Apagar…", role: .destructive) { historico.apagarHistorico() }
+                                .disabled(historico.itens.allSatisfy(\.fixado))
+                        }
+                    } label: {
+                        Text("Itens guardados")
+                        Text("\(historico.itens.count), \(historico.itens.filter(\.fixado).count) fixados. Apagar mantém os fixados.")
+                    }
+                }
+            } footer: {
+                Text("Senhas copiadas de gerenciadores (1Password, Bitwarden, Senhas da Apple e outros que seguem a convenção nspasteboard.org) não entram no histórico. Ler a área de transferência não pede permissão.")
+            }
+
+            Section {
+                Toggle(isOn: $store.limparLinksAoCopiar) {
+                    Text("Limpar links ao copiar")
+                    Text("Tira utm_, fbclid, gclid e outros rastreadores de todo link copiado, sozinho.")
+                }
+                Picker(selection: Binding(get: { ApagarClipboard(persisted: store.apagarClipboard) },
+                                          set: { store.apagarClipboard = $0.rawValue })) {
+                    ForEach(ApagarClipboard.allCases) { Text($0.titulo).tag($0) }
+                } label: {
+                    Text("Apagar a área de transferência")
+                    Text("Esvazia o que está copiado depois de um tempo — o histórico continua com ele.")
+                }
+            } header: {
+                Text("Privacidade")
+            }
+
+            SecaoColarSozinho()
+
+            SecaoDeSnippets()
+
+            Section {
+                LabeledContent {
+                    Button("Aplicar agora") { HistoricoModelo.shared.soTexto() }
+                } label: {
+                    Text("Colar sem formatação")
+                    Text("Troca o que está copiado pela versão em texto puro — sem negrito, cor nem fonte. Também tem atalho.")
+                }
+                LabeledContent {
+                    Button("Aplicar agora") { HistoricoModelo.shared.limparLinkCopiado() }
+                } label: {
+                    Text("Limpar o link copiado")
+                    Text("Tira os rastreadores do link que está na área de transferência agora.")
+                }
+            } header: {
+                Text("Ferramentas")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Janelas
+
+private struct JanelasSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @State private var permitido = Colagem.permitido
+    private let relogio = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.janelasControl) {
+                    Text("Encaixar janelas")
+                    Text("Atalhos e um menu na barra para mandar a janela da frente para metades, quartos e terços, maximizar, centralizar, levar para outra tela e voltar ao tamanho de antes.")
+                }
+                if store.janelasControl {
+                    LabeledContent {
+                        if !permitido {
+                            Button("Abrir Privacidade") { Colagem.abrirAjustesDePrivacidade() }
+                        }
+                    } label: {
+                        Label(permitido ? "Acessibilidade concedida" : "Falta conceder a Acessibilidade",
+                              systemImage: permitido ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
+                            .foregroundStyle(permitido ? .green : .orange)
+                    }
+                }
+            } header: {
+                Text("Módulo com permissão")
+            } footer: {
+                Text("Mover a janela de outro app exige a permissão de Acessibilidade — a mesma do \"Colar sozinho\". Repetir o atalho de uma metade alterna a largura entre ½, ⅓ e ⅔.")
+            }
+            .onReceive(relogio) { _ in permitido = Colagem.permitido }
+
+            SecaoDoAlternador()
+
+            if store.janelasControl {
+                ForEach(LayoutDeJanela.grupos.indices, id: \.self) { g in
+                    Section(g == 0 ? "Atalhos" : "") {
+                        ForEach(LayoutDeJanela.grupos[g]) { l in
+                            LabeledContent {
+                                ShortcutRecorder(acao: .janela(l))
+                            } label: {
+                                Label(l.titulo, systemImage: l.simbolo)
+                            }
+                            if let erro = store.erroDoAtalho(.janela(l)) {
+                                Label(erro, systemImage: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange).font(.callout)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Captura
+
+private struct CapturaSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @State private var permitido = CapturaController.permitido
+    private let relogio = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.capturaControl) {
+                    Text("Captura")
+                    Text("Conta-gotas, texto da tela (com leitor de QR) e captura de área — pelo menu Captura na barra ou por atalho.")
+                }
+                if store.capturaControl {
+                    LabeledContent {
+                        if !permitido {
+                            Button("Abrir Privacidade") { CapturaController.abrirAjustesDePrivacidade() }
+                        }
+                    } label: {
+                        Label(permitido ? "Gravação de Tela concedida" : "Falta conceder a Gravação de Tela",
+                              systemImage: permitido ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
+                            .foregroundStyle(permitido ? .green : .orange)
+                    }
+                }
+            } header: {
+                Text("Módulo com permissão")
+            } footer: {
+                Text("O texto da tela e a captura de área precisam de Gravação de Tela: sem ela, o macOS entrega só o fundo da mesa. O conta-gotas não precisa de nada. O reconhecimento de texto roda no próprio Mac — nenhuma imagem sai daqui. Pode ser preciso reabrir o Docka depois de conceder.")
+            }
+            .onReceive(relogio) { _ in permitido = CapturaController.permitido }
+
+            if store.capturaControl {
+                Section("Conta-gotas") {
+                    Picker("Copiar a cor como", selection: $store.formatoDeCor) {
+                        ForEach(FormatoDeCor.allCases) { Text($0.titulo).tag($0.rawValue) }
+                    }
+                    linha(.contaGotas, "Atalho do conta-gotas")
+                }
+                Section("Texto da tela") {
+                    linha(.textoDaTela, "Atalho")
+                }
+                Section("Captura de área") {
+                    Toggle(isOn: $store.capturaNaMesa) {
+                        Text("Salvar na Mesa")
+                        Text("Desligado, a captura vai para a área de transferência. Espaço troca para captura de janela, como no ⇧⌘4.")
+                    }
+                    linha(.capturaArea, "Atalho")
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    @ViewBuilder
+    private func linha(_ acao: AcaoDeAtalho, _ titulo: String) -> some View {
+        LabeledContent(titulo) { ShortcutRecorder(acao: acao) }
+        if let erro = store.erroDoAtalho(acao) {
+            Label(erro, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange).font(.callout)
+        }
+    }
+}
+
+// MARK: - Mouse
+
+private struct MouseSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @State private var permitido = Colagem.permitido
+    private let relogio = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.mouseControl) {
+                    Text("Ajustes do mouse")
+                    Text("Rolagem e botões do mouse com fio ou Bluetooth. O trackpad e o Magic Mouse ficam como estão.")
+                }
+                if store.mouseControl {
+                    LabeledContent {
+                        if !permitido {
+                            Button("Abrir Privacidade") { Colagem.abrirAjustesDePrivacidade() }
+                        }
+                    } label: {
+                        Label(permitido ? "Acessibilidade concedida" : "Falta conceder a Acessibilidade",
+                              systemImage: permitido ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
+                            .foregroundStyle(permitido ? .green : .orange)
+                    }
+                }
+            } header: {
+                Text("Módulo com permissão")
+            } footer: {
+                Text("Mudar a rolagem e os cliques de outros apps exige interceptar esses eventos, o que só a Acessibilidade permite. Só eventos do mouse passam pelo Docka — o teclado não.")
+            }
+            .onReceive(relogio) { _ in
+                if permitido != Colagem.permitido {
+                    permitido = Colagem.permitido
+                    MouseController.shared.sincronizar()   // concedeu agora: liga sem reabrir
+                }
+            }
+
+            if store.mouseControl {
+                Section("Rolagem") {
+                    Toggle("Inverter a rolagem vertical", isOn: $store.mouseInverterVertical)
+                    Toggle("Inverter a rolagem horizontal", isOn: $store.mouseInverterHorizontal)
+                    Picker(selection: $store.mouseLinhas) {
+                        Text("Do sistema (com aceleração)").tag(0)
+                        ForEach([1, 3, 5, 10], id: \.self) { Text("\($0) \($0 == 1 ? "linha" : "linhas") por dente").tag($0) }
+                    } label: {
+                        Text("Rolagem linear")
+                        Text("Cada dente da roda rola sempre o mesmo, por mais rápido que se gire.")
+                    }
+                    Toggle(isOn: $store.mouseSuave) {
+                        Text("Rolagem suave")
+                        Text("Cada dente vira um deslize curto, em vez de um salto.")
+                    }
+                    Picker(selection: $store.mouseDeLado) {
+                        Text("Nenhuma").tag(0)
+                        Text("⌥ Option").tag(Int(Shortcut.Modifiers.option.rawValue))
+                        Text("⌃ Control").tag(Int(Shortcut.Modifiers.control.rawValue))
+                        Text("⌘ Command").tag(Int(Shortcut.Modifiers.command.rawValue))
+                    } label: {
+                        Text("Rolar de lado segurando")
+                        Text("A roda rola na horizontal enquanto a tecla está apertada. (⇧ já faz isso no macOS.)")
+                    }
+                }
+                Section {
+                    Toggle(isOn: $store.mouseBotoes) {
+                        Text("Botões laterais voltam e avançam")
+                        Text("No Finder, no Safari, no Chrome e em outros apps que entendem ⌘[ e ⌘].")
+                    }
+                } header: {
+                    Text("Botões")
+                } footer: {
+                    if store.orbitaControl && BotaoDoMouse.valido(store.orbitaBotao) {
+                        Text("O \(BotaoDoMouse.nome(store.orbitaBotao).lowercased()) abre a Órbita e continua com ela.")
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+private struct SecaoDoAlternador: View {
+    @EnvironmentObject var store: DockaStore
+
+    /// ⌥Tab: a sugestão — perto do ⌘Tab na mão, sem tomar o lugar dele.
+    private let sugestao = Shortcut(keyCode: 48, modifiers: [.option])
+
+    var body: some View {
+        Section {
+            Toggle(isOn: $store.alternadorControl) {
+                Text("Alternador de apps")
+                Text("Segure o modificador do atalho, aperte de novo para avançar (⇧ volta) e solte para trocar. Os apps vêm na ordem em que você os usou.")
+            }
+            if store.alternadorControl {
+                LabeledContent {
+                    HStack {
+                        ShortcutRecorder(acao: .alternador)
+                        if store.atalho(de: .alternador) == nil {
+                            Button("Usar ⌥Tab") { store.definirAtalho(sugestao, para: .alternador) }
+                        }
+                    }
+                } label: {
+                    Text("Atalho")
+                    Text("Precisa de ⌘, ⌥ ou ⌃: é soltando ele que a troca acontece.")
+                }
+                if let erro = store.erroDoAtalho(.alternador) {
+                    Label(erro, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange).font(.callout)
+                }
+                Toggle(isOn: $store.alternadorJanelas) {
+                    Text("Mostrar cada janela")
+                    Text("Uma entrada por janela, com o título, e a escolhida vem para a frente. Pede Acessibilidade; sem ela, o alternador troca de app.")
+                }
+            }
+        } header: {
+            Text("Alternador")
+        } footer: {
+            Text("Não substitui o ⌘Tab do sistema — interceptá-lo exigiria ler o teclado inteiro. Prévias ao vivo das janelas pediriam Gravação de Tela e ficam para depois.")
+        }
+    }
+}
+
+/// O módulo com permissão: o interruptor, o estado da Acessibilidade e o
+/// caminho para concedê-la.
+private struct SecaoColarSozinho: View {
+    @EnvironmentObject var store: DockaStore
+    @State private var permitido = Colagem.permitido
+    private let relogio = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        Section {
+            Toggle(isOn: $store.colarSozinho) {
+                Text("Colar sozinho")
+                Text("Ao escolher no histórico ou num snippet, o Docka cola direto no app da frente, em vez de só deixar pronto para o ⌘V.")
+            }
+            if store.colarSozinho {
+                LabeledContent {
+                    if !permitido {
+                        Button("Abrir Privacidade") { Colagem.abrirAjustesDePrivacidade() }
+                    }
+                } label: {
+                    Label(permitido ? "Acessibilidade concedida" : "Falta conceder a Acessibilidade",
+                          systemImage: permitido ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
+                        .foregroundStyle(permitido ? .green : .orange)
+                }
+            }
+        } header: {
+            Text("Módulo com permissão")
+        } footer: {
+            Text("Mandar um ⌘V para outro app exige a permissão de Acessibilidade — é a única coisa que o Docka faz com ela. Sem a permissão, nada quebra: o item só fica copiado. Com o Docka assinado sem certificado de desenvolvedor, o macOS pode pedir a permissão de novo a cada versão nova.")
+        }
+        // a permissão é dada nos Ajustes do Sistema, fora do Docka: relê sozinho
+        .onReceive(relogio) { _ in permitido = Colagem.permitido }
+    }
+}
+
+/// Lista e editor dos snippets.
+private struct SecaoDeSnippets: View {
+    @ObservedObject private var modelo = SnippetsModelo.shared
+    @State private var editando: UUID?
+
+    var body: some View {
+        Section {
+            ForEach($modelo.lista) { $s in
+                DisclosureGroup(isExpanded: Binding(get: { editando == s.id },
+                                                    set: { editando = $0 ? s.id : nil })) {
+                    TextField("Nome", text: $s.nome)
+                    TextEditor(text: $s.texto)
+                        .font(.system(size: 12, design: .monospaced))
+                        .frame(minHeight: 70)
+                    HStack {
+                        Text("Prévia: \(SnippetsModelo.expandido(s))")
+                            .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                        Spacer()
+                        Button("Apagar", role: .destructive) { modelo.remover(s.id) }
+                    }
+                } label: {
+                    Text(s.nome)
+                }
+            }
+            HStack {
+                Button("Novo snippet") { editando = modelo.novo().id }
+                Spacer()
+                Button("Abrir a lista") { SnippetsController.shared.abrir() }
+                    .disabled(modelo.lista.isEmpty)
+            }
+        } header: {
+            Text("Snippets")
+        } footer: {
+            Text("Textos prontos, escolhidos pelo atalho dos snippets. Variáveis: " + Snippets.variaveis.map { "\($0.chave) — \($0.descricao)" }.joined(separator: "; ") + ". Expandir um gatilho digitado (como ;email) pediria Monitoramento de Entrada e fica para depois.")
+        }
+    }
+}
+
 // MARK: - Brilho e volume
 
 /// A mesma página para os dois controles de borda: o que muda entre eles cabe
@@ -1103,6 +1764,10 @@ private struct DeslizadorView: View {
                     Text(deslizador.nota)
                 }
             }
+
+            if deslizador.id == "brilho" {
+                TelasDeBrilhoSection()
+            }
         }
         .formStyle(.grouped)
     }
@@ -1147,6 +1812,153 @@ private struct DeslizadorView: View {
     }
 }
 
+// MARK: - Energia
+
+private struct EnergiaView: View {
+    @EnvironmentObject var store: DockaStore
+    @ObservedObject private var sessao = AcordadoSessao.shared
+
+    var body: some View {
+        Form {
+            Section {
+                LabeledContent {
+                    if sessao.ativo {
+                        Button("Desligar") { sessao.desligar() }
+                    } else {
+                        Button("Ligar") { store.alternarAcordado() }
+                    }
+                } label: {
+                    Text("Manter acordado")
+                    Text(sessao.ativo
+                         ? "Ligado — \(sessao.fim == nil ? "até você desligar" : "faltam \(sessao.restante)")."
+                         : "Impede o Mac de dormir sozinho enquanto estiver ligado.")
+                }
+
+                Picker(selection: $store.acordadoDuracao) {
+                    ForEach(DuracaoAcordado.allCases) { d in Text(d.titulo).tag(d) }
+                } label: {
+                    Text("Duração padrão")
+                    Text("Usada pelo atalho e pelo botão acima. O menu da barra oferece todas.")
+                }
+
+                Toggle(isOn: $store.acordadoTelaAcesa) {
+                    Text("Manter a tela acesa")
+                    Text("Desligado, só o sistema fica acordado: downloads e builds continuam, mas a tela apaga.")
+                }
+            } footer: {
+                Text("Usa a mesma asserção de energia do caffeinate, sem permissão. Encerrar o Docka libera o Mac na hora; fechar a tampa ainda faz o Mac dormir.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Ações rápidas
+
+private struct AcoesRapidasView: View {
+    @EnvironmentObject var store: DockaStore
+
+    private var disponiveis: [AcaoRapida] {
+        AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.acoesRapidas) {
+                    Text("Mostrar no menu da barra")
+                    Text("Um submenu com as ações abaixo. Os atalhos funcionam mesmo com ele desligado.")
+                }
+            }
+
+            Section {
+                ForEach(disponiveis) { a in
+                    LabeledContent {
+                        Button("Executar") { AcoesRapidasBackend.executar(a) }
+                    } label: {
+                        Label {
+                            Text(AcoesRapidasBackend.titulo(a))
+                            Text(a.descricao)
+                        } icon: {
+                            Image(systemName: a.simbolo)
+                        }
+                    }
+                }
+            } footer: {
+                Text("Nenhuma pede permissão. Esvaziar o Lixo e trocar claro/escuro ficaram de fora porque exigiriam autorizar o Docka a controlar o Finder e os Eventos do Sistema.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Brilho por tela
+
+/// Uma linha por tela conectada: o brilho de hardware, onde a tela aceita, e o
+/// escurecimento por software em todas — que também vai abaixo do mínimo.
+private struct TelasDeBrilhoSection: View {
+    @ObservedObject private var telas = TelasDeBrilho.shared
+
+    var body: some View {
+        Section {
+            ForEach(telas.telas) { tela in
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Label(tela.nome, systemImage: tela.hardware ? "laptopcomputer" : "display")
+                        Spacer()
+                        Text(tela.hardware ? "Brilho do painel" : "Só por software")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    if tela.hardware {
+                        LinhaDeBrilho(tela: tela)
+                    }
+                    LabeledContent {
+                        HStack {
+                            Slider(value: Binding(get: { telas.escurecimento(tela) },
+                                                  set: { telas.definirEscurecimento($0, em: tela) }),
+                                   in: 0...Escurecimento.maximo)
+                            Text("\(Int((telas.escurecimento(tela) * 100).rounded()))%")
+                                .monospacedDigit()
+                                .frame(width: 40, alignment: .trailing)
+                        }
+                    } label: {
+                        Text(tela.hardware ? "Escurecer além do mínimo" : "Escurecer")
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        } header: {
+            Text("Telas")
+        } footer: {
+            Text("O escurecimento pinta a imagem mais escura pela tabela de gama — funciona em qualquer monitor, inclusive nos que não aceitam controle de brilho, e para em \(Int(Escurecimento.maximo * 100))% para a tela nunca ficar preta. Se o Docka for encerrado, as cores voltam ao normal sozinhas.")
+        }
+        .onAppear { telas.atualizarTelas() }
+    }
+}
+
+/// O brilho de hardware de uma tela, lido ao aparecer e escrito ao arrastar.
+private struct LinhaDeBrilho: View {
+    let tela: TelasDeBrilho.Tela
+    @State private var nivel: Double = 0.5
+
+    var body: some View {
+        LabeledContent {
+            HStack {
+                Slider(value: Binding(get: { nivel }, set: {
+                    nivel = $0
+                    BrightnessBackend.escrever($0, tela.id)
+                }), in: 0...1)
+                Text("\(Int((nivel * 100).rounded()))%")
+                    .monospacedDigit()
+                    .frame(width: 40, alignment: .trailing)
+            }
+        } label: {
+            Text("Brilho")
+        }
+        .onAppear { nivel = BrightnessBackend.ler(tela.id) ?? nivel }
+    }
+}
+
 // MARK: - Atalhos
 
 private struct AtalhoView: View {
@@ -1168,7 +1980,8 @@ private struct AtalhoView: View {
                      : "O atalho fixa a bandeja aberta e a esconde no segundo toque.")
             }
 
-            if store.brightnessControl || store.volumeControl || store.orbitaControl {
+            if store.brightnessControl || store.volumeControl || store.orbitaControl
+                || store.prateleiraControl || store.notasControl || store.monitorControl {
                 Section {
                     if store.brightnessControl {
                         linha(.brilho, titulo: "Controle de brilho",
@@ -1177,6 +1990,18 @@ private struct AtalhoView: View {
                     if store.volumeControl {
                         linha(.volume, titulo: "Controle de volume",
                               detalhe: "Abre a régua fixada, sem precisar encostar na borda")
+                    }
+                    if store.monitorControl {
+                        linha(.monitor, titulo: "Monitor do sistema",
+                              detalhe: "Fixa o painel aberto; o segundo toque esconde")
+                    }
+                    if store.notasControl {
+                        linha(.blocoDeNotas, titulo: "Bloco de notas",
+                              detalhe: "Abre pronto para digitar; o segundo toque esconde")
+                    }
+                    if store.prateleiraControl {
+                        linha(.prateleira, titulo: "Prateleira",
+                              detalhe: "Fixa a prateleira aberta; o segundo toque esconde")
                     }
                     if store.orbitaControl {
                         linha(.orbita, titulo: "Órbita",
@@ -1192,6 +2017,34 @@ private struct AtalhoView: View {
                 } header: {
                     Text("Controles de borda")
                 }
+            }
+
+            Section {
+                if store.historicoControl {
+                    linha(.historico, titulo: "Histórico",
+                          detalhe: "Abre a lista com busca; ↩ copia o escolhido")
+                }
+                linha(.textoPuro, titulo: "Colar sem formatação",
+                      detalhe: "Deixa o que está copiado em texto puro — depois é só ⌘V")
+                linha(.snippets, titulo: "Snippets",
+                      detalhe: "Abre a lista; ↩ insere o escolhido")
+            } header: {
+                Text("Área de transferência")
+            }
+
+            Section {
+                linha(.acordado, titulo: "Manter acordado",
+                      detalhe: "Liga com a duração padrão; o segundo toque desliga")
+            } header: {
+                Text("Energia")
+            }
+
+            Section {
+                ForEach(AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)) { a in
+                    linha(.rapida(a), titulo: a.titulo, detalhe: a.descricao)
+                }
+            } header: {
+                Text("Ações rápidas")
             }
 
             Section {

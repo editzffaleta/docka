@@ -4,6 +4,103 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
+## [Não lançado]
+
+### Novo
+
+- **Manter acordado**: impede o Mac de dormir por 15 min, 30 min, 1 h, 2 h,
+  5 h ou até você desligar. Fica no menu da barra (que mostra o tempo
+  restante e troca o ícone por uma xícara enquanto está ligado), na nova
+  seção **Energia** dos ajustes e num atalho global próprio. Opcionalmente
+  deixa a tela apagar e segura só o sistema. Usa a mesma asserção de energia
+  do `caffeinate`: API pública, sem permissão, e liberada na hora se o Docka
+  for encerrado.
+- **Ações rápidas**: travar a tela, apagar as telas, proteção de tela,
+  repouso, ejetar todos os discos e ocultar/mostrar os ícones da mesa. Ficam
+  num submenu opcional da barra, numa seção própria dos ajustes e cada uma
+  pode ter atalho global. Nenhuma pede permissão. "Ejetar todos" leva o que
+  não for o disco interno — inclusive SSD externo que não se declara
+  ejetável — e só mostra aviso quando algum disco em uso não sai.
+- **Prateleira**: painel numa lateral para estacionar arquivos, textos e
+  links. Abre sozinha quando qualquer arrasto começa (ou encostando na
+  borda, ou pelo atalho), recebe vários itens de uma vez e devolve: clique
+  abre (texto é copiado), arrastar leva um item, e a alça "Tudo" leva todos
+  numa só sessão. Arquivos são só referenciados — movido ou apagado, o item
+  sai sozinho. Sem permissão: o arrasto é percebido pelo contador da área
+  de arrasto do sistema, que qualquer app pode ler.
+- **Bloco de notas**: notas em abas numa lateral (a esquerda, por padrão,
+  longe da prateleira), salvas sozinhas meio segundo depois da última
+  tecla num arquivo próprio em Application Support. Aceita digitação sem
+  tirar o foco do app em que você está; enquanto você escreve, não some
+  com o cursor longe, e Esc devolve o teclado. O atalho abre já pronto para
+  digitar. Pré-visualização de Markdown com títulos, listas, citações,
+  código e tarefas que se marcam com um clique; exporta a nota como `.md`.
+- **Órbita com submenus e ações rápidas**: dois tipos novos de item no
+  anel. **Submenu** abre outro anel no mesmo lugar, sem trocar o anel
+  ativo; clique no miolo ou Esc volta um nível, e só fecha no anel de
+  partida. **Ação rápida** trava a tela, ejeta discos e afins direto do
+  anel. Apagar um anel leva junto os submenus que apontavam para ele.
+- **Monitor do sistema**: painel de borda (direita, na base, por padrão)
+  com CPU, memória e rede em gráficos dos últimos dois minutos, disco livre
+  e bateria com tempo restante, e aviso quando o Mac esquenta. Opcionalmente
+  mostra uma leitura ao lado do ícone na barra de menus. Só mede enquanto o
+  painel está aberto ou há leitura na barra. Conferido contra `top`,
+  `vm_stat` e `pmset`; memória em base 1024, como o Monitor de Atividade.
+- **Alertas**: um aviso de vidro no canto superior direito quando a CPU
+  fica alta por minutos seguidos, a memória aperta, o disco está quase
+  cheio, a bateria está baixa ou o Mac esquenta. Limites ajustáveis; cada
+  alerta avisa uma vez e só volta a avisar depois que a situação normaliza
+  com folga. O aviso é do próprio Docka — notificações do sistema pediriam
+  autorização. Memória e temperatura chegam por evento do sistema, sem
+  medição contínua.
+- **Brilho por tela**: os ajustes de Brilho listam cada tela conectada,
+  com o brilho do painel onde ele existe e um **escurecimento por software**
+  em todas — que funciona em monitores externos sem controle de brilho e
+  também vai abaixo do mínimo do painel. A régua da borda passa a valer em
+  qualquer monitor: onde não há brilho de hardware, ela escurece pela gama.
+  O escurecimento para em 80% (a tela nunca fica preta), é lembrado por
+  monitor e some sozinho se o Docka encerrar.
+- **Histórico da área de transferência**: textos, links e arquivos
+  copiados, com busca (sem diferenciar acento), fixar no topo e navegação
+  pelo teclado num painel que abre pelo atalho; escolher um item o devolve
+  à área de transferência, pronto para ⌘V. Os últimos também ficam num
+  submenu da barra. Senhas de gerenciadores (marcadas como sigilosas pela
+  convenção nspasteboard.org) não entram. Pode viver só na memória.
+- **Colar sem formatação**, **limpar rastreadores de links** (manual ou a
+  cada cópia) e **apagar a área de transferência** depois de um tempo.
+- **Snippets**: textos prontos com `{data}`, `{hora}`, `{dia}` e
+  `{clipboard}`, escolhidos num painel com busca pelo atalho.
+- **Colar sozinho** — o primeiro **módulo opcional com permissão**: com a
+  Acessibilidade concedida, escolher no histórico ou num snippet cola direto
+  no app da frente (o ⌘V usa a tecla certa do layout em uso). O snippet
+  devolve depois o que estava copiado antes. Sem a permissão, tudo continua
+  só copiando. README e SECURITY.md passam a listar as permissões por módulo
+  e o que fica gravado em disco.
+- **Encaixar janelas** (módulo opcional, Acessibilidade): atalhos e um
+  menu "Janelas" na barra para mandar a janela da frente para metades,
+  quartos e terços, maximizar, centralizar, levar para a próxima tela
+  (mantendo a proporção) e voltar ao tamanho de antes. Repetir o atalho de
+  uma metade alterna a largura entre ½, ⅓ e ⅔.
+- **Alternador de apps**: num atalho próprio (sugestão ⌥Tab), mostra os
+  apps na ordem de uso; segure o modificador, aperte de novo para avançar
+  (⇧ volta, setas também) e solte para trocar. Sem permissão: soltar o
+  modificador é percebido lendo o estado do teclado. Com Acessibilidade,
+  opcionalmente lista cada janela pelo título e traz a escolhida para a
+  frente. A ativação passa pelo LaunchServices, que funciona mesmo com a
+  ativação cooperativa do macOS 14+.
+- **Ajustes do mouse** (módulo opcional, Acessibilidade): inverter a
+  rolagem da roda (vertical e horizontal, separadas) sem mexer no
+  trackpad, rolagem linear (cada dente vale o mesmo), rolagem suave
+  (deslize com desaceleração), rolar de lado segurando ⌥/⌃/⌘ e botões
+  laterais como voltar/avançar (⌘[ / ⌘]). O botão usado pela Órbita fica
+  com ela. Só eventos do mouse passam pelo Docka.
+- **Captura** (módulo opcional): **conta-gotas** sem permissão, copiando
+  em HEX, RGB, HSL ou SwiftUI; **texto da tela** com leitor de QR, que
+  reconhece português e inglês no próprio Mac (Vision); e **captura de
+  área** para a área de transferência ou a Mesa. A seleção é a do próprio
+  macOS (a do ⇧⌘4). Texto e captura pedem Gravação de Tela.
+- Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
 ## [1.1.2] — 2026-07-30
 
 ### Identidade

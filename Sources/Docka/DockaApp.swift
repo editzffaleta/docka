@@ -110,9 +110,80 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--acordado-selftest") {
+            let saida = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"]
+                ?? "/tmp/docka-acordado-selftest.txt"
+            print("acordado: \(AcordadoBackend.autoteste(paraArquivo: saida))")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
+        if CommandLine.arguments.contains("--monitor-selftest") {
+            print("monitor: \(MonitorModelo.autoteste())")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
+        if CommandLine.arguments.contains("--alertas-selftest") {
+            print("alertas:\n\(VigiaController.autoteste())")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
+        if CommandLine.arguments.contains("--telas-selftest") {
+            print("telas:\n\(TelasDeBrilho.autoteste())")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
+        if CommandLine.arguments.contains("--clipboard-selftest") {
+            print("clipboard:\n\(HistoricoModelo.autoteste())")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
+        if CommandLine.arguments.contains("--colagem-selftest") {
+            // aberto pelo `open`, o app não herda a permissão de um terminal
+            // e não tem stdout: o resultado vai também para um arquivo
+            let r = Colagem.autoteste()
+            let saida = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"]
+                ?? "/tmp/docka-colagem-selftest.txt"
+            try? r.write(toFile: saida, atomically: true, encoding: .utf8)
+            print("colagem:\n\(r)")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
+        if CommandLine.arguments.contains("--mouse-selftest") {
+            print("mouse:\n\(MouseController.autoteste())")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
+        if CommandLine.arguments.contains("--captura-selftest") {
+            print("captura:\n\(CapturaController.autoteste())")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
         if CommandLine.arguments.contains("--demo") {
             TrayManager.shared.startDemo()
         }
+    }
+
+    // o bloco de notas grava meio segundo depois da última tecla: encerrar
+    // nesse meio-tempo perderia o fim do que foi escrito
+    func applicationWillTerminate(_ notification: Notification) {
+        NotasModelo.shared.gravarAgora()
+        HistoricoModelo.shared.gravarAgora()
     }
 
     // a bandeja continua viva com a janela fechada — é o ponto do app
@@ -129,21 +200,84 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 struct DockaApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var store = DockaStore.shared
+    @StateObject private var acordado = AcordadoSessao.shared
+    @StateObject private var monitor = MonitorModelo.shared
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBarContent().environmentObject(store)
+            MenuBarContent().environmentObject(store).environmentObject(acordado)
         } label: {
-            Image(systemName: "tray.full.fill")
+            // a xícara avisa que o Mac está sendo segurado acordado — sem ela,
+            // é fácil esquecer ligado e estranhar a bateria no fim do dia
+            let icone = Image(systemName: acordado.ativo ? "cup.and.saucer.fill" : "tray.full.fill")
+            // a barra de menus só desenha um Text ou uma Image: o ícone vai
+            // interpolado no texto para a leitura caber ao lado dele
+            if let leitura = monitor.textoDaBarra(store.leituraDaBarra) {
+                Text("\(icone) \(leitura)").monospacedDigit()
+            } else {
+                icone
+            }
         }
     }
 }
 
 struct MenuBarContent: View {
     @EnvironmentObject var store: DockaStore
+    @EnvironmentObject var acordado: AcordadoSessao
+    @ObservedObject private var historico = HistoricoModelo.shared
 
     var body: some View {
         Button("Abrir Configurações") { SettingsWindowController.shared.show() }
+        Divider()
+        menuAcordado
+        if store.historicoControl {
+            Menu("Área de transferência") {
+                Button("Abrir o histórico…") { HistoricoController.shared.abrir() }
+                Divider()
+                ForEach(HistoricoDeCopias.ordenados(historico.itens).prefix(10)) { item in
+                    Button(HistoricoDeCopias.encurtar(item.resumo, ate: 50)) {
+                        historico.copiar(item)
+                    }
+                }
+                Divider()
+                Button("Deixar o copiado sem formatação") { HistoricoModelo.shared.soTexto() }
+                Button("Limpar rastreadores do link copiado") { HistoricoModelo.shared.limparLinkCopiado() }
+            }
+        }
+        if store.capturaControl {
+            Menu("Captura") {
+                Button("Conta-gotas") { CapturaController.contaGotas() }
+                Button("Copiar texto da tela") { CapturaController.textoDaTela() }
+                Button(store.capturaNaMesa ? "Capturar área para a Mesa" : "Capturar área para copiar") {
+                    CapturaController.capturarArea()
+                }
+            }
+        }
+        if store.janelasControl {
+            Menu("Janelas") {
+                ForEach(LayoutDeJanela.grupos.indices, id: \.self) { g in
+                    if g > 0 { Divider() }
+                    ForEach(LayoutDeJanela.grupos[g]) { l in
+                        Button {
+                            JanelasBackend.executar(l)
+                        } label: {
+                            Label(l.titulo, systemImage: l.simbolo)
+                        }
+                    }
+                }
+            }
+        }
+        if store.acoesRapidas {
+            Menu("Ações rápidas") {
+                ForEach(AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)) { a in
+                    Button {
+                        AcoesRapidasBackend.executar(a)
+                    } label: {
+                        Label(AcoesRapidasBackend.titulo(a), systemImage: a.simbolo)
+                    }
+                }
+            }
+        }
         Divider()
         Toggle("Sons", isOn: $store.soundsEnabled)
         Toggle("Pressure Zone", isOn: $store.pressureZone)
@@ -151,5 +285,26 @@ struct MenuBarContent: View {
                                                set: { store.setLaunchAtLogin($0) }))
         Divider()
         Button("Encerrar o Docka") { NSApp.terminate(nil) }
+    }
+
+    @ViewBuilder
+    private var menuAcordado: some View {
+        if acordado.ativo {
+            Menu("Acordado — \(acordado.restante)") {
+                Button("Desligar") { acordado.desligar() }
+                Divider()
+                duracoes(titulo: "Recomeçar com")
+            }
+        } else {
+            Menu("Manter acordado") { duracoes(titulo: nil) }
+        }
+    }
+
+    @ViewBuilder
+    private func duracoes(titulo: String?) -> some View {
+        if let titulo { Text(titulo) }
+        ForEach(DuracaoAcordado.allCases) { d in
+            Button(d.titulo) { acordado.ligar(d, telaAcesa: store.acordadoTelaAcesa) }
+        }
     }
 }

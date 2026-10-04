@@ -9,7 +9,8 @@ struct AcaoDeAtalhoTests {
     func idaEVolta() {
         let uuid = UUID()
         let casos: [AcaoDeAtalho] = [.bandeja(uuid), .brilho, .volume, .ajustes,
-                                     .orbita, .anel(uuid)]
+                                     .orbita, .anel(uuid), .acordado,
+                                     .historico, .textoPuro]
         for c in casos {
             #expect(AcaoDeAtalho(id: c.id) == c)
         }

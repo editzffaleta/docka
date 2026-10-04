@@ -4,8 +4,12 @@ import Foundation
 ///
 /// A referência lança quatro tipos: aplicativo, site, arquivo e pasta. O
 /// `valor` guarda o caminho (app, arquivo, pasta) ou a URL (site).
+///
+/// Mais dois não lançam nada de fora: `anel` abre outro anel no mesmo lugar,
+/// como um submenu (o `valor` é o id dele), e `acao` executa uma ação rápida
+/// (o `valor` é o `rawValue` da `AcaoRapida`).
 public enum TipoDeItem: String, Codable, CaseIterable, Sendable {
-    case app, site, arquivo, pasta
+    case app, site, arquivo, pasta, anel, acao
 
     public var titulo: String {
         switch self {
@@ -13,6 +17,8 @@ public enum TipoDeItem: String, Codable, CaseIterable, Sendable {
         case .site:    return "Site"
         case .arquivo: return "Arquivo"
         case .pasta:   return "Pasta"
+        case .anel:    return "Submenu"
+        case .acao:    return "Ação rápida"
         }
     }
 
@@ -23,6 +29,8 @@ public enum TipoDeItem: String, Codable, CaseIterable, Sendable {
         case .site:    return "globe"
         case .arquivo: return "doc"
         case .pasta:   return "folder"
+        case .anel:    return "circle.circle"
+        case .acao:    return "bolt.fill"
         }
     }
 }
@@ -62,6 +70,10 @@ public struct ItemDaOrbita: Codable, Identifiable, Hashable, Sendable {
         switch tipo {
         case .site:
             return URL(string: valor)?.host ?? valor
+        case .anel:
+            return "Submenu"
+        case .acao:
+            return AcaoRapida(rawValue: valor)?.titulo ?? valor
         case .app, .arquivo, .pasta:
             let base = (valor as NSString).lastPathComponent
             return tipo == .app ? (base as NSString).deletingPathExtension : base
@@ -94,12 +106,71 @@ public struct AnelDaOrbita: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
+/// Por onde a órbita andou ao entrar em submenus — para o "voltar".
+public struct NavegacaoDaOrbita: Equatable, Sendable {
+    /// Os anéis de onde se entrou, do mais antigo ao mais recente.
+    public private(set) var pilha: [UUID] = []
+    /// O anel mostrado agora, quando é um submenu; `nil` = o anel ativo.
+    public private(set) var exibido: UUID?
+
+    /// Profundidade máxima. Submenus que se apontam em roda não podem fazer
+    /// a pilha crescer sem fim.
+    public static let profundidade = 8
+
+    public init() {}
+
+    public var emSubmenu: Bool { exibido != nil }
+
+    /// Entra no anel `destino`, guardando `atual` para voltar.
+    public mutating func entrar(_ destino: UUID, vindoDe atual: UUID) {
+        guard destino != atual else { return }
+        pilha.append(atual)
+        if pilha.count > Self.profundidade { pilha.removeFirst() }
+        exibido = destino
+    }
+
+    /// Volta um nível. Devolve `false` se já estava no anel de partida —
+    /// aí quem chamou fecha a órbita.
+    @discardableResult
+    public mutating func voltar() -> Bool {
+        guard emSubmenu, let anterior = pilha.popLast() else { return false }
+        // a base da pilha é o anel ativo: voltar até ela é sair do submenu
+        exibido = pilha.isEmpty ? nil : anterior
+        return true
+    }
+
+    /// Esquece o caminho — ao fechar, ou ao trocar de anel pela rolagem.
+    public mutating func zerar() {
+        pilha = []
+        exibido = nil
+    }
+}
+
 public enum Aneis {
     /// Limite da referência. Mais que isso e a troca por rolagem vira roleta.
     public static let maximo = 8
 
     /// Itens por anel: acima disso os setores ficam finos demais para apontar.
     public static let maximoDeItens = 12
+
+    /// Anéis que podem virar submenu de `anel`: todos menos ele mesmo e os que
+    /// ele já tem como item. Um anel que abre a si mesmo não leva a lugar
+    /// nenhum.
+    public static func destinosDeSubmenu(de anel: AnelDaOrbita,
+                                         em aneis: [AnelDaOrbita]) -> [AnelDaOrbita] {
+        let jaTem = Set(anel.itens.filter { $0.tipo == .anel }.map(\.valor))
+        return aneis.filter { $0.id != anel.id && !jaTem.contains($0.id.uuidString) }
+    }
+
+    /// Apaga um anel e, junto, os itens dos outros que abriam ele — sem isso
+    /// sobraria um setor que não leva a lugar nenhum.
+    public static func removendo(_ id: UUID, de aneis: [AnelDaOrbita]) -> [AnelDaOrbita] {
+        aneis.filter { $0.id != id }.map { a in
+            var a = a
+            a.itens.removeAll { $0.tipo == .anel && $0.valor == id.uuidString }
+            return a
+        }
+    }
 
     public static func podeCriar(_ atuais: [AnelDaOrbita]) -> Bool {
         atuais.count < maximo

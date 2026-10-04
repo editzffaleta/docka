@@ -26,7 +26,16 @@ enum ItemVisual {
         }
         let chave = "\(item.tipo.rawValue):\(item.valor)" as NSString
         if let pronto = cache.object(forKey: chave) { return pronto }
-        let imagem = NSWorkspace.shared.icon(forFile: item.valor)
+        let imagem: NSImage
+        switch item.tipo {
+        case .anel:
+            imagem = ladrilho(simbolo: "circle.circle.fill", cor: .systemPurple)
+        case .acao:
+            imagem = ladrilho(simbolo: AcaoRapida(rawValue: item.valor)?.simbolo ?? "bolt.fill",
+                              cor: .systemRed)
+        default:
+            imagem = NSWorkspace.shared.icon(forFile: item.valor)
+        }
         cache.setObject(imagem, forKey: chave)
         return imagem
     }
@@ -54,14 +63,26 @@ enum ItemVisual {
             return PinnedApp(path: item.valor).name
         case .arquivo, .pasta:
             return FileManager.default.displayName(atPath: item.valor)
-        case .site:
+        case .site, .acao:
             return item.nomeDerivado
+        case .anel:
+            return DockaStore.shared.aneis.first { $0.id.uuidString == item.valor }?.nome
+                ?? "Submenu"
         }
     }
 
     /// O item ainda existe? Sites sempre existem; o resto depende do disco.
     static func existe(_ item: ItemDaOrbita) -> Bool {
-        item.tipo == .site || FileManager.default.fileExists(atPath: item.valor)
+        switch item.tipo {
+        case .site:
+            return true
+        case .anel:
+            return DockaStore.shared.aneis.contains { $0.id.uuidString == item.valor }
+        case .acao:
+            return AcaoRapida(rawValue: item.valor).map(AcoesRapidasBackend.disponivel) ?? false
+        case .app, .arquivo, .pasta:
+            return FileManager.default.fileExists(atPath: item.valor)
+        }
     }
 
     /// Abre o item do jeito próprio de cada tipo.
@@ -74,6 +95,35 @@ enum ItemVisual {
         case .arquivo, .pasta:
             // pasta abre no Finder; arquivo abre no app padrão dele
             NSWorkspace.shared.open(URL(fileURLWithPath: item.valor))
+        case .acao:
+            if let a = AcaoRapida(rawValue: item.valor) { AcoesRapidasBackend.executar(a) }
+        case .anel:
+            break   // quem entra no submenu é a própria órbita, que segue aberta
+        }
+    }
+
+    /// Um símbolo branco num ladrilho colorido, do feitio de um ícone de app —
+    /// para os itens que não têm ícone no disco (submenu e ação rápida).
+    private static func ladrilho(simbolo nome: String, cor: NSColor) -> NSImage {
+        let lado: CGFloat = 128
+        return NSImage(size: NSSize(width: lado, height: lado), flipped: false) { rect in
+            let forma = NSBezierPath(roundedRect: rect.insetBy(dx: 10, dy: 10),
+                                     xRadius: 26, yRadius: 26)
+            cor.withAlphaComponent(0.9).setFill()
+            forma.fill()
+            if let simbolo = NSImage(systemSymbolName: nome, accessibilityDescription: nil)?
+                .withSymbolConfiguration(.init(pointSize: 54, weight: .semibold)) {
+                let branca = NSImage(size: simbolo.size, flipped: false) { r in
+                    NSColor.white.set()
+                    simbolo.draw(in: r)
+                    r.fill(using: .sourceAtop)
+                    return true
+                }
+                let s = branca.size
+                branca.draw(in: NSRect(x: rect.midX - s.width / 2, y: rect.midY - s.height / 2,
+                                       width: s.width, height: s.height))
+            }
+            return true
         }
     }
 

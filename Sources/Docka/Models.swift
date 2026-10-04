@@ -143,6 +143,49 @@ final class DockaStore: ObservableObject {
         static let orbitaApps = "docka.orbitaApps"
         static let orbitaAneis = "docka.orbitaRings"
         static let orbitaAnelAtivo = "docka.orbitaActiveRing"
+        static let acordadoDuracao = "docka.keepAwakeDuration"
+        static let acordadoTela = "docka.keepAwakeDisplay"
+        static let acoesRapidas = "docka.quickActions"
+        static let prateleira = "docka.shelf"
+        static let prateleiraBorda = "docka.shelfEdge"
+        static let prateleiraAlinhamento = "docka.shelfAlignment"
+        static let prateleiraAoArrastar = "docka.shelfOnDrag"
+        static let notas = "docka.notes"
+        static let notasBorda = "docka.notesEdge"
+        static let notasAlinhamento = "docka.notesAlignment"
+        static let monitor = "docka.monitor"
+        static let monitorBorda = "docka.monitorEdge"
+        static let monitorAlinhamento = "docka.monitorAlignment"
+        static let leituraDaBarra = "docka.menuBarReading"
+        static let alertas = "docka.alerts"
+        static let alertaCPU = "docka.alertCPU"
+        static let alertaCPULimite = "docka.alertCPULimit"
+        static let alertaCPUMinutos = "docka.alertCPUMinutes"
+        static let alertaMemoria = "docka.alertMemory"
+        static let alertaDisco = "docka.alertDisk"
+        static let alertaDiscoGB = "docka.alertDiskGB"
+        static let alertaBateria = "docka.alertBattery"
+        static let alertaBateriaLimite = "docka.alertBatteryLimit"
+        static let alertaTemperatura = "docka.alertThermal"
+        static let historico = "docka.clipboardHistory"
+        static let historicoLimite = "docka.clipboardLimit"
+        static let historicoLembrar = "docka.clipboardRemember"
+        static let limparLinks = "docka.cleanLinksOnCopy"
+        static let apagarClipboard = "docka.clearClipboardAfter"
+        static let colarSozinho = "docka.autoPaste"
+        static let janelas = "docka.windowSnapping"
+        static let alternador = "docka.switcher"
+        static let alternadorJanelas = "docka.switcherWindows"
+        static let mouse = "docka.mouse"
+        static let mouseInverterV = "docka.mouseInvertVertical"
+        static let mouseInverterH = "docka.mouseInvertHorizontal"
+        static let mouseLinhas = "docka.mouseLinesPerNotch"
+        static let mouseSuave = "docka.mouseSmooth"
+        static let mouseDeLado = "docka.mouseSidewaysModifier"
+        static let mouseBotoes = "docka.mouseSideButtons"
+        static let captura = "docka.capture"
+        static let formatoDeCor = "docka.colorFormat"
+        static let capturaNaMesa = "docka.captureToDesktop"
     }
 
     private let defaults = UserDefaults.standard
@@ -201,8 +244,13 @@ final class DockaStore: ObservableObject {
     }
 
     /// Os itens do anel em uso que ainda existem no disco.
-    var itensDaOrbita: [ItemDaOrbita] {
-        (anelEmUso?.itens ?? []).filter { ItemVisual.existe($0) }
+    var itensDaOrbita: [ItemDaOrbita] { itens(doAnel: nil) }
+
+    /// Os itens de um anel (`nil` = o em uso) que ainda existem — os submenus
+    /// mostram outro anel sem trocar o ativo.
+    func itens(doAnel id: UUID?) -> [ItemDaOrbita] {
+        let anel = id.flatMap { i in aneis.first { $0.id == i } } ?? anelEmUso
+        return (anel?.itens ?? []).filter { ItemVisual.existe($0) }
     }
 
     private func atualizarAnel(_ id: UUID, _ mudanca: (inout AnelDaOrbita) -> Void) {
@@ -219,7 +267,7 @@ final class DockaStore: ObservableObject {
 
     func removerAnel(_ id: UUID) {
         guard aneis.count > 1 else { return }   // sempre sobra um
-        aneis.removeAll { $0.id == id }
+        aneis = Aneis.removendo(id, de: aneis)
         if anelAtivo == id { anelAtivo = aneis.first?.id }
     }
 
@@ -328,6 +376,150 @@ final class DockaStore: ObservableObject {
     /// Botão extra do mouse que abre a órbita; -1 = nenhum.
     @Published var orbitaBotao: Int { didSet { defaults.set(orbitaBotao, forKey: Key.orbitaBotao) } }
 
+    /// Duração usada pelo atalho e pelo clique direto em "Manter acordado".
+    @Published var acordadoDuracao: DuracaoAcordado {
+        didSet { defaults.set(acordadoDuracao.rawValue, forKey: Key.acordadoDuracao) }
+    }
+    /// Manter acordado segura também a tela acesa, não só o sistema.
+    @Published var acordadoTelaAcesa: Bool {
+        didSet {
+            defaults.set(acordadoTelaAcesa, forKey: Key.acordadoTela)
+            AcordadoSessao.shared.trocarTela(acesa: acordadoTelaAcesa)
+        }
+    }
+
+    /// Liga a prateleira — o painel de borda que segura arquivos, textos e links.
+    @Published var prateleiraControl: Bool { didSet { defaults.set(prateleiraControl, forKey: Key.prateleira) } }
+    /// Lateral da prateleira.
+    @Published var prateleiraBorda: String { didSet { defaults.set(prateleiraBorda, forKey: Key.prateleiraBorda) } }
+    @Published var prateleiraAlinhamento: String { didSet { defaults.set(prateleiraAlinhamento, forKey: Key.prateleiraAlinhamento) } }
+    /// Abre a prateleira sozinha quando um arrasto começa em qualquer lugar.
+    @Published var prateleiraAoArrastar: Bool { didSet { defaults.set(prateleiraAoArrastar, forKey: Key.prateleiraAoArrastar) } }
+
+    /// Liga o bloco de notas de borda.
+    @Published var notasControl: Bool { didSet { defaults.set(notasControl, forKey: Key.notas) } }
+    @Published var notasBorda: String { didSet { defaults.set(notasBorda, forKey: Key.notasBorda) } }
+    @Published var notasAlinhamento: String { didSet { defaults.set(notasAlinhamento, forKey: Key.notasAlinhamento) } }
+
+    /// Liga o painel de borda do monitor do sistema.
+    @Published var monitorControl: Bool { didSet { defaults.set(monitorControl, forKey: Key.monitor) } }
+    @Published var monitorBorda: String { didSet { defaults.set(monitorBorda, forKey: Key.monitorBorda) } }
+    @Published var monitorAlinhamento: String { didSet { defaults.set(monitorAlinhamento, forKey: Key.monitorAlinhamento) } }
+    /// O que aparece na barra de menus ao lado do ícone.
+    @Published var leituraDaBarra: LeituraDaBarra {
+        didSet {
+            defaults.set(leituraDaBarra.rawValue, forKey: Key.leituraDaBarra)
+            MonitorModelo.shared.interesse("barra", leituraDaBarra != .nenhuma)
+        }
+    }
+
+    /// Liga os alertas; cada um tem o seu interruptor e limite.
+    @Published var alertas: Bool { didSet { defaults.set(alertas, forKey: Key.alertas) } }
+    @Published var alertaCPU: Bool { didSet { defaults.set(alertaCPU, forKey: Key.alertaCPU) } }
+    @Published var alertaCPULimite: Double { didSet { defaults.set(alertaCPULimite, forKey: Key.alertaCPULimite) } }
+    @Published var alertaCPUMinutos: Int { didSet { defaults.set(alertaCPUMinutos, forKey: Key.alertaCPUMinutos) } }
+    @Published var alertaMemoria: Bool { didSet { defaults.set(alertaMemoria, forKey: Key.alertaMemoria) } }
+    @Published var alertaDisco: Bool { didSet { defaults.set(alertaDisco, forKey: Key.alertaDisco) } }
+    @Published var alertaDiscoGB: Int { didSet { defaults.set(alertaDiscoGB, forKey: Key.alertaDiscoGB) } }
+    @Published var alertaBateria: Bool { didSet { defaults.set(alertaBateria, forKey: Key.alertaBateria) } }
+    @Published var alertaBateriaLimite: Double { didSet { defaults.set(alertaBateriaLimite, forKey: Key.alertaBateriaLimite) } }
+    @Published var alertaTemperatura: Bool { didSet { defaults.set(alertaTemperatura, forKey: Key.alertaTemperatura) } }
+
+    /// Guarda o histórico da área de transferência.
+    @Published var historicoControl: Bool {
+        didSet { defaults.set(historicoControl, forKey: Key.historico); sincronizarClipboard() }
+    }
+    @Published var historicoLimite: Int { didSet { defaults.set(historicoLimite, forKey: Key.historicoLimite) } }
+    /// Grava o histórico em disco para sobreviver a reaberturas.
+    @Published var historicoLembrar: Bool {
+        didSet { defaults.set(historicoLembrar, forKey: Key.historicoLembrar); HistoricoModelo.shared.gravarAgora() }
+    }
+    /// Tira rastreadores de todo link copiado, sozinho.
+    @Published var limparLinksAoCopiar: Bool {
+        didSet { defaults.set(limparLinksAoCopiar, forKey: Key.limparLinks); sincronizarClipboard() }
+    }
+    /// Segundos até apagar a área de transferência (0 = nunca).
+    @Published var apagarClipboard: Int {
+        didSet { defaults.set(apagarClipboard, forKey: Key.apagarClipboard); sincronizarClipboard() }
+    }
+
+    /// Módulo com permissão: cola sozinho o que se escolhe no histórico e
+    /// nos snippets. Ligar pede a Acessibilidade, se ainda não houver.
+    @Published var colarSozinho: Bool {
+        didSet {
+            defaults.set(colarSozinho, forKey: Key.colarSozinho)
+            if colarSozinho && !Colagem.permitido { Colagem.pedirPermissao() }
+        }
+    }
+
+    /// Módulo com permissão: encaixar a janela da frente em layouts.
+    @Published var janelasControl: Bool {
+        didSet {
+            defaults.set(janelasControl, forKey: Key.janelas)
+            if janelasControl && !Colagem.permitido { Colagem.pedirPermissao() }
+        }
+    }
+
+    /// Alternador de apps no atalho próprio (sem permissão).
+    @Published var alternadorControl: Bool {
+        didSet {
+            defaults.set(alternadorControl, forKey: Key.alternador)
+            AlternadorController.shared.ligar(alternadorControl)
+        }
+    }
+    /// Uma entrada por janela no alternador — pede Acessibilidade.
+    @Published var alternadorJanelas: Bool {
+        didSet {
+            defaults.set(alternadorJanelas, forKey: Key.alternadorJanelas)
+            if alternadorJanelas && !Colagem.permitido { Colagem.pedirPermissao() }
+        }
+    }
+
+    /// Módulo com permissão: a rolagem e os botões do mouse.
+    @Published var mouseControl: Bool {
+        didSet {
+            defaults.set(mouseControl, forKey: Key.mouse)
+            if mouseControl && !Colagem.permitido { Colagem.pedirPermissao() }
+            MouseController.shared.sincronizar()
+        }
+    }
+    @Published var mouseInverterVertical: Bool { didSet { defaults.set(mouseInverterVertical, forKey: Key.mouseInverterV) } }
+    @Published var mouseInverterHorizontal: Bool { didSet { defaults.set(mouseInverterHorizontal, forKey: Key.mouseInverterH) } }
+    /// Linhas por dente da roda; 0 = a aceleração do sistema.
+    @Published var mouseLinhas: Int { didSet { defaults.set(mouseLinhas, forKey: Key.mouseLinhas) } }
+    @Published var mouseSuave: Bool { didSet { defaults.set(mouseSuave, forKey: Key.mouseSuave) } }
+    /// Modificadores (rawValue de Shortcut.Modifiers) que rolam de lado; 0 = nenhum.
+    @Published var mouseDeLado: Int { didSet { defaults.set(mouseDeLado, forKey: Key.mouseDeLado) } }
+    @Published var mouseBotoes: Bool { didSet { defaults.set(mouseBotoes, forKey: Key.mouseBotoes) } }
+
+    /// Módulo de captura: conta-gotas (sem permissão), texto da tela e
+    /// captura de área (Gravação de Tela).
+    @Published var capturaControl: Bool {
+        didSet {
+            defaults.set(capturaControl, forKey: Key.captura)
+            if capturaControl && !CapturaController.permitido { CapturaController.pedirPermissao() }
+        }
+    }
+    @Published var formatoDeCor: String { didSet { defaults.set(formatoDeCor, forKey: Key.formatoDeCor) } }
+    /// A captura de área vai para um arquivo na Mesa, em vez da área de transferência.
+    @Published var capturaNaMesa: Bool { didSet { defaults.set(capturaNaMesa, forKey: Key.capturaNaMesa) } }
+
+    /// O vigia da área de transferência só roda se algum recurso dele está
+    /// ligado — histórico, limpar links ou apagar depois de um tempo.
+    func sincronizarClipboard() {
+        HistoricoModelo.shared.ligar(historicoControl || limparLinksAoCopiar || apagarClipboard > 0)
+    }
+
+    /// Mostra o submenu "Ações rápidas" na barra de menus.
+    @Published var acoesRapidas: Bool { didSet { defaults.set(acoesRapidas, forKey: Key.acoesRapidas) } }
+
+    /// Liga com a duração escolhida, ou desliga se já estiver ligado.
+    func alternarAcordado() {
+        let sessao = AcordadoSessao.shared
+        if sessao.ativo { sessao.desligar() }
+        else { sessao.ligar(acordadoDuracao, telaAcesa: acordadoTelaAcesa) }
+    }
+
     /// Tonalização do vidro (0 = transparente, 1 = tonalizado), como o slider
     /// Liquid Glass das Configurações do Sistema.
     @Published var glassTint: Double { didSet { defaults.set(glassTint, forKey: Key.glassTint) } }
@@ -355,7 +547,7 @@ final class DockaStore: ObservableObject {
     /// Relê o brilho da tela. Chamado quando o controle aparece: o usuário pode
     /// ter mexido pelo teclado enquanto ele estava escondido.
     func sincronizarBrilho() {
-        if let real = BrightnessBackend.ler() { brightnessLevel = real }
+        if let real = TelasDeBrilho.shared.lerRegua() { brightnessLevel = real }
     }
 
     /// Relê o volume da saída. Além do teclado, ele muda sozinho quando o
@@ -426,6 +618,19 @@ final class DockaStore: ObservableObject {
         case .volume:  return "Controle de volume"
         case .ajustes: return "Abrir os ajustes"
         case .orbita:  return "Órbita"
+        case .acordado: return "Manter acordado"
+        case .rapida(let a): return a.titulo
+        case .prateleira: return "Prateleira"
+        case .blocoDeNotas: return "Bloco de notas"
+        case .monitor: return "Monitor do sistema"
+        case .historico: return "Histórico da área de transferência"
+        case .textoPuro: return "Colar sem formatação"
+        case .snippets: return "Snippets"
+        case .janela(let l): return "Janela — \(l.titulo.lowercased())"
+        case .alternador: return "Alternador de apps"
+        case .contaGotas: return "Conta-gotas"
+        case .textoDaTela: return "Texto da tela"
+        case .capturaArea: return "Capturar área"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -544,6 +749,52 @@ final class DockaStore: ObservableObject {
             Key.volumeBorda: TrayEdge.left.rawValue,
             Key.volumeAlinhamento: TrayAlignment.center.rawValue,
             Key.orbita: false,
+            Key.acordadoDuracao: DuracaoAcordado.umaHora.rawValue,
+            Key.acordadoTela: true,
+            Key.acoesRapidas: false,
+            Key.prateleira: false,
+            Key.prateleiraBorda: TrayEdge.right.rawValue,
+            Key.prateleiraAlinhamento: TrayAlignment.start.rawValue,
+            Key.prateleiraAoArrastar: true,
+            Key.notas: false,
+            // a prateleira nasce na direita: as notas nascem do outro lado
+            Key.notasBorda: TrayEdge.left.rawValue,
+            Key.notasAlinhamento: TrayAlignment.center.rawValue,
+            Key.monitor: false,
+            Key.monitorBorda: TrayEdge.right.rawValue,
+            // a prateleira fica no topo da direita: o monitor, na base
+            Key.monitorAlinhamento: TrayAlignment.end.rawValue,
+            Key.leituraDaBarra: LeituraDaBarra.nenhuma.rawValue,
+            // desligados em bloco por padrão; ligando, todos já vêm marcados
+            Key.alertas: false,
+            Key.alertaCPU: true,
+            Key.alertaCPULimite: 0.85,
+            Key.alertaCPUMinutos: 2,
+            Key.alertaMemoria: true,
+            Key.alertaDisco: true,
+            Key.alertaDiscoGB: 10,
+            Key.alertaBateria: true,
+            Key.alertaBateriaLimite: 0.20,
+            Key.alertaTemperatura: true,
+            Key.historico: false,
+            Key.historicoLimite: HistoricoDeCopias.limitePadrao,
+            Key.historicoLembrar: true,
+            Key.limparLinks: false,
+            Key.apagarClipboard: 0,
+            Key.colarSozinho: false,
+            Key.janelas: false,
+            Key.alternador: false,
+            Key.alternadorJanelas: false,
+            Key.mouse: false,
+            Key.mouseInverterV: false,
+            Key.mouseInverterH: false,
+            Key.mouseLinhas: 0,
+            Key.mouseSuave: false,
+            Key.mouseDeLado: 0,
+            Key.mouseBotoes: false,
+            Key.captura: false,
+            Key.formatoDeCor: FormatoDeCor.hex.rawValue,
+            Key.capturaNaMesa: false,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -565,7 +816,7 @@ final class DockaStore: ObservableObject {
         bounceOnLaunch = defaults.bool(forKey: Key.bounceOnLaunch)
         position = defaults.string(forKey: Key.position) ?? "right"
         brightnessControl = defaults.bool(forKey: Key.brilho)
-        brightnessLevel = BrightnessBackend.ler() ?? defaults.double(forKey: Key.brilhoNivel)
+        brightnessLevel = TelasDeBrilho.shared.lerRegua() ?? defaults.double(forKey: Key.brilhoNivel)
         brightnessEdge = defaults.string(forKey: Key.brilhoBorda) ?? TrayEdge.right.rawValue
         brightnessAlignment = defaults.string(forKey: Key.brilhoAlinhamento) ?? TrayAlignment.center.rawValue
         volumeControl = defaults.bool(forKey: Key.volume)
@@ -603,6 +854,49 @@ final class DockaStore: ObservableObject {
             .flatMap(UUID.init(uuidString:))
         orbitaCanto = defaults.string(forKey: Key.orbitaCanto) ?? ""
         orbitaBotao = defaults.object(forKey: Key.orbitaBotao) as? Int ?? BotaoDoMouse.nenhum
+        acordadoDuracao = DuracaoAcordado(persisted: defaults.integer(forKey: Key.acordadoDuracao))
+        acordadoTelaAcesa = defaults.bool(forKey: Key.acordadoTela)
+        acoesRapidas = defaults.bool(forKey: Key.acoesRapidas)
+        prateleiraControl = defaults.bool(forKey: Key.prateleira)
+        prateleiraBorda = defaults.string(forKey: Key.prateleiraBorda) ?? TrayEdge.right.rawValue
+        prateleiraAlinhamento = defaults.string(forKey: Key.prateleiraAlinhamento) ?? TrayAlignment.start.rawValue
+        prateleiraAoArrastar = defaults.bool(forKey: Key.prateleiraAoArrastar)
+        notasControl = defaults.bool(forKey: Key.notas)
+        notasBorda = defaults.string(forKey: Key.notasBorda) ?? TrayEdge.left.rawValue
+        notasAlinhamento = defaults.string(forKey: Key.notasAlinhamento) ?? TrayAlignment.center.rawValue
+        monitorControl = defaults.bool(forKey: Key.monitor)
+        monitorBorda = defaults.string(forKey: Key.monitorBorda) ?? TrayEdge.right.rawValue
+        monitorAlinhamento = defaults.string(forKey: Key.monitorAlinhamento) ?? TrayAlignment.end.rawValue
+        leituraDaBarra = LeituraDaBarra(persisted: defaults.string(forKey: Key.leituraDaBarra) ?? "")
+        alertas = defaults.bool(forKey: Key.alertas)
+        alertaCPU = defaults.bool(forKey: Key.alertaCPU)
+        alertaCPULimite = defaults.double(forKey: Key.alertaCPULimite)
+        alertaCPUMinutos = defaults.integer(forKey: Key.alertaCPUMinutos)
+        alertaMemoria = defaults.bool(forKey: Key.alertaMemoria)
+        alertaDisco = defaults.bool(forKey: Key.alertaDisco)
+        alertaDiscoGB = defaults.integer(forKey: Key.alertaDiscoGB)
+        alertaBateria = defaults.bool(forKey: Key.alertaBateria)
+        alertaBateriaLimite = defaults.double(forKey: Key.alertaBateriaLimite)
+        alertaTemperatura = defaults.bool(forKey: Key.alertaTemperatura)
+        historicoControl = defaults.bool(forKey: Key.historico)
+        historicoLimite = defaults.integer(forKey: Key.historicoLimite)
+        historicoLembrar = defaults.bool(forKey: Key.historicoLembrar)
+        limparLinksAoCopiar = defaults.bool(forKey: Key.limparLinks)
+        apagarClipboard = defaults.integer(forKey: Key.apagarClipboard)
+        colarSozinho = defaults.bool(forKey: Key.colarSozinho)
+        janelasControl = defaults.bool(forKey: Key.janelas)
+        alternadorControl = defaults.bool(forKey: Key.alternador)
+        alternadorJanelas = defaults.bool(forKey: Key.alternadorJanelas)
+        mouseControl = defaults.bool(forKey: Key.mouse)
+        mouseInverterVertical = defaults.bool(forKey: Key.mouseInverterV)
+        mouseInverterHorizontal = defaults.bool(forKey: Key.mouseInverterH)
+        mouseLinhas = defaults.integer(forKey: Key.mouseLinhas)
+        mouseSuave = defaults.bool(forKey: Key.mouseSuave)
+        mouseDeLado = defaults.integer(forKey: Key.mouseDeLado)
+        mouseBotoes = defaults.bool(forKey: Key.mouseBotoes)
+        capturaControl = defaults.bool(forKey: Key.captura)
+        formatoDeCor = defaults.string(forKey: Key.formatoDeCor) ?? FormatoDeCor.hex.rawValue
+        capturaNaMesa = defaults.bool(forKey: Key.capturaNaMesa)
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 
@@ -640,6 +934,15 @@ final class DockaStore: ObservableObject {
         }
 
         refreshLaunchAtLogin()
+        // didSet não dispara no init: a leitura gravada liga a coleta aqui
+        MonitorModelo.shared.interesse("barra", leituraDaBarra != .nenhuma)
+        // idem para o vigia da área de transferência — mas fora do init:
+        // ele lê o próprio store, que ainda está nascendo
+        DispatchQueue.main.async {
+            DockaStore.shared.sincronizarClipboard()
+            AlternadorController.shared.ligar(DockaStore.shared.alternadorControl)
+            MouseController.shared.sincronizar()
+        }
     }
 
     // MARK: - Apps instalados (para o seletor)

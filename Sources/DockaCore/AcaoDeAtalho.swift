@@ -18,6 +18,32 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case orbita
     /// Abre a órbita já num anel específico.
     case anel(UUID)
+    /// Liga/desliga o "manter acordado" com a duração padrão.
+    case acordado
+    /// Executa uma ação rápida (travar a tela, ejetar discos…).
+    case rapida(AcaoRapida)
+    /// Fixa/esconde a prateleira.
+    case prateleira
+    /// Abre o bloco de notas já pronto para digitar; o segundo toque esconde.
+    case blocoDeNotas
+    /// Fixa/esconde o monitor do sistema.
+    case monitor
+    /// Abre o histórico da área de transferência.
+    case historico
+    /// Troca o que está copiado pela versão sem formatação.
+    case textoPuro
+    /// Abre a lista de snippets.
+    case snippets
+    /// Encaixa a janela da frente num layout.
+    case janela(LayoutDeJanela)
+    /// Abre o alternador de apps, ou avança nele se já estiver aberto.
+    case alternador
+    /// Conta-gotas: copia a cor de um ponto da tela.
+    case contaGotas
+    /// Copia o texto (ou o QR) de uma área da tela.
+    case textoDaTela
+    /// Captura uma área ou janela.
+    case capturaArea
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -28,6 +54,19 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .ajustes:           return "ajustes"
         case .orbita:            return "orbita"
         case .anel(let uuid):    return "anel:\(uuid.uuidString)"
+        case .acordado:          return "acordado"
+        case .rapida(let a):     return "rapida:\(a.rawValue)"
+        case .prateleira:        return "prateleira"
+        case .blocoDeNotas:      return "notas"
+        case .monitor:           return "monitor"
+        case .historico:         return "historico"
+        case .textoPuro:         return "textoPuro"
+        case .snippets:          return "snippets"
+        case .janela(let l):     return "janela:\(l.rawValue)"
+        case .alternador:        return "alternador"
+        case .contaGotas:        return "contaGotas"
+        case .textoDaTela:       return "textoDaTela"
+        case .capturaArea:       return "capturaArea"
         }
     }
 
@@ -37,10 +76,27 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "volume":  self = .volume
         case "ajustes": self = .ajustes
         case "orbita":  self = .orbita
+        case "acordado": self = .acordado
+        case "prateleira": self = .prateleira
+        case "notas": self = .blocoDeNotas
+        case "monitor": self = .monitor
+        case "historico": self = .historico
+        case "textoPuro": self = .textoPuro
+        case "snippets": self = .snippets
+        case "alternador": self = .alternador
+        case "contaGotas": self = .contaGotas
+        case "textoDaTela": self = .textoDaTela
+        case "capturaArea": self = .capturaArea
         default:
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {
                 self = .bandeja(uuid)
+            } else if id.hasPrefix("janela:"),
+                      let l = LayoutDeJanela(rawValue: String(id.dropFirst("janela:".count))) {
+                self = .janela(l)
+            } else if id.hasPrefix("rapida:"),
+                      let a = AcaoRapida(rawValue: String(id.dropFirst("rapida:".count))) {
+                self = .rapida(a)
             } else if id.hasPrefix("anel:"),
                       let uuid = UUID(uuidString: String(id.dropFirst("anel:".count))) {
                 self = .anel(uuid)
