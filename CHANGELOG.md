@@ -110,6 +110,15 @@ todo o resto por aqui.
   hora com os ícones e as miniaturas chegam em seguida; no modo de
   janelas, cada janela casa com a sua miniatura pela posição na tela, não
   pelo título.
+- **Itens pendentes do roteiro**:
+  - **Encaixar arrastando até a borda**, com prévia: laterais dão metades,
+    cantos dão quartos e o topo maximiza.
+  - **Expandir gatilhos digitados** (módulo com Monitoramento de Entrada +
+    Acessibilidade): digitar o gatilho de um snippet troca ele pelo texto.
+    Guarda só os últimos 32 caracteres, na memória; campos de senha nunca
+    chegam. Um gatilho não pode ser o começo de outro.
+  - **Apagar a área de transferência ao travar a tela ou dormir.**
+  - **Apps a ignorar** nos ajustes do mouse.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30

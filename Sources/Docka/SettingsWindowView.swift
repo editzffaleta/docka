@@ -1357,6 +1357,10 @@ private struct ClipboardSettingsView: View {
                     Text("Apagar a área de transferência")
                     Text("Esvazia o que está copiado depois de um tempo — o histórico continua com ele.")
                 }
+                Toggle(isOn: $store.apagarAoBloquear) {
+                    Text("Apagar ao travar a tela ou dormir")
+                    Text("Quem usar o Mac depois não cola o que ficou copiado. O histórico continua.")
+                }
             } header: {
                 Text("Privacidade")
             }
@@ -1364,6 +1368,8 @@ private struct ClipboardSettingsView: View {
             SecaoColarSozinho()
 
             SecaoDeSnippets()
+
+            SecaoDeGatilhos()
 
             Section {
                 LabeledContent {
@@ -1416,7 +1422,23 @@ private struct JanelasSettingsView: View {
             } footer: {
                 Text("Mover a janela de outro app exige a permissão de Acessibilidade — a mesma do \"Colar sozinho\". Repetir o atalho de uma metade alterna a largura entre ½, ⅓ e ⅔.")
             }
-            .onReceive(relogio) { _ in permitido = Colagem.permitido }
+            .onReceive(relogio) { _ in
+                if permitido != Colagem.permitido {
+                    permitido = Colagem.permitido
+                    ArrastoDeJanelas.shared.sincronizar()
+                }
+            }
+
+            if store.janelasControl {
+                Section {
+                    Toggle(isOn: $store.janelasArrastar) {
+                        Text("Encaixar arrastando até a borda")
+                        Text("Leve a janela pela barra de título até a borda: laterais dão metades, cantos dão quartos, o topo maximiza. Uma prévia mostra onde ela vai parar.")
+                    }
+                } footer: {
+                    Text("A borda de baixo sozinha não encaixa — é onde mora o Dock, e soltar ali por acidente é comum.")
+                }
+            }
 
             SecaoDoAlternador()
 
@@ -1585,9 +1607,56 @@ private struct MouseSettingsView: View {
                         Text("O \(BotaoDoMouse.nome(store.orbitaBotao).lowercased()) abre a Órbita e continua com ela.")
                     }
                 }
+                SecaoDeAppsIgnorados()
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// Apps em que o mouse fica como o sistema manda — um jogo, um app de
+/// desenho que já trata a roda do jeito dele.
+private struct SecaoDeAppsIgnorados: View {
+    @EnvironmentObject var store: DockaStore
+
+    var body: some View {
+        Section {
+            ForEach(store.mouseIgnorados, id: \.self) { id in
+                HStack {
+                    if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) {
+                        Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+                            .resizable().frame(width: 20, height: 20)
+                        Text(FileManager.default.displayName(atPath: url.path))
+                    } else {
+                        Text(id)
+                    }
+                    Spacer()
+                    Button { store.mouseIgnorados.removeAll { $0 == id } } label: {
+                        Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            Button("Adicionar app…") { escolher() }
+        } header: {
+            Text("Apps a ignorar")
+        } footer: {
+            Text("Com um destes apps na frente, a rolagem e os botões ficam como o sistema manda.")
+        }
+    }
+
+    private func escolher() {
+        let p = NSOpenPanel()
+        p.allowedContentTypes = [.application]
+        p.directoryURL = URL(fileURLWithPath: "/Applications")
+        p.allowsMultipleSelection = true
+        p.prompt = "Ignorar"
+        guard p.runModal() == .OK else { return }
+        for url in p.urls {
+            if let id = Bundle(url: url)?.bundleIdentifier, !store.mouseIgnorados.contains(id) {
+                store.mouseIgnorados.append(id)
+            }
+        }
     }
 }
 
@@ -1670,6 +1739,48 @@ private struct SecaoColarSozinho: View {
     }
 }
 
+/// O módulo mais sensível: escuta o teclado para achar os gatilhos.
+private struct SecaoDeGatilhos: View {
+    @EnvironmentObject var store: DockaStore
+    @State private var escuta = GatilhosController.podeEscutar
+    @State private var acessibilidade = Colagem.permitido
+    private let relogio = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        Section {
+            Toggle(isOn: $store.gatilhosControl) {
+                Text("Expandir gatilhos digitados")
+                Text("Digitar o gatilho de um snippet (como ;hoje) em qualquer app troca ele pelo texto.")
+            }
+            if store.gatilhosControl {
+                linha(escuta, "Monitoramento de Entrada", "ver as teclas") { GatilhosController.abrirAjustesDeEscuta() }
+                linha(acessibilidade, "Acessibilidade", "apagar o gatilho e colar") { Colagem.abrirAjustesDePrivacidade() }
+            }
+        } header: {
+            Text("Módulo com permissão")
+        } footer: {
+            Text("Para achar o gatilho, o Docka vê cada tecla digitada — e guarda só os últimos 32 caracteres, na memória, sem gravar nem enviar nada. Campos de senha ficam de fora: neles o macOS não entrega as teclas a ninguém. Atalhos com ⌘ ou ⌃, setas, ↩ e cliques zeram o que foi guardado.")
+        }
+        .onReceive(relogio) { _ in
+            let e = GatilhosController.podeEscutar, a = Colagem.permitido
+            if e != escuta || a != acessibilidade {
+                escuta = e; acessibilidade = a
+                GatilhosController.shared.sincronizar()
+            }
+        }
+    }
+
+    private func linha(_ ok: Bool, _ nome: String, _ para: String, abrir: @escaping () -> Void) -> some View {
+        LabeledContent {
+            if !ok { Button("Abrir Privacidade", action: abrir) }
+        } label: {
+            Label(ok ? "\(nome) concedido — para \(para)" : "Falta \(nome) — para \(para)",
+                  systemImage: ok ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
+                .foregroundStyle(ok ? .green : .orange)
+        }
+    }
+}
+
 /// Lista e editor dos snippets.
 private struct SecaoDeSnippets: View {
     @ObservedObject private var modelo = SnippetsModelo.shared
@@ -1681,6 +1792,13 @@ private struct SecaoDeSnippets: View {
                 DisclosureGroup(isExpanded: Binding(get: { editando == s.id },
                                                     set: { editando = $0 ? s.id : nil })) {
                     TextField("Nome", text: $s.nome)
+                    TextField("Gatilho (opcional, ex.: ;email)", text: $s.gatilho)
+                        .font(.system(size: 12, design: .monospaced))
+                    if !s.gatilho.isEmpty && !Snippets.gatilhoValido(s.gatilho, entre: modelo.lista, ignorando: s.id) {
+                        Label("Gatilho sem espaço, de 2 a 20 caracteres, que não seja o começo de outro.",
+                              systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange).font(.caption)
+                    }
                     TextEditor(text: $s.texto)
                         .font(.system(size: 12, design: .monospaced))
                         .frame(minHeight: 70)
@@ -1691,7 +1809,12 @@ private struct SecaoDeSnippets: View {
                         Button("Apagar", role: .destructive) { modelo.remover(s.id) }
                     }
                 } label: {
-                    Text(s.nome)
+                    HStack {
+                        Text(s.nome)
+                        if !s.gatilho.isEmpty {
+                            Text(s.gatilho).font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
+                        }
+                    }
                 }
             }
             HStack {
@@ -1703,7 +1826,7 @@ private struct SecaoDeSnippets: View {
         } header: {
             Text("Snippets")
         } footer: {
-            Text("Textos prontos, escolhidos pelo atalho dos snippets. Variáveis: " + Snippets.variaveis.map { "\($0.chave) — \($0.descricao)" }.joined(separator: "; ") + ". Expandir um gatilho digitado (como ;email) pediria Monitoramento de Entrada e fica para depois.")
+            Text("Textos prontos, escolhidos pelo atalho dos snippets. Variáveis: " + Snippets.variaveis.map { "\($0.chave) — \($0.descricao)" }.joined(separator: "; ") + ". Com gatilhos, digitar o gatilho em qualquer app troca ele pelo texto — veja o módulo abaixo.")
         }
     }
 }

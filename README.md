@@ -128,13 +128,14 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 
 | Recurso | Descrição |
 |---------|-----------|
+| **Gatilhos** *(módulo opcional)* | Digitar o gatilho de um snippet (como `;hoje`) em qualquer app troca ele pelo texto |
 | **Snippets** | Textos prontos com variáveis (`{data}`, `{hora}`, `{dia}`, `{clipboard}`), escolhidos num painel com busca. Com o "Colar sozinho", entram direto no app da frente e o que estava copiado antes volta |
 | **Colar sozinho** *(módulo opcional, Acessibilidade)* | Escolher no histórico ou num snippet cola direto, em vez de só copiar |
 | **Histórico** | Textos, links e arquivos copiados, com busca, fixar no topo e navegação pelo teclado (↑↓ e ↩). Escolher devolve o item à área de transferência, pronto para ⌘V |
 | **Senhas ficam de fora** | O que gerenciadores de senha marcam como sigiloso (convenção nspasteboard.org) nunca entra no histórico |
 | **Colar sem formatação** | Deixa o que está copiado em texto puro — sem negrito, cor nem fonte |
 | **Limpar links** | Tira `utm_`, `fbclid`, `gclid` e outros rastreadores, manualmente ou a cada cópia |
-| **Apagar depois de um tempo** | Esvazia a área de transferência após 1 min a 1 h; o histórico continua com o item |
+| **Apagar depois de um tempo** | Esvazia a área de transferência após 1 min a 1 h, ou ao travar a tela ou dormir; o histórico continua com o item |
 
 > Ler a área de transferência não pede permissão: o Docka olha só o contador de mudanças, a cada meio segundo, e lê o conteúdo quando ele muda. Colar sozinho no app da frente pediria Acessibilidade — por isso, aqui, escolher um item só o deixa pronto para o seu ⌘V.
 
@@ -146,6 +147,7 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Ciclo de larguras** | Repetir o atalho de uma metade alterna entre ½, ⅓ e ⅔ da tela |
 | **Outra tela** | Leva a janela para a próxima tela mantendo a proporção: a metade esquerda de uma vira a metade esquerda da outra |
 | **Voltar** | Devolve a janela ao tamanho e lugar de antes do primeiro encaixe |
+| **Arrastar até a borda** | Leve a janela até a borda: laterais dão metades, cantos dão quartos, o topo maximiza — com prévia de onde ela vai parar |
 | **Alternador de apps** | Num atalho próprio (sugestão ⌥Tab): apps na ordem de uso, segure e aperte para avançar, solte para trocar. Sem permissão; com Acessibilidade, uma entrada por janela; com Gravação de Tela, miniaturas das janelas. Não substitui o ⌘Tab |
 
 ### Mouse *(módulo opcional, Acessibilidade)*
@@ -157,6 +159,7 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Rolagem suave** | Cada dente vira um deslize curto com desaceleração; dentes seguidos se somam |
 | **Rolar de lado** | Segurando ⌥, ⌃ ou ⌘, a roda rola na horizontal |
 | **Botões laterais** | Voltam e avançam no Finder, Safari, Chrome e outros (⌘[ / ⌘]); o botão da Órbita continua com ela |
+| **Apps a ignorar** | Com um deles na frente, o mouse fica como o sistema manda |
 
 ### Captura *(módulo opcional)*
 
@@ -257,7 +260,8 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── ClipboardController.swift — vigia da área de transferência e painel do histórico
 ├── Colagem.swift            — módulo "Colar sozinho": Acessibilidade e ⌘V no layout certo
 ├── SnippetsController.swift — snippets em disco e o painel de escolha
-├── JanelasBackend.swift     — módulo "Encaixar janelas": a janela da frente pela Acessibilidade
+├── GatilhosController.swift — módulo "Expandir gatilhos": escuta só de teclas, memória curta
+├── JanelasBackend.swift     — módulo "Encaixar janelas": atalhos e arrastar até a borda
 ├── AlternadorController.swift — o alternador: histórico de uso, painel e ativação
 ├── MouseController.swift    — módulo do mouse: o event tap e a rolagem suave
 ├── CapturaController.swift  — conta-gotas, OCR/QR pelo Vision e captura de área
@@ -307,6 +311,7 @@ sem ela continuam funcionando no modo sem permissão.
 
 | Módulo | Permissão | Para quê, e só isso | Sem a permissão |
 |---|---|---|---|
+| Expandir gatilhos | Monitoramento de Entrada + Acessibilidade | Ver as teclas para achar o gatilho (só os últimos 32 caracteres, na memória), apagá-lo e colar o snippet | Os snippets continuam pelo painel |
 | Colar sozinho | Acessibilidade | Enviar ⌘V ao app da frente ao escolher no histórico ou num snippet | O item só fica copiado, pronto para o seu ⌘V |
 | Alternador — cada janela | Acessibilidade | Listar janelas pelo título e trazer a escolhida para a frente | O alternador troca de app, sem listar janelas |
 | Alternador — prévias | Gravação de Tela | Miniaturas das janelas enquanto o alternador está aberto; nada é gravado | Ícones no lugar das miniaturas |

@@ -64,6 +64,7 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
 
   | Módulo | Permissão | Para quê, e só isso |
   |---|---|---|
+  | Expandir gatilhos | Monitoramento de Entrada + Acessibilidade | Ver as teclas digitadas para achar o gatilho de um snippet (guarda só os últimos 32 caracteres, na memória; campos de senha nunca chegam) e então apagar o gatilho e colar o texto |
   | Colar sozinho | Acessibilidade | Enviar um ⌘V ao app da frente depois que você escolhe um item do histórico ou um snippet |
   | Alternador — mostrar cada janela | Acessibilidade | Listar as janelas abertas pelo título e trazer a escolhida para a frente |
   | Alternador — prévias | Gravação de Tela | Capturar miniaturas das janelas só enquanto o alternador está aberto; ficam na memória e somem ao fechar |
@@ -71,7 +72,7 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   | Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse (nunca o teclado) para inverter, deixar linear, suavizar e voltar/avançar |
   | Encaixar janelas | Acessibilidade | Ler e mudar posição e tamanho da janela da frente quando você usa um atalho ou o menu Janelas |
 
-- ❌ Não captura teclado (o atalho ⌘⇧D usa `RegisterEventHotKey`, que entrega apenas aquele atalho)
+- ❌ Não captura teclado (os atalhos usam `RegisterEventHotKey`, que entrega apenas aquele atalho) — **exceto** com o módulo "Expandir gatilhos" ligado, que escuta as teclas como descrito na tabela acima
 - ⚠️ Acessa a rede em UM caso só: ao adicionar um site à órbita, busca o ícone
   (apple-touch-icon/favicon) **no próprio site digitado** — nunca em resolvedor de
   terceiros, que receberia sua lista de sites. Sessão efêmera (sem cookies),

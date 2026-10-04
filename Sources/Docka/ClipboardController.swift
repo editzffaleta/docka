@@ -49,6 +49,38 @@ final class HistoricoModelo: ObservableObject {
         }
     }
 
+    private var observadoresDeBloqueio: [(NotificationCenter, NSObjectProtocol)] = []
+
+    /// Apaga a área de transferência quando a tela trava ou o Mac dorme —
+    /// quem senta na máquina depois não cola o que ficou copiado. Não pede
+    /// permissão: são avisos públicos do sistema.
+    func vigiarBloqueio(_ sim: Bool) {
+        if sim, observadoresDeBloqueio.isEmpty {
+            let apagar: (Notification) -> Void = { [weak self] _ in self?.apagarAgora() }
+            let dist = DistributedNotificationCenter.default()
+            let ws = NSWorkspace.shared.notificationCenter
+            observadoresDeBloqueio = [
+                (dist, dist.addObserver(forName: Notification.Name("com.apple.screenIsLocked"),
+                                        object: nil, queue: .main, using: apagar)),
+                (ws, ws.addObserver(forName: NSWorkspace.willSleepNotification, object: nil,
+                                    queue: .main, using: apagar)),
+                (ws, ws.addObserver(forName: NSWorkspace.screensDidSleepNotification, object: nil,
+                                    queue: .main, using: apagar)),
+            ]
+        } else if !sim {
+            observadoresDeBloqueio.forEach { $0.0.removeObserver($0.1) }
+            observadoresDeBloqueio = []
+        }
+    }
+
+    /// O histórico fica: ele é do Docka, num arquivo da conta. Some só o que
+    /// estava pronto para colar.
+    private func apagarAgora() {
+        pb.clearContents()
+        visto = pb.changeCount
+        apagarEm = nil
+    }
+
     private func olhar() {
         if let quando = apagarEm, Date() >= quando {
             apagarEm = nil

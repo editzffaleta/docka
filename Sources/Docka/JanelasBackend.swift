@@ -10,7 +10,7 @@ import DockaCore
 enum JanelasBackend {
 
     /// Quadro de antes do primeiro encaixe, por janela — o "voltar".
-    private static var anteriores: [String: CGRect] = [:]
+    fileprivate static var anteriores: [String: CGRect] = [:]
     /// O último encaixe: qual janela, que layout, em que passo do ciclo e o
     /// quadro aplicado. Repetir o atalho só avança o ciclo se a janela ainda
     /// estiver onde o Docka a deixou — mexeu nela à mão, recomeça da metade.
@@ -71,16 +71,16 @@ enum JanelasBackend {
 
     /// Chave estável da janela enquanto ela existe: o processo e o hash do
     /// elemento de Acessibilidade (o mesmo elemento devolve o mesmo hash).
-    private static func identidade(_ janela: AXUIElement) -> String {
+    fileprivate static func identidade(_ janela: AXUIElement) -> String {
         var pid: pid_t = 0
         AXUIElementGetPid(janela, &pid)
         return "\(pid):\(CFHash(janela))"
     }
 
-    private static var alturaDaPrincipal: CGFloat { NSScreen.screens.first?.frame.height ?? 0 }
+    fileprivate static var alturaDaPrincipal: CGFloat { NSScreen.screens.first?.frame.height ?? 0 }
 
     /// O quadro da janela em coordenadas do AppKit.
-    private static func quadro(de janela: AXUIElement) -> CGRect? {
+    fileprivate static func quadro(de janela: AXUIElement) -> CGRect? {
         var p: CFTypeRef?, t: CFTypeRef?
         guard AXUIElementCopyAttributeValue(janela, kAXPositionAttribute as CFString, &p) == .success,
               AXUIElementCopyAttributeValue(janela, kAXSizeAttribute as CFString, &t) == .success,
@@ -95,7 +95,7 @@ enum JanelasBackend {
     /// Aplica tamanho, posição e tamanho de novo. A segunda vez não é
     /// descuido: ao mudar de tela, alguns apps recusam o tamanho que não
     /// cabia na tela de ANTES; repetido depois de mover, ele entra.
-    private static func definir(_ janela: AXUIElement, _ r: CGRect) {
+    fileprivate static func definir(_ janela: AXUIElement, _ r: CGRect) {
         let ax = Encaixe.paraAcessibilidade(r, alturaDaPrincipal: alturaDaPrincipal)
         var ponto = ax.origin, tamanho = ax.size
         guard let p = AXValueCreate(.cgPoint, &ponto), let t = AXValueCreate(.cgSize, &tamanho) else { return }
@@ -108,5 +108,129 @@ enum JanelasBackend {
     private static func tela(de r: CGRect) -> NSScreen? {
         let centro = CGPoint(x: r.midX, y: r.midY)
         return NSScreen.screens.first { NSMouseInRect(centro, $0.frame, false) } ?? NSScreen.main
+    }
+}
+
+// MARK: - Arrastar até a borda
+
+/// Encaixe arrastando a janela até a borda, com a prévia de onde ela vai
+/// parar.
+///
+/// Perceber o arrasto não pede permissão: monitores globais de MOUSE só
+/// observam. Saber qual janela está sendo arrastada e encaixá-la ao soltar
+/// usa a mesma Acessibilidade do encaixe por atalho.
+final class ArrastoDeJanelas {
+    static let shared = ArrastoDeJanelas()
+
+    private var monitores: [Any] = []
+    private var janela: AXUIElement?
+    private var posicaoInicial: CGPoint?
+    private var arrastando = false
+    private var zona: LayoutDeJanela?
+    private var previa: NSPanel?
+
+    func sincronizar() {
+        let s = DockaStore.shared
+        let precisa = s.janelasControl && s.janelasArrastar && Colagem.permitido
+        if precisa && monitores.isEmpty {
+            monitores = [
+                NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] _ in self?.apertou() },
+                NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDragged) { [weak self] _ in self?.arrastou() },
+                NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { [weak self] _ in self?.soltou() },
+            ].compactMap { $0 }
+        } else if !precisa && !monitores.isEmpty {
+            monitores.forEach(NSEvent.removeMonitor)
+            monitores = []
+            zerar()
+        }
+    }
+
+    /// A janela sob o cursor, e onde ela estava — se ela mudar de lugar no
+    /// arrasto, é uma janela sendo movida (e não texto sendo selecionado).
+    private func apertou() {
+        zerar()
+        let loc = NSEvent.mouseLocation
+        let ax = CGPoint(x: loc.x, y: JanelasBackend.alturaDaPrincipal - loc.y)
+        var elemento: AXUIElement?
+        guard AXUIElementCopyElementAtPosition(AXUIElementCreateSystemWide(), Float(ax.x), Float(ax.y),
+                                               &elemento) == .success, let elemento else { return }
+        var w: CFTypeRef?
+        // o próprio elemento pode já ser a janela; senão, a janela dele
+        if AXUIElementCopyAttributeValue(elemento, kAXWindowAttribute as CFString, &w) != .success {
+            w = elemento
+        }
+        guard let w, CFGetTypeID(w) == AXUIElementGetTypeID() else { return }
+        let alvo = w as! AXUIElement
+        janela = alvo
+        posicaoInicial = JanelasBackend.quadro(de: alvo)?.origin
+    }
+
+    private func arrastou() {
+        guard let janela, let inicio = posicaoInicial else { return }
+        if !arrastando {
+            // só confirma o arrasto quando a janela de fato andou
+            guard let agora = JanelasBackend.quadro(de: janela)?.origin,
+                  hypot(agora.x - inicio.x, agora.y - inicio.y) > 2 else { return }
+            arrastando = true
+        }
+        let loc = NSEvent.mouseLocation
+        guard let tela = NSScreen.screens.first(where: { NSMouseInRect(loc, $0.frame, false) }) else { return }
+        let nova = Encaixe.zona(cursor: loc, tela: tela.frame)
+        guard nova != zona else { return }
+        zona = nova
+        if let nova, let destino = Encaixe.quadro(nova, em: tela.visibleFrame) {
+            mostrarPrevia(destino)
+        } else {
+            previa?.orderOut(nil)
+        }
+    }
+
+    private func soltou() {
+        defer { zerar() }
+        guard arrastando, let janela, let zona else { return }
+        let loc = NSEvent.mouseLocation
+        guard let tela = NSScreen.screens.first(where: { NSMouseInRect(loc, $0.frame, false) }),
+              let destino = Encaixe.quadro(zona, em: tela.visibleFrame) else { return }
+        let chave = JanelasBackend.identidade(janela)
+        // "voltar" devolve ao tamanho de antes do arrasto
+        if JanelasBackend.anteriores[chave] == nil, let atual = JanelasBackend.quadro(de: janela) {
+            JanelasBackend.anteriores[chave] = atual
+        }
+        // um instante depois: o app ainda está terminando o próprio arrasto
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            JanelasBackend.definir(janela, destino)
+        }
+    }
+
+    private func zerar() {
+        janela = nil
+        posicaoInicial = nil
+        arrastando = false
+        zona = nil
+        previa?.orderOut(nil)
+    }
+
+    private func mostrarPrevia(_ quadro: CGRect) {
+        let p = previa ?? {
+            let p = NSPanel(contentRect: quadro, styleMask: [.borderless, .nonactivatingPanel],
+                            backing: .buffered, defer: false)
+            p.backgroundColor = .clear
+            p.isOpaque = false
+            p.hasShadow = false
+            p.ignoresMouseEvents = true
+            p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
+            p.level = .floating
+            let v = NSView()
+            v.wantsLayer = true
+            v.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.18).cgColor
+            v.layer?.borderColor = NSColor.controlAccentColor.withAlphaComponent(0.7).cgColor
+            v.layer?.borderWidth = 2
+            v.layer?.cornerRadius = 12
+            p.contentView = v
+            previa = p
+            return p
+        }()
+        p.setFrame(quadro.insetBy(dx: 6, dy: 6), display: true, animate: !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
+        p.orderFrontRegardless()
     }
 }

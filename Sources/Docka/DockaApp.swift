@@ -181,6 +181,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--gatilhos-selftest") {
+            print("gatilhos:\n\(GatilhosController.autoteste())")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
         if CommandLine.arguments.contains("--demo") {
             TrayManager.shared.startDemo()
         }

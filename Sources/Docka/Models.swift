@@ -173,7 +173,10 @@ final class DockaStore: ObservableObject {
         static let limparLinks = "docka.cleanLinksOnCopy"
         static let apagarClipboard = "docka.clearClipboardAfter"
         static let colarSozinho = "docka.autoPaste"
+        static let apagarAoBloquear = "docka.clearClipboardOnLock"
+        static let gatilhos = "docka.snippetTriggers"
         static let janelas = "docka.windowSnapping"
+        static let janelasArrastar = "docka.windowSnapDrag"
         static let alternador = "docka.switcher"
         static let alternadorJanelas = "docka.switcherWindows"
         static let alternadorPrevias = "docka.switcherPreviews"
@@ -184,6 +187,7 @@ final class DockaStore: ObservableObject {
         static let mouseSuave = "docka.mouseSmooth"
         static let mouseDeLado = "docka.mouseSidewaysModifier"
         static let mouseBotoes = "docka.mouseSideButtons"
+        static let mouseIgnorados = "docka.mouseIgnoredApps"
         static let captura = "docka.capture"
         static let formatoDeCor = "docka.colorFormat"
         static let capturaNaMesa = "docka.captureToDesktop"
@@ -459,6 +463,14 @@ final class DockaStore: ObservableObject {
         didSet {
             defaults.set(janelasControl, forKey: Key.janelas)
             if janelasControl && !Colagem.permitido { Colagem.pedirPermissao() }
+            ArrastoDeJanelas.shared.sincronizar()
+        }
+    }
+    /// Encaixar arrastando a janela até a borda da tela.
+    @Published var janelasArrastar: Bool {
+        didSet {
+            defaults.set(janelasArrastar, forKey: Key.janelasArrastar)
+            ArrastoDeJanelas.shared.sincronizar()
         }
     }
 
@@ -493,6 +505,8 @@ final class DockaStore: ObservableObject {
     /// Modificadores (rawValue de Shortcut.Modifiers) que rolam de lado; 0 = nenhum.
     @Published var mouseDeLado: Int { didSet { defaults.set(mouseDeLado, forKey: Key.mouseDeLado) } }
     @Published var mouseBotoes: Bool { didSet { defaults.set(mouseBotoes, forKey: Key.mouseBotoes) } }
+    /// Bundle IDs dos apps em que o mouse fica como o sistema manda.
+    @Published var mouseIgnorados: [String] { didSet { defaults.set(mouseIgnorados, forKey: Key.mouseIgnorados) } }
 
     /// Módulo de captura: conta-gotas (sem permissão), texto da tela e
     /// captura de área (Gravação de Tela).
@@ -513,6 +527,26 @@ final class DockaStore: ObservableObject {
         didSet {
             defaults.set(alternadorPrevias, forKey: Key.alternadorPrevias)
             if alternadorPrevias && !CapturaController.permitido { CapturaController.pedirPermissao() }
+        }
+    }
+
+    /// Módulo com permissão: expandir gatilhos digitados em qualquer app.
+    @Published var gatilhosControl: Bool {
+        didSet {
+            defaults.set(gatilhosControl, forKey: Key.gatilhos)
+            if gatilhosControl {
+                if !GatilhosController.podeEscutar { GatilhosController.pedirEscuta() }
+                if !Colagem.permitido { Colagem.pedirPermissao() }
+            }
+            GatilhosController.shared.sincronizar()
+        }
+    }
+
+    /// Apaga a área de transferência ao travar a tela ou dormir.
+    @Published var apagarAoBloquear: Bool {
+        didSet {
+            defaults.set(apagarAoBloquear, forKey: Key.apagarAoBloquear)
+            HistoricoModelo.shared.vigiarBloqueio(apagarAoBloquear)
         }
     }
 
@@ -794,7 +828,10 @@ final class DockaStore: ObservableObject {
             Key.limparLinks: false,
             Key.apagarClipboard: 0,
             Key.colarSozinho: false,
+            Key.apagarAoBloquear: false,
+            Key.gatilhos: false,
             Key.janelas: false,
+            Key.janelasArrastar: false,
             Key.alternador: false,
             Key.alternadorJanelas: false,
             Key.alternadorPrevias: false,
@@ -898,7 +935,10 @@ final class DockaStore: ObservableObject {
         limparLinksAoCopiar = defaults.bool(forKey: Key.limparLinks)
         apagarClipboard = defaults.integer(forKey: Key.apagarClipboard)
         colarSozinho = defaults.bool(forKey: Key.colarSozinho)
+        apagarAoBloquear = defaults.bool(forKey: Key.apagarAoBloquear)
+        gatilhosControl = defaults.bool(forKey: Key.gatilhos)
         janelasControl = defaults.bool(forKey: Key.janelas)
+        janelasArrastar = defaults.bool(forKey: Key.janelasArrastar)
         alternadorControl = defaults.bool(forKey: Key.alternador)
         alternadorJanelas = defaults.bool(forKey: Key.alternadorJanelas)
         alternadorPrevias = defaults.bool(forKey: Key.alternadorPrevias)
@@ -909,6 +949,7 @@ final class DockaStore: ObservableObject {
         mouseSuave = defaults.bool(forKey: Key.mouseSuave)
         mouseDeLado = defaults.integer(forKey: Key.mouseDeLado)
         mouseBotoes = defaults.bool(forKey: Key.mouseBotoes)
+        mouseIgnorados = defaults.stringArray(forKey: Key.mouseIgnorados) ?? []
         capturaControl = defaults.bool(forKey: Key.captura)
         formatoDeCor = defaults.string(forKey: Key.formatoDeCor) ?? FormatoDeCor.hex.rawValue
         capturaNaMesa = defaults.bool(forKey: Key.capturaNaMesa)
@@ -956,8 +997,11 @@ final class DockaStore: ObservableObject {
         // ele lê o próprio store, que ainda está nascendo
         DispatchQueue.main.async {
             DockaStore.shared.sincronizarClipboard()
+            HistoricoModelo.shared.vigiarBloqueio(DockaStore.shared.apagarAoBloquear)
             AlternadorController.shared.ligar(DockaStore.shared.alternadorControl)
             MouseController.shared.sincronizar()
+            GatilhosController.shared.sincronizar()
+            ArrastoDeJanelas.shared.sincronizar()
         }
     }
 

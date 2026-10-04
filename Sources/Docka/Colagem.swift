@@ -57,6 +57,9 @@ enum Colagem {
         let sobe = CGEvent(keyboardEventSource: fonte, virtualKey: tecla, keyDown: false)
         desce?.flags = .maskCommand
         sobe?.flags = .maskCommand
+        // marcados: os taps do próprio Docka (gatilhos) não leem de volta
+        desce?.setIntegerValueField(.eventSourceUserData, value: MouseController.marca)
+        sobe?.setIntegerValueField(.eventSourceUserData, value: MouseController.marca)
         desce?.post(tap: .cghidEventTap)
         sobe?.post(tap: .cghidEventTap)
     }
@@ -92,9 +95,12 @@ enum Colagem {
     ///
     /// Sem permissão, só copia: aí a pessoa cola com ⌘V, e o que estava antes
     /// fica no histórico, se ele estiver ligado.
-    static func inserir(_ texto: String) {
+    /// `forcar`: cola mesmo com o "Colar sozinho" desligado — os gatilhos
+    /// digitados não têm outro jeito de entregar o texto. Ainda exige a
+    /// Acessibilidade.
+    static func inserir(_ texto: String, forcar: Bool = false) {
         let pb = NSPasteboard.general
-        guard podeColar else {
+        guard forcar ? permitido : podeColar else {
             pb.clearContents()
             pb.setString(texto, forType: .string)
             return
@@ -105,7 +111,11 @@ enum Colagem {
         // apps) não guarda o que só passou pela área de transferência
         pb.declareTypes([.string, NSPasteboard.PasteboardType("org.nspasteboard.TransientType")], owner: nil)
         pb.setString(texto, forType: .string)
-        colarSePuder()
+        if forcar {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { enviarComandoV() }
+        } else {
+            colarSePuder()
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
             restaurar(anterior, em: pb)
         }

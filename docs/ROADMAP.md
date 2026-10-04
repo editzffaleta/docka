@@ -44,19 +44,19 @@ identidade visual do Vorssaint.
 |---|---|
 | ✅ Histórico do clipboard | polling do `NSPasteboard.changeCount` (sem permissão); colar automaticamente exige Acessibilidade |
 | ✅ Colar sem formatação | reescreve o pasteboard como texto puro |
-| ✅ Limpar o clipboard automaticamente | temporizador de 1 min a 1 h (apagar ao bloquear a tela ou dormir fica para depois) |
+| ✅ Limpar o clipboard automaticamente | temporizador de 1 min a 1 h e ✅ ao travar a tela ou dormir |
 | ✅ Snippets de texto (painel) | painel pesquisável com variáveis; com o módulo "Colar sozinho" (Acessibilidade) insere direto |
 | ✅ Colar sozinho | módulo opcional com Acessibilidade: ⌘V sintético no layout do teclado em uso |
-| Expandir gatilhos digitados | exige Monitoramento de Entrada (ler tudo o que se digita) — decisão pendente |
+| ✅ Expandir gatilhos digitados | módulo com Monitoramento de Entrada + Acessibilidade; memória de 32 caracteres |
 | ✅ Limpar URL | remove `utm_*`, `fbclid` etc. do link copiado |
 
 ## Fase 4 — Janelas, mouse e captura (pede Acessibilidade e Gravação de Tela)
 
 | Recurso | Permissão |
 |---|---|
-| ✅ Encaixe de janelas e layouts (atalhos e menu) | Acessibilidade — encaixe arrastando até a borda fica para depois |
+| ✅ Encaixe de janelas e layouts (atalhos e menu) | Acessibilidade — ✅ também arrastando até a borda, com prévia |
 | ✅ Alternador de apps | atalho próprio, ordem de uso, sem permissão; janelas por título com Acessibilidade — ✅ prévias pelo ScreenCaptureKit (Gravação de Tela) |
-| ✅ Rolagem suave, inverter rolagem, botões laterais | Acessibilidade (event tap só de mouse) — apps a ignorar e atalhos por botão ficam para depois |
+| ✅ Rolagem suave, inverter rolagem, botões laterais | Acessibilidade (event tap só de mouse) — ✅ apps a ignorar; atalhos por botão ficam para depois |
 | ✅ Conta-gotas, texto da tela (OCR + QR), captura de área | conta-gotas sem permissão; o resto com Gravação de Tela |
 | ✅ Editor de anotação | seta, retângulo, caneta, marca-texto, texto, borrão e recorte; exporta em resolução Retina |
 
