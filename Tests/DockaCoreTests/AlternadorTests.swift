@@ -1,4 +1,5 @@
 import Testing
+import CoreGraphics
 @testable import DockaCore
 
 @Suite("Alternador de apps")
@@ -43,5 +44,32 @@ struct AlternadorTests {
     @Test("O alternador é um atalho próprio")
     func atalho() {
         #expect(AcaoDeAtalho(id: AcaoDeAtalho.alternador.id) == .alternador)
+    }
+
+    @Test("Casa as janelas pelo quadro, não pelo título")
+    func casar() {
+        let ax = [CGRect(x: 0, y: 25, width: 800, height: 600), CGRect(x: 900, y: 25, width: 500, height: 400)]
+        let sc: [(id: UInt32, quadro: CGRect)] = [
+            (7, CGRect(x: 900, y: 25, width: 500, height: 400)),
+            (3, CGRect(x: 1, y: 25, width: 800, height: 601)),
+        ]
+        #expect(Alternador.casar(ax, com: sc) == [3, 7])
+    }
+
+    @Test("Janela sem par na captura fica sem prévia, e nenhuma casa duas vezes")
+    func semPar() {
+        let ax = [CGRect(x: 0, y: 0, width: 400, height: 300), CGRect(x: 2, y: 0, width: 400, height: 300)]
+        let sc: [(id: UInt32, quadro: CGRect)] = [(1, CGRect(x: 0, y: 0, width: 400, height: 300))]
+        #expect(Alternador.casar(ax, com: sc) == [1, nil])
+        #expect(Alternador.casar([CGRect(x: 0, y: 0, width: 10, height: 10)],
+                                 com: [(9, CGRect(x: 500, y: 500, width: 300, height: 300))]) == [nil])
+    }
+
+    @Test("Miniatura cabe na caixa sem distorcer")
+    func miniatura() {
+        #expect(Alternador.miniatura(CGSize(width: 1600, height: 900), caixa: CGSize(width: 160, height: 100))
+                == CGSize(width: 160, height: 90))
+        #expect(Alternador.miniatura(CGSize(width: 500, height: 1000), caixa: CGSize(width: 160, height: 100))
+                == CGSize(width: 50, height: 100))
     }
 }

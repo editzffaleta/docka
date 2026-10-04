@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import ApplicationServices
+import ScreenCaptureKit
 import DockaCore
 
 /// Um destino do alternador: um app, ou uma janela dele quando o modo de
@@ -11,6 +12,9 @@ struct DestinoDoAlternador: Identifiable {
     /// Título da janela; `nil` = o app inteiro.
     let janela: String?
     let elemento: AXUIElement?
+    /// Quadro da janela pela Acessibilidade (origem no topo) — é o que casa
+    /// com a janela da captura para achar a prévia.
+    var quadro: CGRect? = nil
 
     var nome: String { app.localizedName ?? "App" }
 }
@@ -33,8 +37,11 @@ final class AlternadorController {
     private var monitorDeTecla: Any?
     private var gatilho: Shortcut.Modifiers = []
 
-    static let lado: CGFloat = 104
-    static let colunas = 7
+    /// Com prévia, o ladrilho alarga para caber a miniatura.
+    static var comPrevias: Bool { DockaStore.shared.alternadorPrevias && CapturaController.permitido }
+    static var lado: CGFloat { comPrevias ? 196 : 104 }
+    static var colunas: Int { comPrevias ? 5 : 7 }
+    static let caixaDaPrevia = CGSize(width: 176, height: 110)
 
     /// Liga o histórico de uso — sem ele a ordem seria a de abertura dos
     /// apps, e não a de uso.
@@ -79,14 +86,15 @@ final class AlternadorController {
             let janelas = Self.janelas(de: app)
             if janelas.isEmpty { return [DestinoDoAlternador(id: base, app: app, janela: nil, elemento: nil)] }
             return janelas.enumerated().map { i, j in
-                DestinoDoAlternador(id: "\(base):\(i)", app: app, janela: j.titulo, elemento: j.elemento)
+                DestinoDoAlternador(id: "\(base):\(i)", app: app, janela: j.titulo, elemento: j.elemento,
+                                    quadro: j.quadro)
             }
         }
     }
 
     /// As janelas de um app, pela Acessibilidade — o título vem junto, sem a
     /// Gravação de Tela que a lista de janelas do sistema exigiria.
-    private static func janelas(de app: NSRunningApplication) -> [(titulo: String, elemento: AXUIElement)] {
+    private static func janelas(de app: NSRunningApplication) -> [(titulo: String, elemento: AXUIElement, quadro: CGRect?)] {
         let el = AXUIElementCreateApplication(app.processIdentifier)
         var valor: CFTypeRef?
         guard AXUIElementCopyAttributeValue(el, kAXWindowsAttribute as CFString, &valor) == .success,
@@ -99,8 +107,19 @@ final class AlternadorController {
             var t: CFTypeRef?
             AXUIElementCopyAttributeValue(w, kAXTitleAttribute as CFString, &t)
             let titulo = (t as? String).flatMap { $0.isEmpty ? nil : $0 } ?? (app.localizedName ?? "Janela")
-            return (titulo, w)
+            return (titulo, w, quadroAX(w))
         }
+    }
+
+    private static func quadroAX(_ w: AXUIElement) -> CGRect? {
+        var p: CFTypeRef?, t: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(w, kAXPositionAttribute as CFString, &p) == .success,
+              AXUIElementCopyAttributeValue(w, kAXSizeAttribute as CFString, &t) == .success,
+              let p, let t else { return nil }
+        var ponto = CGPoint.zero, tamanho = CGSize.zero
+        AXValueGetValue(p as! AXValue, .cgPoint, &ponto)
+        AXValueGetValue(t as! AXValue, .cgSize, &tamanho)
+        return CGRect(origin: ponto, size: tamanho)
     }
 
     // MARK: abrir, mover, escolher
@@ -109,6 +128,8 @@ final class AlternadorController {
         let lista = destinos()
         guard !lista.isEmpty else { NSSound.beep(); return }
         estado.destinos = lista
+        estado.previas = [:]
+        if Self.comPrevias { PreviasDoAlternador.carregar(lista, em: estado) }
         estado.selecao = Alternador.selecaoInicial(total: lista.count)
         gatilho = DockaStore.shared.atalho(de: .alternador)?.modifiers ?? []
 
@@ -117,7 +138,7 @@ final class AlternadorController {
         let colunas = min(lista.count, Self.colunas)
         let linhas = Int((Double(lista.count) / Double(Self.colunas)).rounded(.up))
         let largura = CGFloat(colunas) * Self.lado + 40
-        let altura = CGFloat(min(linhas, 4)) * (Self.lado + 18) + 70
+        let altura = CGFloat(min(linhas, 4)) * (Self.comPrevias ? Self.caixaDaPrevia.height + 70 : Self.lado + 18) + 70
         let loc = NSEvent.mouseLocation
         if let v = (NSScreen.screens.first { NSMouseInRect(loc, $0.frame, false) } ?? NSScreen.main)?.visibleFrame {
             p.setFrame(NSRect(x: v.midX - largura / 2, y: v.midY - altura / 2,
@@ -232,12 +253,40 @@ final class AlternadorEstado: ObservableObject {
     @Published var visivel = false
     @Published var destinos: [DestinoDoAlternador] = []
     @Published var selecao = 0
+    /// Miniaturas por destino, chegando aos poucos.
+    @Published var previas: [String: CGImage] = [:]
 }
 
 struct AlternadorView: View {
     let escolher: (Int) -> Void
     @EnvironmentObject var estado: AlternadorEstado
     @EnvironmentObject var store: DockaStore
+
+    /// A miniatura da janela, quando chegou; senão, o ícone do app.
+    @ViewBuilder
+    private func imagem(_ d: DestinoDoAlternador) -> some View {
+        let icone = Image(nsImage: d.app.icon ?? NSImage()).resizable()
+        if AlternadorController.comPrevias {
+            let caixa = AlternadorController.caixaDaPrevia
+            ZStack(alignment: .bottomLeading) {
+                if let p = estado.previas[d.id] {
+                    let t = Alternador.miniatura(CGSize(width: p.width, height: p.height), caixa: caixa)
+                    Image(decorative: p, scale: 1)
+                        .resizable()
+                        .frame(width: t.width, height: t.height)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
+                        .frame(width: caixa.width, height: caixa.height)
+                    icone.frame(width: 34, height: 34).offset(x: -4, y: 6)
+                } else {
+                    icone.frame(width: 64, height: 64)
+                        .frame(width: caixa.width, height: caixa.height)
+                }
+            }
+        } else {
+            icone.frame(width: 64, height: 64)
+        }
+    }
 
     private var grade: [GridItem] {
         Array(repeating: GridItem(.fixed(AlternadorController.lado), spacing: 0),
@@ -251,9 +300,7 @@ struct AlternadorView: View {
                     ForEach(Array(estado.destinos.enumerated()), id: \.element.id) { i, d in
                         Button { escolher(i) } label: {
                             VStack(spacing: 4) {
-                                Image(nsImage: d.app.icon ?? NSImage())
-                                    .resizable()
-                                    .frame(width: 64, height: 64)
+                                imagem(d)
                                 Text(d.janela ?? d.nome)
                                     .font(.system(size: 10))
                                     .lineLimit(2)
@@ -284,5 +331,59 @@ struct AlternadorView: View {
         .modifier(EsquemaEscolhido(appearance: TrayAppearance(persisted: store.appearance)))
         .padding(8)
         .ignoresSafeArea()
+    }
+}
+
+// MARK: - Prévias
+
+/// As miniaturas das janelas, pelo ScreenCaptureKit — pedem Gravação de Tela.
+///
+/// O alternador abre com os ícones; cada miniatura chega quando fica pronta.
+/// Esperar todas antes de abrir faria o atalho parecer lento justo no gesto
+/// que precisa ser instantâneo.
+enum PreviasDoAlternador {
+
+    static func carregar(_ destinos: [DestinoDoAlternador], em estado: AlternadorEstado) {
+        let caixa = AlternadorController.caixaDaPrevia
+        Task {
+            guard let conteudo = try? await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: false)
+            else { return }
+            // só janelas de verdade, do tamanho de alguma coisa
+            let janelas = conteudo.windows.filter {
+                $0.windowLayer == 0 && $0.frame.width > 60 && $0.frame.height > 60
+            }
+            var pares: [(id: String, janela: SCWindow)] = []
+            for pid in Set(destinos.map(\.app.processIdentifier)) {
+                let doApp = janelas.filter { $0.owningApplication?.processID == pid }
+                let ds = destinos.filter { $0.app.processIdentifier == pid }
+                if ds.contains(where: { $0.quadro != nil }) {
+                    let comQuadro = ds.filter { $0.quadro != nil }
+                    let ids = Alternador.casar(comQuadro.map { $0.quadro! },
+                                               com: doApp.map { (id: $0.windowID, quadro: $0.frame) })
+                    for (d, id) in zip(comQuadro, ids) {
+                        if let id, let w = doApp.first(where: { $0.windowID == id }) { pares.append((d.id, w)) }
+                    }
+                } else if let d = ds.first,
+                          let w = doApp.first(where: \.isOnScreen) ?? doApp.first {
+                    // modo de apps: a janela da frente do app (a lista vem de frente para trás)
+                    pares.append((d.id, w))
+                }
+            }
+            for par in pares {
+                let t = Alternador.miniatura(par.janela.frame.size, caixa: caixa)
+                let cfg = SCStreamConfiguration()
+                cfg.width = Int(t.width * 2)      // o dobro: nítida em tela Retina
+                cfg.height = Int(t.height * 2)
+                cfg.showsCursor = false
+                guard let img = try? await SCScreenshotManager.captureImage(
+                    contentFilter: SCContentFilter(desktopIndependentWindow: par.janela), configuration: cfg)
+                else { continue }
+                await MainActor.run {
+                    // fechou ou reabriu com outra lista no meio: descarta
+                    guard estado.visivel, estado.destinos.contains(where: { $0.id == par.id }) else { return }
+                    estado.previas[par.id] = img
+                }
+            }
+        }
     }
 }

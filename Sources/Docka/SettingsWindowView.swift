@@ -1485,9 +1485,15 @@ private struct CapturaSettingsView: View {
                     linha(.textoDaTela, "Atalho")
                 }
                 Section("Captura de área") {
-                    Toggle(isOn: $store.capturaNaMesa) {
-                        Text("Salvar na Mesa")
-                        Text("Desligado, a captura vai para a área de transferência. Espaço troca para captura de janela, como no ⇧⌘4.")
+                    Toggle(isOn: $store.capturaEditar) {
+                        Text("Abrir no editor de anotação")
+                        Text("Seta, retângulo, caneta, marca-texto, texto, borrão e recorte; depois copie ou salve. O borrão pixeliza de verdade — quem recebe não recupera o que estava embaixo.")
+                    }
+                    if !store.capturaEditar {
+                        Toggle(isOn: $store.capturaNaMesa) {
+                            Text("Salvar na Mesa")
+                            Text("Desligado, a captura vai para a área de transferência.")
+                        }
                     }
                     linha(.capturaArea, "Atalho")
                 }
@@ -1617,11 +1623,15 @@ private struct SecaoDoAlternador: View {
                     Text("Mostrar cada janela")
                     Text("Uma entrada por janela, com o título, e a escolhida vem para a frente. Pede Acessibilidade; sem ela, o alternador troca de app.")
                 }
+                Toggle(isOn: $store.alternadorPrevias) {
+                    Text("Prévias das janelas")
+                    Text("Uma miniatura de cada janela no lugar do ícone. Pede Gravação de Tela; sem ela, ficam os ícones. As imagens não saem do Mac nem ficam gravadas.")
+                }
             }
         } header: {
             Text("Alternador")
         } footer: {
-            Text("Não substitui o ⌘Tab do sistema — interceptá-lo exigiria ler o teclado inteiro. Prévias ao vivo das janelas pediriam Gravação de Tela e ficam para depois.")
+            Text("Não substitui o ⌘Tab do sistema — interceptá-lo exigiria ler o teclado inteiro. O alternador abre na hora com os ícones; as prévias chegam em seguida.")
         }
     }
 }

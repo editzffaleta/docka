@@ -176,6 +176,7 @@ final class DockaStore: ObservableObject {
         static let janelas = "docka.windowSnapping"
         static let alternador = "docka.switcher"
         static let alternadorJanelas = "docka.switcherWindows"
+        static let alternadorPrevias = "docka.switcherPreviews"
         static let mouse = "docka.mouse"
         static let mouseInverterV = "docka.mouseInvertVertical"
         static let mouseInverterH = "docka.mouseInvertHorizontal"
@@ -186,6 +187,7 @@ final class DockaStore: ObservableObject {
         static let captura = "docka.capture"
         static let formatoDeCor = "docka.colorFormat"
         static let capturaNaMesa = "docka.captureToDesktop"
+        static let capturaEditar = "docka.captureEdit"
     }
 
     private let defaults = UserDefaults.standard
@@ -503,6 +505,16 @@ final class DockaStore: ObservableObject {
     @Published var formatoDeCor: String { didSet { defaults.set(formatoDeCor, forKey: Key.formatoDeCor) } }
     /// A captura de área vai para um arquivo na Mesa, em vez da área de transferência.
     @Published var capturaNaMesa: Bool { didSet { defaults.set(capturaNaMesa, forKey: Key.capturaNaMesa) } }
+    /// Abre a captura de área no editor de anotação.
+    @Published var capturaEditar: Bool { didSet { defaults.set(capturaEditar, forKey: Key.capturaEditar) } }
+
+    /// Miniaturas das janelas no alternador — pede Gravação de Tela.
+    @Published var alternadorPrevias: Bool {
+        didSet {
+            defaults.set(alternadorPrevias, forKey: Key.alternadorPrevias)
+            if alternadorPrevias && !CapturaController.permitido { CapturaController.pedirPermissao() }
+        }
+    }
 
     /// O vigia da área de transferência só roda se algum recurso dele está
     /// ligado — histórico, limpar links ou apagar depois de um tempo.
@@ -785,6 +797,7 @@ final class DockaStore: ObservableObject {
             Key.janelas: false,
             Key.alternador: false,
             Key.alternadorJanelas: false,
+            Key.alternadorPrevias: false,
             Key.mouse: false,
             Key.mouseInverterV: false,
             Key.mouseInverterH: false,
@@ -795,6 +808,7 @@ final class DockaStore: ObservableObject {
             Key.captura: false,
             Key.formatoDeCor: FormatoDeCor.hex.rawValue,
             Key.capturaNaMesa: false,
+            Key.capturaEditar: true,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -887,6 +901,7 @@ final class DockaStore: ObservableObject {
         janelasControl = defaults.bool(forKey: Key.janelas)
         alternadorControl = defaults.bool(forKey: Key.alternador)
         alternadorJanelas = defaults.bool(forKey: Key.alternadorJanelas)
+        alternadorPrevias = defaults.bool(forKey: Key.alternadorPrevias)
         mouseControl = defaults.bool(forKey: Key.mouse)
         mouseInverterVertical = defaults.bool(forKey: Key.mouseInverterV)
         mouseInverterHorizontal = defaults.bool(forKey: Key.mouseInverterH)
@@ -897,6 +912,7 @@ final class DockaStore: ObservableObject {
         capturaControl = defaults.bool(forKey: Key.captura)
         formatoDeCor = defaults.string(forKey: Key.formatoDeCor) ?? FormatoDeCor.hex.rawValue
         capturaNaMesa = defaults.bool(forKey: Key.capturaNaMesa)
+        capturaEditar = defaults.bool(forKey: Key.capturaEditar)
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 
