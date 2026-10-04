@@ -60,6 +60,14 @@ todo o resto por aqui.
   qualquer monitor: onde não há brilho de hardware, ela escurece pela gama.
   O escurecimento para em 80% (a tela nunca fica preta), é lembrado por
   monitor e some sozinho se o Docka encerrar.
+- **Histórico da área de transferência**: textos, links e arquivos
+  copiados, com busca (sem diferenciar acento), fixar no topo e navegação
+  pelo teclado num painel que abre pelo atalho; escolher um item o devolve
+  à área de transferência, pronto para ⌘V. Os últimos também ficam num
+  submenu da barra. Senhas de gerenciadores (marcadas como sigilosas pela
+  convenção nspasteboard.org) não entram. Pode viver só na memória.
+- **Colar sem formatação**, **limpar rastreadores de links** (manual ou a
+  cada cópia) e **apagar a área de transferência** depois de um tempo.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30

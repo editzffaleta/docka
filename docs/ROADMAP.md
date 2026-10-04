@@ -42,11 +42,11 @@ identidade visual do Vorssaint.
 
 | Recurso | Como |
 |---|---|
-| Histórico do clipboard | polling do `NSPasteboard.changeCount` (sem permissão); colar automaticamente exige Acessibilidade |
-| Colar sem formatação | reescreve o pasteboard como texto puro |
-| Limpar o clipboard automaticamente | timer e eventos de suspensão/bloqueio |
+| ✅ Histórico do clipboard | polling do `NSPasteboard.changeCount` (sem permissão); colar automaticamente exige Acessibilidade |
+| ✅ Colar sem formatação | reescreve o pasteboard como texto puro |
+| ✅ Limpar o clipboard automaticamente | temporizador de 1 min a 1 h (apagar ao bloquear a tela ou dormir fica para depois) |
 | Snippets de texto | expandir gatilhos exige Monitoramento de Entrada; o modo "menu pesquisável" não exige |
-| Limpar URL | remove `utm_*`, `fbclid` etc. do link copiado |
+| ✅ Limpar URL | remove `utm_*`, `fbclid` etc. do link copiado |
 
 ## Fase 4 — Janelas, mouse e captura (pede Acessibilidade e Gravação de Tela)
 

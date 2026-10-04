@@ -167,6 +167,11 @@ final class DockaStore: ObservableObject {
         static let alertaBateria = "docka.alertBattery"
         static let alertaBateriaLimite = "docka.alertBatteryLimit"
         static let alertaTemperatura = "docka.alertThermal"
+        static let historico = "docka.clipboardHistory"
+        static let historicoLimite = "docka.clipboardLimit"
+        static let historicoLembrar = "docka.clipboardRemember"
+        static let limparLinks = "docka.cleanLinksOnCopy"
+        static let apagarClipboard = "docka.clearClipboardAfter"
     }
 
     private let defaults = UserDefaults.standard
@@ -406,6 +411,30 @@ final class DockaStore: ObservableObject {
     @Published var alertaBateriaLimite: Double { didSet { defaults.set(alertaBateriaLimite, forKey: Key.alertaBateriaLimite) } }
     @Published var alertaTemperatura: Bool { didSet { defaults.set(alertaTemperatura, forKey: Key.alertaTemperatura) } }
 
+    /// Guarda o histórico da área de transferência.
+    @Published var historicoControl: Bool {
+        didSet { defaults.set(historicoControl, forKey: Key.historico); sincronizarClipboard() }
+    }
+    @Published var historicoLimite: Int { didSet { defaults.set(historicoLimite, forKey: Key.historicoLimite) } }
+    /// Grava o histórico em disco para sobreviver a reaberturas.
+    @Published var historicoLembrar: Bool {
+        didSet { defaults.set(historicoLembrar, forKey: Key.historicoLembrar); HistoricoModelo.shared.gravarAgora() }
+    }
+    /// Tira rastreadores de todo link copiado, sozinho.
+    @Published var limparLinksAoCopiar: Bool {
+        didSet { defaults.set(limparLinksAoCopiar, forKey: Key.limparLinks); sincronizarClipboard() }
+    }
+    /// Segundos até apagar a área de transferência (0 = nunca).
+    @Published var apagarClipboard: Int {
+        didSet { defaults.set(apagarClipboard, forKey: Key.apagarClipboard); sincronizarClipboard() }
+    }
+
+    /// O vigia da área de transferência só roda se algum recurso dele está
+    /// ligado — histórico, limpar links ou apagar depois de um tempo.
+    func sincronizarClipboard() {
+        HistoricoModelo.shared.ligar(historicoControl || limparLinksAoCopiar || apagarClipboard > 0)
+    }
+
     /// Mostra o submenu "Ações rápidas" na barra de menus.
     @Published var acoesRapidas: Bool { didSet { defaults.set(acoesRapidas, forKey: Key.acoesRapidas) } }
 
@@ -519,6 +548,8 @@ final class DockaStore: ObservableObject {
         case .prateleira: return "Prateleira"
         case .blocoDeNotas: return "Bloco de notas"
         case .monitor: return "Monitor do sistema"
+        case .historico: return "Histórico da área de transferência"
+        case .textoPuro: return "Colar sem formatação"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -664,6 +695,11 @@ final class DockaStore: ObservableObject {
             Key.alertaBateria: true,
             Key.alertaBateriaLimite: 0.20,
             Key.alertaTemperatura: true,
+            Key.historico: false,
+            Key.historicoLimite: HistoricoDeCopias.limitePadrao,
+            Key.historicoLembrar: true,
+            Key.limparLinks: false,
+            Key.apagarClipboard: 0,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -747,6 +783,11 @@ final class DockaStore: ObservableObject {
         alertaBateria = defaults.bool(forKey: Key.alertaBateria)
         alertaBateriaLimite = defaults.double(forKey: Key.alertaBateriaLimite)
         alertaTemperatura = defaults.bool(forKey: Key.alertaTemperatura)
+        historicoControl = defaults.bool(forKey: Key.historico)
+        historicoLimite = defaults.integer(forKey: Key.historicoLimite)
+        historicoLembrar = defaults.bool(forKey: Key.historicoLembrar)
+        limparLinksAoCopiar = defaults.bool(forKey: Key.limparLinks)
+        apagarClipboard = defaults.integer(forKey: Key.apagarClipboard)
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 
@@ -786,6 +827,9 @@ final class DockaStore: ObservableObject {
         refreshLaunchAtLogin()
         // didSet não dispara no init: a leitura gravada liga a coleta aqui
         MonitorModelo.shared.interesse("barra", leituraDaBarra != .nenhuma)
+        // idem para o vigia da área de transferência — mas fora do init:
+        // ele lê o próprio store, que ainda está nascendo
+        DispatchQueue.main.async { DockaStore.shared.sincronizarClipboard() }
     }
 
     // MARK: - Apps instalados (para o seletor)

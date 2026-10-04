@@ -140,6 +140,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--clipboard-selftest") {
+            print("clipboard:\n\(HistoricoModelo.autoteste())")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
         if CommandLine.arguments.contains("--demo") {
             TrayManager.shared.startDemo()
         }
@@ -149,6 +156,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // nesse meio-tempo perderia o fim do que foi escrito
     func applicationWillTerminate(_ notification: Notification) {
         NotasModelo.shared.gravarAgora()
+        HistoricoModelo.shared.gravarAgora()
     }
 
     // a bandeja continua viva com a janela fechada — é o ponto do app
@@ -189,11 +197,26 @@ struct DockaApp: App {
 struct MenuBarContent: View {
     @EnvironmentObject var store: DockaStore
     @EnvironmentObject var acordado: AcordadoSessao
+    @ObservedObject private var historico = HistoricoModelo.shared
 
     var body: some View {
         Button("Abrir Configurações") { SettingsWindowController.shared.show() }
         Divider()
         menuAcordado
+        if store.historicoControl {
+            Menu("Área de transferência") {
+                Button("Abrir o histórico…") { HistoricoController.shared.abrir() }
+                Divider()
+                ForEach(HistoricoDeCopias.ordenados(historico.itens).prefix(10)) { item in
+                    Button(HistoricoDeCopias.encurtar(item.resumo, ate: 50)) {
+                        historico.copiar(item)
+                    }
+                }
+                Divider()
+                Button("Deixar o copiado sem formatação") { HistoricoModelo.shared.soTexto() }
+                Button("Limpar rastreadores do link copiado") { HistoricoModelo.shared.limparLinkCopiado() }
+            }
+        }
         if store.acoesRapidas {
             Menu("Ações rápidas") {
                 ForEach(AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)) { a in

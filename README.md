@@ -124,6 +124,18 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 
 > Tudo por API pública e sem permissão: Mach (`host_processor_info`, `host_statistics64`) para CPU e memória, IOKit (`IOPowerSources`) para bateria, `getifaddrs` para rede e o `FileManager` para disco.
 
+### Área de transferência
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Histórico** | Textos, links e arquivos copiados, com busca, fixar no topo e navegação pelo teclado (↑↓ e ↩). Escolher devolve o item à área de transferência, pronto para ⌘V |
+| **Senhas ficam de fora** | O que gerenciadores de senha marcam como sigiloso (convenção nspasteboard.org) nunca entra no histórico |
+| **Colar sem formatação** | Deixa o que está copiado em texto puro — sem negrito, cor nem fonte |
+| **Limpar links** | Tira `utm_`, `fbclid`, `gclid` e outros rastreadores, manualmente ou a cada cópia |
+| **Apagar depois de um tempo** | Esvazia a área de transferência após 1 min a 1 h; o histórico continua com o item |
+
+> Ler a área de transferência não pede permissão: o Docka olha só o contador de mudanças, a cada meio segundo, e lê o conteúdo quando ele muda. Colar sozinho no app da frente pediria Acessibilidade — por isso, aqui, escolher um item só o deixa pronto para o seu ⌘V.
+
 ### Controles de borda
 
 Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a bandeja — encostando o cursor na borda. Não são itens da bandeja: cada uma tem painel próprio.
@@ -163,7 +175,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 No formato dos **Ajustes do Sistema**: barra lateral com busca e navegação com
 histórico, e uma seção por assunto — **Geral**, **Apps**, **Aparência** (Tom e
 material do painel com prévia simulada), **Bandeja**, **Órbita** (com o editor
-visual do anel), **Prateleira**, **Bloco de notas**, **Monitor do sistema**, **Brilho**, **Volume**, **Energia**, **Ações rápidas**, **Atalhos** e **Sobre**.
+visual do anel), **Prateleira**, **Bloco de notas**, **Monitor do sistema**, **Área de transferência**, **Brilho**, **Volume**, **Energia**, **Ações rápidas**, **Atalhos** e **Sobre**.
 
 ## Arquitetura
 
@@ -183,6 +195,7 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 ├── BlocoDeNotas.swift       — notas, título da aba, tarefas e Markdown por blocos
 ├── Metricas.swift           — CPU, memória e rede a partir dos contadores; histórico
 ├── Alertas.swift            — quando avisar: limites, tempo contínuo e rearme
+├── Clipboard.swift          — histórico (sigilo, limite, busca), limpar link, apagar
 ├── AcaoDeAtalho.swift       — uma combinação por ação, com limpeza de órfãos
 ├── Shortcut.swift           — atalho global: validação e exibição
 └── AppScanner.swift         — varredura de /Applications, nome do app, reordenação
@@ -202,6 +215,7 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── NotasController.swift    — o bloco de notas: painel com teclado, abas e gravação
 ├── MonitorController.swift  — leitura dos contadores, painel do sistema e barra de menus
 ├── AlertasController.swift  — o vigia (10 s + eventos do sistema) e o cartão de aviso
+├── ClipboardController.swift — vigia da área de transferência e painel do histórico
 ├── FaviconStore.swift       — a logo do site, baixada do próprio site e cacheada
 ├── ArrastoAppKit.swift      — arrasto e clique que funcionam em painel não-ativante
 ├── HotKey.swift             — atalhos globais (Carbon, sem permissões)

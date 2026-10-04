@@ -393,6 +393,8 @@ final class TrayManager {
         case .prateleira:      prateleira?.toggleFromHotKey()
         case .blocoDeNotas:    notas?.toggleFromHotKey()
         case .monitor:         monitor?.toggleFromHotKey()
+        case .historico:       if store.historicoControl { HistoricoController.shared.alternar() }
+        case .textoPuro:       HistoricoModelo.shared.soTexto()
         }
     }
 

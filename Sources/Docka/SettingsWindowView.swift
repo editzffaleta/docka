@@ -10,11 +10,11 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, brilho, volume, energia, acoes, atalho, sobre
+    case geral, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .notas, .monitor, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .notas, .monitor, .clipboard, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
 
     var titulo: String {
         switch self {
@@ -26,6 +26,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .prateleira: return "Prateleira"
         case .notas:     return "Bloco de notas"
         case .monitor:   return "Monitor do sistema"
+        case .clipboard: return "Área de transferência"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
         case .energia:   return "Energia"
@@ -45,6 +46,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .prateleira: return "tray.and.arrow.down.fill"
         case .notas:     return "note.text"
         case .monitor:   return "gauge.with.dots.needle.67percent"
+        case .clipboard: return "doc.on.clipboard.fill"
         case .brilho:    return "sun.max.fill"
         case .volume:    return "speaker.wave.2.fill"
         case .energia:   return "cup.and.saucer.fill"
@@ -65,6 +67,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .prateleira: return .green
         case .notas:     return .yellow
         case .monitor:   return .mint
+        case .clipboard: return .cyan
         case .brilho:    return .yellow
         case .volume:    return .pink
         case .energia:   return .brown
@@ -189,6 +192,7 @@ struct SettingsWindowView: View {
         case .prateleira: PrateleiraSettingsView()
         case .notas:     NotasSettingsView()
         case .monitor:   MonitorSettingsView()
+        case .clipboard: ClipboardSettingsView()
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
         case .energia:   EnergiaView()
@@ -1293,6 +1297,79 @@ private struct MonitorSettingsView: View {
     }
 }
 
+// MARK: - Área de transferência
+
+private struct ClipboardSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @ObservedObject private var historico = HistoricoModelo.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.historicoControl) {
+                    Text("Histórico")
+                    Text("Guarda textos, links e arquivos que você copia. O atalho abre a lista com busca; escolher um item o põe de volta na área de transferência, pronto para ⌘V.")
+                }
+                if store.historicoControl {
+                    Picker("Guardar até", selection: $store.historicoLimite) {
+                        ForEach([25, 50, 100, 200], id: \.self) { Text("\($0) itens").tag($0) }
+                    }
+                    Toggle(isOn: $store.historicoLembrar) {
+                        Text("Lembrar entre aberturas")
+                        Text("Grava o histórico num arquivo em Application Support. Desligado, ele vive só enquanto o Docka está aberto.")
+                    }
+                    LabeledContent {
+                        HStack {
+                            Button("Abrir") { HistoricoController.shared.abrir() }
+                            Button("Apagar…", role: .destructive) { historico.apagarHistorico() }
+                                .disabled(historico.itens.allSatisfy(\.fixado))
+                        }
+                    } label: {
+                        Text("Itens guardados")
+                        Text("\(historico.itens.count), \(historico.itens.filter(\.fixado).count) fixados. Apagar mantém os fixados.")
+                    }
+                }
+            } footer: {
+                Text("Senhas copiadas de gerenciadores (1Password, Bitwarden, Senhas da Apple e outros que seguem a convenção nspasteboard.org) não entram no histórico. Ler a área de transferência não pede permissão.")
+            }
+
+            Section {
+                Toggle(isOn: $store.limparLinksAoCopiar) {
+                    Text("Limpar links ao copiar")
+                    Text("Tira utm_, fbclid, gclid e outros rastreadores de todo link copiado, sozinho.")
+                }
+                Picker(selection: Binding(get: { ApagarClipboard(persisted: store.apagarClipboard) },
+                                          set: { store.apagarClipboard = $0.rawValue })) {
+                    ForEach(ApagarClipboard.allCases) { Text($0.titulo).tag($0) }
+                } label: {
+                    Text("Apagar a área de transferência")
+                    Text("Esvazia o que está copiado depois de um tempo — o histórico continua com ele.")
+                }
+            } header: {
+                Text("Privacidade")
+            }
+
+            Section {
+                LabeledContent {
+                    Button("Aplicar agora") { HistoricoModelo.shared.soTexto() }
+                } label: {
+                    Text("Colar sem formatação")
+                    Text("Troca o que está copiado pela versão em texto puro — sem negrito, cor nem fonte. Também tem atalho.")
+                }
+                LabeledContent {
+                    Button("Aplicar agora") { HistoricoModelo.shared.limparLinkCopiado() }
+                } label: {
+                    Text("Limpar o link copiado")
+                    Text("Tira os rastreadores do link que está na área de transferência agora.")
+                }
+            } header: {
+                Text("Ferramentas")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
 // MARK: - Brilho e volume
 
 /// A mesma página para os dois controles de borda: o que muda entre eles cabe
@@ -1612,6 +1689,17 @@ private struct AtalhoView: View {
                 } header: {
                     Text("Controles de borda")
                 }
+            }
+
+            Section {
+                if store.historicoControl {
+                    linha(.historico, titulo: "Histórico",
+                          detalhe: "Abre a lista com busca; ↩ copia o escolhido")
+                }
+                linha(.textoPuro, titulo: "Colar sem formatação",
+                      detalhe: "Deixa o que está copiado em texto puro — depois é só ⌘V")
+            } header: {
+                Text("Área de transferência")
             }
 
             Section {
