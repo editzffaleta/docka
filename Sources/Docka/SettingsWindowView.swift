@@ -1485,9 +1485,15 @@ private struct CapturaSettingsView: View {
                     linha(.textoDaTela, "Atalho")
                 }
                 Section("Captura de área") {
-                    Toggle(isOn: $store.capturaNaMesa) {
-                        Text("Salvar na Mesa")
-                        Text("Desligado, a captura vai para a área de transferência. Espaço troca para captura de janela, como no ⇧⌘4.")
+                    Toggle(isOn: $store.capturaEditar) {
+                        Text("Abrir no editor de anotação")
+                        Text("Seta, retângulo, caneta, marca-texto, texto, borrão e recorte; depois copie ou salve. O borrão pixeliza de verdade — quem recebe não recupera o que estava embaixo.")
+                    }
+                    if !store.capturaEditar {
+                        Toggle(isOn: $store.capturaNaMesa) {
+                            Text("Salvar na Mesa")
+                            Text("Desligado, a captura vai para a área de transferência.")
+                        }
                     }
                     linha(.capturaArea, "Atalho")
                 }

@@ -174,6 +174,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--editor-selftest") {
+            print("editor:\n\(DesenhoDeAnotacao.autoteste())")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
         if CommandLine.arguments.contains("--demo") {
             TrayManager.shared.startDemo()
         }
@@ -248,7 +255,8 @@ struct MenuBarContent: View {
             Menu("Captura") {
                 Button("Conta-gotas") { CapturaController.contaGotas() }
                 Button("Copiar texto da tela") { CapturaController.textoDaTela() }
-                Button(store.capturaNaMesa ? "Capturar área para a Mesa" : "Capturar área para copiar") {
+                Button(store.capturaEditar ? "Capturar e anotar"
+                       : (store.capturaNaMesa ? "Capturar área para a Mesa" : "Capturar área para copiar")) {
                     CapturaController.capturarArea()
                 }
             }

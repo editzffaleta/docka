@@ -58,7 +58,7 @@ identidade visual do Vorssaint.
 | ✅ Alternador de apps | atalho próprio, ordem de uso, sem permissão; janelas por título com Acessibilidade — prévias ao vivo (Gravação de Tela) ficam para depois |
 | ✅ Rolagem suave, inverter rolagem, botões laterais | Acessibilidade (event tap só de mouse) — apps a ignorar e atalhos por botão ficam para depois |
 | ✅ Conta-gotas, texto da tela (OCR + QR), captura de área | conta-gotas sem permissão; o resto com Gravação de Tela |
-| Editor de anotação (setas, texto, borrão, recorte) | sobre a captura feita — próxima etapa |
+| ✅ Editor de anotação | seta, retângulo, caneta, marca-texto, texto, borrão e recorte; exporta em resolução Retina |
 
 ## Fora do escopo
 

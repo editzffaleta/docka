@@ -165,6 +165,7 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Conta-gotas** | O seletor de cor do macOS, com lupa; copia em HEX, RGB, HSL ou como `Color` do SwiftUI. Sem permissão |
 | **Texto da tela** | Selecione uma área e o texto vai para a área de transferência — português e inglês, reconhecidos no próprio Mac. Se houver um QR code, o conteúdo dele |
 | **Captura de área** | Área ou janela (espaço troca, como no ⇧⌘4), para a área de transferência ou a Mesa |
+| **Editor de anotação** | Seta, retângulo, caneta, marca-texto, texto, borrão e recorte, com cores, espessura e ⌘Z; exporta na resolução da captura. O borrão pixeliza de verdade: quem recebe a imagem não recupera o que estava embaixo |
 
 > A seleção é a do próprio macOS (`screencapture -i`). Texto e captura precisam de **Gravação de Tela**; o reconhecimento usa o Vision, no Mac — nenhuma imagem sai daqui.
 
@@ -233,6 +234,7 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 ├── Alternador.swift         — ordem de uso, seleção e soltar do modificador
 ├── Rolagem.swift            — inverter, linear, de lado, deslize suave, botões laterais
 ├── Captura.swift            — formatos de cor, ordem de leitura do OCR, nome do arquivo
+├── Anotacao.swift           — marcas do editor, cabeça da seta, encaixe, recorte, borrão
 ├── AcaoDeAtalho.swift       — uma combinação por ação, com limpeza de órfãos
 ├── Shortcut.swift           — atalho global: validação e exibição
 └── AppScanner.swift         — varredura de /Applications, nome do app, reordenação
@@ -259,6 +261,7 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── AlternadorController.swift — o alternador: histórico de uso, painel e ativação
 ├── MouseController.swift    — módulo do mouse: o event tap e a rolagem suave
 ├── CapturaController.swift  — conta-gotas, OCR/QR pelo Vision e captura de área
+├── EditorDeAnotacao.swift   — o editor: desenho único para prévia e exportação
 ├── FaviconStore.swift       — a logo do site, baixada do próprio site e cacheada
 ├── ArrastoAppKit.swift      — arrasto e clique que funcionam em painel não-ativante
 ├── HotKey.swift             — atalhos globais (Carbon, sem permissões)

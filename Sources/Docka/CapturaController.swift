@@ -85,6 +85,22 @@ enum CapturaController {
 
     static func capturarArea() {
         guard exigirPermissao() else { return }
+        if DockaStore.shared.capturaEditar {
+            // captura para um arquivo temporário e abre no editor; copiar ou
+            // salvar fica para os botões dele
+            let arquivo = FileManager.default.temporaryDirectory
+                .appendingPathComponent("docka-captura-\(UUID().uuidString).png")
+            rodarScreencapture(["-i", arquivo.path]) {
+                defer { try? FileManager.default.removeItem(at: arquivo) }
+                guard let img = NSImage(contentsOf: arquivo)?
+                        .cgImage(forProposedRect: nil, context: nil, hints: nil) else { return }   // cancelou
+                let escala = NSScreen.screens.first {
+                    NSMouseInRect(NSEvent.mouseLocation, $0.frame, false)
+                }?.backingScaleFactor ?? 2
+                EditorDeAnotacaoController.abrir(img, escalaDaTela: escala)
+            }
+            return
+        }
         if DockaStore.shared.capturaNaMesa {
             let mesa = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
             let arquivo = mesa.appendingPathComponent(Captura.nomeDoArquivo(em: Date()))
