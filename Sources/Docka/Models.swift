@@ -173,6 +173,7 @@ final class DockaStore: ObservableObject {
         static let limparLinks = "docka.cleanLinksOnCopy"
         static let apagarClipboard = "docka.clearClipboardAfter"
         static let colarSozinho = "docka.autoPaste"
+        static let janelas = "docka.windowSnapping"
     }
 
     private let defaults = UserDefaults.standard
@@ -439,6 +440,14 @@ final class DockaStore: ObservableObject {
         }
     }
 
+    /// Módulo com permissão: encaixar a janela da frente em layouts.
+    @Published var janelasControl: Bool {
+        didSet {
+            defaults.set(janelasControl, forKey: Key.janelas)
+            if janelasControl && !Colagem.permitido { Colagem.pedirPermissao() }
+        }
+    }
+
     /// O vigia da área de transferência só roda se algum recurso dele está
     /// ligado — histórico, limpar links ou apagar depois de um tempo.
     func sincronizarClipboard() {
@@ -561,6 +570,7 @@ final class DockaStore: ObservableObject {
         case .historico: return "Histórico da área de transferência"
         case .textoPuro: return "Colar sem formatação"
         case .snippets: return "Snippets"
+        case .janela(let l): return "Janela — \(l.titulo.lowercased())"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -712,6 +722,7 @@ final class DockaStore: ObservableObject {
             Key.limparLinks: false,
             Key.apagarClipboard: 0,
             Key.colarSozinho: false,
+            Key.janelas: false,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -801,6 +812,7 @@ final class DockaStore: ObservableObject {
         limparLinksAoCopiar = defaults.bool(forKey: Key.limparLinks)
         apagarClipboard = defaults.integer(forKey: Key.apagarClipboard)
         colarSozinho = defaults.bool(forKey: Key.colarSozinho)
+        janelasControl = defaults.bool(forKey: Key.janelas)
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 

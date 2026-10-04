@@ -54,7 +54,7 @@ identidade visual do Vorssaint.
 
 | Recurso | Permissão |
 |---|---|
-| Encaixe de janelas e layouts | Acessibilidade |
+| ✅ Encaixe de janelas e layouts (atalhos e menu) | Acessibilidade — encaixe arrastando até a borda fica para depois |
 | Alternador de apps com prévia | Gravação de Tela (prévia) + Acessibilidade |
 | Rolagem suave, inverter rolagem, botões laterais | Acessibilidade / Monitoramento de Entrada |
 | Captura de tela com anotação, OCR, conta-gotas | Gravação de Tela |

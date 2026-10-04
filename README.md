@@ -138,6 +138,15 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 
 > Ler a área de transferência não pede permissão: o Docka olha só o contador de mudanças, a cada meio segundo, e lê o conteúdo quando ele muda. Colar sozinho no app da frente pediria Acessibilidade — por isso, aqui, escolher um item só o deixa pronto para o seu ⌘V.
 
+### Janelas *(módulo opcional, Acessibilidade)*
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Encaixar** | Metades, quartos, terços, maximizar e centralizar — por atalho (um por layout) ou pelo menu Janelas na barra |
+| **Ciclo de larguras** | Repetir o atalho de uma metade alterna entre ½, ⅓ e ⅔ da tela |
+| **Outra tela** | Leva a janela para a próxima tela mantendo a proporção: a metade esquerda de uma vira a metade esquerda da outra |
+| **Voltar** | Devolve a janela ao tamanho e lugar de antes do primeiro encaixe |
+
 ### Controles de borda
 
 Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a bandeja — encostando o cursor na borda. Não são itens da bandeja: cada uma tem painel próprio.
@@ -177,7 +186,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 No formato dos **Ajustes do Sistema**: barra lateral com busca e navegação com
 histórico, e uma seção por assunto — **Geral**, **Apps**, **Aparência** (Tom e
 material do painel com prévia simulada), **Bandeja**, **Órbita** (com o editor
-visual do anel), **Prateleira**, **Bloco de notas**, **Monitor do sistema**, **Área de transferência**, **Brilho**, **Volume**, **Energia**, **Ações rápidas**, **Atalhos** e **Sobre**.
+visual do anel), **Prateleira**, **Bloco de notas**, **Monitor do sistema**, **Área de transferência**, **Janelas**, **Brilho**, **Volume**, **Energia**, **Ações rápidas**, **Atalhos** e **Sobre**.
 
 ## Arquitetura
 
@@ -199,6 +208,7 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 ├── Alertas.swift            — quando avisar: limites, tempo contínuo e rearme
 ├── Clipboard.swift          — histórico (sigilo, limite, busca), limpar link, apagar
 ├── Snippets.swift           — snippets, variáveis e busca
+├── Encaixe.swift            — layouts de janela, ciclo de larguras, coordenadas
 ├── AcaoDeAtalho.swift       — uma combinação por ação, com limpeza de órfãos
 ├── Shortcut.swift           — atalho global: validação e exibição
 └── AppScanner.swift         — varredura de /Applications, nome do app, reordenação
@@ -221,6 +231,7 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── ClipboardController.swift — vigia da área de transferência e painel do histórico
 ├── Colagem.swift            — módulo "Colar sozinho": Acessibilidade e ⌘V no layout certo
 ├── SnippetsController.swift — snippets em disco e o painel de escolha
+├── JanelasBackend.swift     — módulo "Encaixar janelas": a janela da frente pela Acessibilidade
 ├── FaviconStore.swift       — a logo do site, baixada do próprio site e cacheada
 ├── ArrastoAppKit.swift      — arrasto e clique que funcionam em painel não-ativante
 ├── HotKey.swift             — atalhos globais (Carbon, sem permissões)
@@ -267,6 +278,7 @@ sem ela continuam funcionando no modo sem permissão.
 | Módulo | Permissão | Para quê, e só isso | Sem a permissão |
 |---|---|---|---|
 | Colar sozinho | Acessibilidade | Enviar ⌘V ao app da frente ao escolher no histórico ou num snippet | O item só fica copiado, pronto para o seu ⌘V |
+| Encaixar janelas | Acessibilidade | Ler e mudar posição e tamanho da janela da frente, no atalho ou no menu Janelas | Os atalhos não fazem nada (um aviso sonoro) e os ajustes mostram o que falta |
 
 > Assinado sem certificado de desenvolvedor (ad-hoc), o Docka muda de assinatura a cada versão compilada, e o macOS pode pedir a permissão de novo depois de uma atualização.
 

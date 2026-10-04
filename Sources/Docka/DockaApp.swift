@@ -230,6 +230,20 @@ struct MenuBarContent: View {
                 Button("Limpar rastreadores do link copiado") { HistoricoModelo.shared.limparLinkCopiado() }
             }
         }
+        if store.janelasControl {
+            Menu("Janelas") {
+                ForEach(LayoutDeJanela.grupos.indices, id: \.self) { g in
+                    if g > 0 { Divider() }
+                    ForEach(LayoutDeJanela.grupos[g]) { l in
+                        Button {
+                            JanelasBackend.executar(l)
+                        } label: {
+                            Label(l.titulo, systemImage: l.simbolo)
+                        }
+                    }
+                }
+            }
+        }
         if store.acoesRapidas {
             Menu("Ações rápidas") {
                 ForEach(AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)) { a in

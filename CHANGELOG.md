@@ -76,6 +76,11 @@ todo o resto por aqui.
   devolve depois o que estava copiado antes. Sem a permissão, tudo continua
   só copiando. README e SECURITY.md passam a listar as permissões por módulo
   e o que fica gravado em disco.
+- **Encaixar janelas** (módulo opcional, Acessibilidade): atalhos e um
+  menu "Janelas" na barra para mandar a janela da frente para metades,
+  quartos e terços, maximizar, centralizar, levar para a próxima tela
+  (mantendo a proporção) e voltar ao tamanho de antes. Repetir o atalho de
+  uma metade alterna a largura entre ½, ⅓ e ⅔.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30

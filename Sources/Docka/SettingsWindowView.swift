@@ -10,11 +10,11 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, brilho, volume, energia, acoes, atalho, sobre
+    case geral, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .notas, .monitor, .clipboard, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .notas, .monitor, .clipboard, .janelas, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
 
     var titulo: String {
         switch self {
@@ -27,6 +27,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .notas:     return "Bloco de notas"
         case .monitor:   return "Monitor do sistema"
         case .clipboard: return "Área de transferência"
+        case .janelas:   return "Janelas"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
         case .energia:   return "Energia"
@@ -47,6 +48,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .notas:     return "note.text"
         case .monitor:   return "gauge.with.dots.needle.67percent"
         case .clipboard: return "doc.on.clipboard.fill"
+        case .janelas:   return "rectangle.split.2x1.fill"
         case .brilho:    return "sun.max.fill"
         case .volume:    return "speaker.wave.2.fill"
         case .energia:   return "cup.and.saucer.fill"
@@ -68,6 +70,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .notas:     return .yellow
         case .monitor:   return .mint
         case .clipboard: return .cyan
+        case .janelas:   return .blue
         case .brilho:    return .yellow
         case .volume:    return .pink
         case .energia:   return .brown
@@ -193,6 +196,7 @@ struct SettingsWindowView: View {
         case .notas:     NotasSettingsView()
         case .monitor:   MonitorSettingsView()
         case .clipboard: ClipboardSettingsView()
+        case .janelas:   JanelasSettingsView()
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
         case .energia:   EnergiaView()
@@ -1368,6 +1372,60 @@ private struct ClipboardSettingsView: View {
                 }
             } header: {
                 Text("Ferramentas")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Janelas
+
+private struct JanelasSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @State private var permitido = Colagem.permitido
+    private let relogio = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.janelasControl) {
+                    Text("Encaixar janelas")
+                    Text("Atalhos e um menu na barra para mandar a janela da frente para metades, quartos e terços, maximizar, centralizar, levar para outra tela e voltar ao tamanho de antes.")
+                }
+                if store.janelasControl {
+                    LabeledContent {
+                        if !permitido {
+                            Button("Abrir Privacidade") { Colagem.abrirAjustesDePrivacidade() }
+                        }
+                    } label: {
+                        Label(permitido ? "Acessibilidade concedida" : "Falta conceder a Acessibilidade",
+                              systemImage: permitido ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
+                            .foregroundStyle(permitido ? .green : .orange)
+                    }
+                }
+            } header: {
+                Text("Módulo com permissão")
+            } footer: {
+                Text("Mover a janela de outro app exige a permissão de Acessibilidade — a mesma do \"Colar sozinho\". Repetir o atalho de uma metade alterna a largura entre ½, ⅓ e ⅔.")
+            }
+            .onReceive(relogio) { _ in permitido = Colagem.permitido }
+
+            if store.janelasControl {
+                ForEach(LayoutDeJanela.grupos.indices, id: \.self) { g in
+                    Section(g == 0 ? "Atalhos" : "") {
+                        ForEach(LayoutDeJanela.grupos[g]) { l in
+                            LabeledContent {
+                                ShortcutRecorder(acao: .janela(l))
+                            } label: {
+                                Label(l.titulo, systemImage: l.simbolo)
+                            }
+                            if let erro = store.erroDoAtalho(.janela(l)) {
+                                Label(erro, systemImage: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange).font(.callout)
+                            }
+                        }
+                    }
+                }
             }
         }
         .formStyle(.grouped)

@@ -396,6 +396,7 @@ final class TrayManager {
         case .historico:       if store.historicoControl { HistoricoController.shared.alternar() }
         case .textoPuro:       HistoricoModelo.shared.soTexto()
         case .snippets:        SnippetsController.shared.alternar()
+        case .janela(let l):   JanelasBackend.executar(l)
         }
     }
 

@@ -34,6 +34,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case textoPuro
     /// Abre a lista de snippets.
     case snippets
+    /// Encaixa a janela da frente num layout.
+    case janela(LayoutDeJanela)
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -52,6 +54,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .historico:         return "historico"
         case .textoPuro:         return "textoPuro"
         case .snippets:          return "snippets"
+        case .janela(let l):     return "janela:\(l.rawValue)"
         }
     }
 
@@ -72,6 +75,9 @@ public enum AcaoDeAtalho: Hashable, Sendable {
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {
                 self = .bandeja(uuid)
+            } else if id.hasPrefix("janela:"),
+                      let l = LayoutDeJanela(rawValue: String(id.dropFirst("janela:".count))) {
+                self = .janela(l)
             } else if id.hasPrefix("rapida:"),
                       let a = AcaoRapida(rawValue: String(id.dropFirst("rapida:".count))) {
                 self = .rapida(a)
