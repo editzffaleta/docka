@@ -50,7 +50,7 @@ struct Deslizador {
         rotulo: "Brilho da tela",
         dica: "Arraste para ajustar o brilho; toque para abrir os ajustes",
         avisoIndisponivel: "Este Mac não expõe o controle de brilho para apps.",
-        nota: "O nível é lido da tela de verdade, e o controle não pede permissão nenhuma. Isso usa uma API do sistema não documentada: se uma atualização do macOS removê-la, o Docka esconde o controle em vez de fingir que funciona.",
+        nota: "Na tela do Mac e em monitores da Apple o nível é o brilho de verdade, lido do painel (por uma API do sistema não documentada). Em monitores que não aceitam esse controle, a mesma régua escurece a imagem por software. Nada disso pede permissão.",
         descricao: "Uma régua própria numa lateral da tela. Encoste o cursor na borda para revelá-la.",
         nivel: \.brightnessLevel,
         borda: \.brightnessEdge,
@@ -58,9 +58,11 @@ struct Deslizador {
         ligado: \.brightnessControl,
         bordaPadrao: .right,
         simbolo: { _ in "sun.max.fill" },
-        disponivel: { BrightnessBackend.disponivel },
-        ler: { BrightnessBackend.ler() },
-        escrever: { BrightnessBackend.escrever($0) },
+        // sempre disponível: onde o brilho de hardware não chega, a régua
+        // escurece por gama, que é API pública
+        disponivel: { true },
+        ler: { TelasDeBrilho.shared.lerRegua() },
+        escrever: { TelasDeBrilho.shared.escreverRegua($0) },
         tique: { DockaStore.shared.tiqueDeBrilho() },
         aoTocar: { nivel in
             SettingsWindowController.shared.show()

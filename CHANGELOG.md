@@ -53,6 +53,13 @@ todo o resto por aqui.
   com folga. O aviso é do próprio Docka — notificações do sistema pediriam
   autorização. Memória e temperatura chegam por evento do sistema, sem
   medição contínua.
+- **Brilho por tela**: os ajustes de Brilho listam cada tela conectada,
+  com o brilho do painel onde ele existe e um **escurecimento por software**
+  em todas — que funciona em monitores externos sem controle de brilho e
+  também vai abaixo do mínimo do painel. A régua da borda passa a valer em
+  qualquer monitor: onde não há brilho de hardware, ela escurece pela gama.
+  O escurecimento para em 80% (a tela nunca fica preta), é lembrado por
+  monitor e some sozinho se o Docka encerrar.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30

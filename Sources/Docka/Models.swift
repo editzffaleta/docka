@@ -443,7 +443,7 @@ final class DockaStore: ObservableObject {
     /// Relê o brilho da tela. Chamado quando o controle aparece: o usuário pode
     /// ter mexido pelo teclado enquanto ele estava escondido.
     func sincronizarBrilho() {
-        if let real = BrightnessBackend.ler() { brightnessLevel = real }
+        if let real = TelasDeBrilho.shared.lerRegua() { brightnessLevel = real }
     }
 
     /// Relê o volume da saída. Além do teclado, ele muda sozinho quando o
@@ -685,7 +685,7 @@ final class DockaStore: ObservableObject {
         bounceOnLaunch = defaults.bool(forKey: Key.bounceOnLaunch)
         position = defaults.string(forKey: Key.position) ?? "right"
         brightnessControl = defaults.bool(forKey: Key.brilho)
-        brightnessLevel = BrightnessBackend.ler() ?? defaults.double(forKey: Key.brilhoNivel)
+        brightnessLevel = TelasDeBrilho.shared.lerRegua() ?? defaults.double(forKey: Key.brilhoNivel)
         brightnessEdge = defaults.string(forKey: Key.brilhoBorda) ?? TrayEdge.right.rawValue
         brightnessAlignment = defaults.string(forKey: Key.brilhoAlinhamento) ?? TrayAlignment.center.rawValue
         volumeControl = defaults.bool(forKey: Key.volume)

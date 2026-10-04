@@ -1359,6 +1359,10 @@ private struct DeslizadorView: View {
                     Text(deslizador.nota)
                 }
             }
+
+            if deslizador.id == "brilho" {
+                TelasDeBrilhoSection()
+            }
         }
         .formStyle(.grouped)
     }
@@ -1480,6 +1484,73 @@ private struct AcoesRapidasView: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+// MARK: - Brilho por tela
+
+/// Uma linha por tela conectada: o brilho de hardware, onde a tela aceita, e o
+/// escurecimento por software em todas — que também vai abaixo do mínimo.
+private struct TelasDeBrilhoSection: View {
+    @ObservedObject private var telas = TelasDeBrilho.shared
+
+    var body: some View {
+        Section {
+            ForEach(telas.telas) { tela in
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Label(tela.nome, systemImage: tela.hardware ? "laptopcomputer" : "display")
+                        Spacer()
+                        Text(tela.hardware ? "Brilho do painel" : "Só por software")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    if tela.hardware {
+                        LinhaDeBrilho(tela: tela)
+                    }
+                    LabeledContent {
+                        HStack {
+                            Slider(value: Binding(get: { telas.escurecimento(tela) },
+                                                  set: { telas.definirEscurecimento($0, em: tela) }),
+                                   in: 0...Escurecimento.maximo)
+                            Text("\(Int((telas.escurecimento(tela) * 100).rounded()))%")
+                                .monospacedDigit()
+                                .frame(width: 40, alignment: .trailing)
+                        }
+                    } label: {
+                        Text(tela.hardware ? "Escurecer além do mínimo" : "Escurecer")
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        } header: {
+            Text("Telas")
+        } footer: {
+            Text("O escurecimento pinta a imagem mais escura pela tabela de gama — funciona em qualquer monitor, inclusive nos que não aceitam controle de brilho, e para em \(Int(Escurecimento.maximo * 100))% para a tela nunca ficar preta. Se o Docka for encerrado, as cores voltam ao normal sozinhas.")
+        }
+        .onAppear { telas.atualizarTelas() }
+    }
+}
+
+/// O brilho de hardware de uma tela, lido ao aparecer e escrito ao arrastar.
+private struct LinhaDeBrilho: View {
+    let tela: TelasDeBrilho.Tela
+    @State private var nivel: Double = 0.5
+
+    var body: some View {
+        LabeledContent {
+            HStack {
+                Slider(value: Binding(get: { nivel }, set: {
+                    nivel = $0
+                    BrightnessBackend.escrever($0, tela.id)
+                }), in: 0...1)
+                Text("\(Int((nivel * 100).rounded()))%")
+                    .monospacedDigit()
+                    .frame(width: 40, alignment: .trailing)
+            }
+        } label: {
+            Text("Brilho")
+        }
+        .onAppear { nivel = BrightnessBackend.ler(tela.id) ?? nivel }
     }
 }
 

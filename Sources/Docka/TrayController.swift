@@ -213,6 +213,9 @@ final class TrayManager {
     private let store = DockaStore.shared
 
     func start() {
+        // reaplica o escurecimento gravado: a gama volta ao normal quando o
+        // Docka encerra, e precisa ser posta de novo ao abrir
+        _ = TelasDeBrilho.shared
         sincronizar()
         // repõe os painéis quando as bandejas ou os ajustes mudam
         cancellable = store.objectWillChange.sink { [weak self] in
@@ -225,6 +228,8 @@ final class TrayManager {
             object: nil, queue: .main
         ) { [weak self] _ in
             self?.controllers.values.forEach { $0.layout() }
+            // monitor novo: descobre se aceita brilho e reaplica o escurecimento
+            TelasDeBrilho.shared.atualizarTelas()
             self?.brilho?.layout()
             self?.volume?.layout()
             self?.prateleira?.layout()

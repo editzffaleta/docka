@@ -36,7 +36,7 @@ identidade visual do Vorssaint.
 | ✅ Monitor do sistema | CPU/memória (`host_statistics`), bateria (`IOPowerSources`), disco, rede (`getifaddrs`) — régua ou painel de borda |
 | ✅ Leituras na barra de menus | texto curto no `MenuBarExtra` |
 | ✅ Alertas | CPU alta contínua, memória, disco, bateria e temperatura — cartão próprio (as notificações do sistema pediriam autorização) |
-| Brilho por monitor | estender o `BrightnessBackend` para várias telas |
+| ✅ Brilho por monitor | brilho de hardware por tela + escurecimento por gama em qualquer monitor; DDC de monitores externos fica para depois (API privada, sem monitor externo para testar) |
 
 ## Fase 3 — Área de transferência e texto (pede Acessibilidade para colar)
 
