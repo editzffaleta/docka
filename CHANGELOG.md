@@ -94,6 +94,11 @@ todo o resto por aqui.
   (deslize com desaceleração), rolar de lado segurando ⌥/⌃/⌘ e botões
   laterais como voltar/avançar (⌘[ / ⌘]). O botão usado pela Órbita fica
   com ela. Só eventos do mouse passam pelo Docka.
+- **Captura** (módulo opcional): **conta-gotas** sem permissão, copiando
+  em HEX, RGB, HSL ou SwiftUI; **texto da tela** com leitor de QR, que
+  reconhece português e inglês no próprio Mac (Vision); e **captura de
+  área** para a área de transferência ou a Mesa. A seleção é a do próprio
+  macOS (a do ⇧⌘4). Texto e captura pedem Gravação de Tela.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30

@@ -4,6 +4,8 @@ import Foundation
 public struct Alerta: Equatable, Sendable {
     public enum Tipo: String, CaseIterable, Sendable {
         case cpu, memoria, disco, bateria, temperatura
+        /// Retorno da captura: cor copiada, texto lido, captura salva.
+        case captura
     }
 
     public var tipo: Tipo
@@ -23,6 +25,7 @@ public struct Alerta: Equatable, Sendable {
         case .disco:       return "internaldrive"
         case .bateria:     return "battery.25"
         case .temperatura: return "thermometer.high"
+        case .captura:     return "text.viewfinder"
         }
     }
 }

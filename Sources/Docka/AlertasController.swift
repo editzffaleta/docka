@@ -137,6 +137,16 @@ final class AvisoController {
     static let duracao: TimeInterval = 8
 
     func mostrar(_ alerta: Alerta) {
+        // retorno de captura troca o que está na tela: duas capturas seguidas
+        // não podem engolir o aviso da segunda
+        if alerta.tipo == .captura, estado.alerta?.tipo == .captura {
+            estado.alerta = alerta
+            retirada?.cancel()
+            let item = DispatchWorkItem { [weak self] in self?.fechar() }
+            retirada = item
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.duracao, execute: item)
+            return
+        }
         // o mesmo tipo já na fila não entra de novo
         guard estado.alerta?.tipo != alerta.tipo,
               !fila.contains(where: { $0.tipo == alerta.tipo }) else { return }
@@ -210,7 +220,7 @@ final class AvisoController {
                     NSWorkspace.shared.open(url)
                 }
             })
-        case .bateria:
+        case .bateria, .captura:
             return nil
         }
     }

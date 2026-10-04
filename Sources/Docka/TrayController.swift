@@ -398,6 +398,9 @@ final class TrayManager {
         case .snippets:        SnippetsController.shared.alternar()
         case .janela(let l):   JanelasBackend.executar(l)
         case .alternador:      if store.alternadorControl { AlternadorController.shared.atalho() }
+        case .contaGotas:      if store.capturaControl { CapturaController.contaGotas() }
+        case .textoDaTela:     if store.capturaControl { CapturaController.textoDaTela() }
+        case .capturaArea:     if store.capturaControl { CapturaController.capturarArea() }
         }
     }
 

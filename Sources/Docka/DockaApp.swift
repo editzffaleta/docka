@@ -167,6 +167,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--captura-selftest") {
+            print("captura:\n\(CapturaController.autoteste())")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
         if CommandLine.arguments.contains("--demo") {
             TrayManager.shared.startDemo()
         }
@@ -235,6 +242,15 @@ struct MenuBarContent: View {
                 Divider()
                 Button("Deixar o copiado sem formatação") { HistoricoModelo.shared.soTexto() }
                 Button("Limpar rastreadores do link copiado") { HistoricoModelo.shared.limparLinkCopiado() }
+            }
+        }
+        if store.capturaControl {
+            Menu("Captura") {
+                Button("Conta-gotas") { CapturaController.contaGotas() }
+                Button("Copiar texto da tela") { CapturaController.textoDaTela() }
+                Button(store.capturaNaMesa ? "Capturar área para a Mesa" : "Capturar área para copiar") {
+                    CapturaController.capturarArea()
+                }
             }
         }
         if store.janelasControl {

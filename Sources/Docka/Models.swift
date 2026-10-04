@@ -183,6 +183,9 @@ final class DockaStore: ObservableObject {
         static let mouseSuave = "docka.mouseSmooth"
         static let mouseDeLado = "docka.mouseSidewaysModifier"
         static let mouseBotoes = "docka.mouseSideButtons"
+        static let captura = "docka.capture"
+        static let formatoDeCor = "docka.colorFormat"
+        static let capturaNaMesa = "docka.captureToDesktop"
     }
 
     private let defaults = UserDefaults.standard
@@ -489,6 +492,18 @@ final class DockaStore: ObservableObject {
     @Published var mouseDeLado: Int { didSet { defaults.set(mouseDeLado, forKey: Key.mouseDeLado) } }
     @Published var mouseBotoes: Bool { didSet { defaults.set(mouseBotoes, forKey: Key.mouseBotoes) } }
 
+    /// Módulo de captura: conta-gotas (sem permissão), texto da tela e
+    /// captura de área (Gravação de Tela).
+    @Published var capturaControl: Bool {
+        didSet {
+            defaults.set(capturaControl, forKey: Key.captura)
+            if capturaControl && !CapturaController.permitido { CapturaController.pedirPermissao() }
+        }
+    }
+    @Published var formatoDeCor: String { didSet { defaults.set(formatoDeCor, forKey: Key.formatoDeCor) } }
+    /// A captura de área vai para um arquivo na Mesa, em vez da área de transferência.
+    @Published var capturaNaMesa: Bool { didSet { defaults.set(capturaNaMesa, forKey: Key.capturaNaMesa) } }
+
     /// O vigia da área de transferência só roda se algum recurso dele está
     /// ligado — histórico, limpar links ou apagar depois de um tempo.
     func sincronizarClipboard() {
@@ -613,6 +628,9 @@ final class DockaStore: ObservableObject {
         case .snippets: return "Snippets"
         case .janela(let l): return "Janela — \(l.titulo.lowercased())"
         case .alternador: return "Alternador de apps"
+        case .contaGotas: return "Conta-gotas"
+        case .textoDaTela: return "Texto da tela"
+        case .capturaArea: return "Capturar área"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -774,6 +792,9 @@ final class DockaStore: ObservableObject {
             Key.mouseSuave: false,
             Key.mouseDeLado: 0,
             Key.mouseBotoes: false,
+            Key.captura: false,
+            Key.formatoDeCor: FormatoDeCor.hex.rawValue,
+            Key.capturaNaMesa: false,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -873,6 +894,9 @@ final class DockaStore: ObservableObject {
         mouseSuave = defaults.bool(forKey: Key.mouseSuave)
         mouseDeLado = defaults.integer(forKey: Key.mouseDeLado)
         mouseBotoes = defaults.bool(forKey: Key.mouseBotoes)
+        capturaControl = defaults.bool(forKey: Key.captura)
+        formatoDeCor = defaults.string(forKey: Key.formatoDeCor) ?? FormatoDeCor.hex.rawValue
+        capturaNaMesa = defaults.bool(forKey: Key.capturaNaMesa)
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 

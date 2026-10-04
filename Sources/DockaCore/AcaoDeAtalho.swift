@@ -38,6 +38,12 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case janela(LayoutDeJanela)
     /// Abre o alternador de apps, ou avança nele se já estiver aberto.
     case alternador
+    /// Conta-gotas: copia a cor de um ponto da tela.
+    case contaGotas
+    /// Copia o texto (ou o QR) de uma área da tela.
+    case textoDaTela
+    /// Captura uma área ou janela.
+    case capturaArea
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -58,6 +64,9 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .snippets:          return "snippets"
         case .janela(let l):     return "janela:\(l.rawValue)"
         case .alternador:        return "alternador"
+        case .contaGotas:        return "contaGotas"
+        case .textoDaTela:       return "textoDaTela"
+        case .capturaArea:       return "capturaArea"
         }
     }
 
@@ -75,6 +84,9 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "textoPuro": self = .textoPuro
         case "snippets": self = .snippets
         case "alternador": self = .alternador
+        case "contaGotas": self = .contaGotas
+        case "textoDaTela": self = .textoDaTela
+        case "capturaArea": self = .capturaArea
         default:
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {

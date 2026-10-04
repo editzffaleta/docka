@@ -10,11 +10,11 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, brilho, volume, energia, acoes, atalho, sobre
+    case geral, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .notas, .monitor, .clipboard, .janelas, .mouse, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .notas, .monitor, .clipboard, .janelas, .mouse, .captura, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
 
     var titulo: String {
         switch self {
@@ -29,6 +29,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .clipboard: return "Área de transferência"
         case .janelas:   return "Janelas"
         case .mouse:     return "Mouse"
+        case .captura:   return "Captura"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
         case .energia:   return "Energia"
@@ -51,6 +52,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .clipboard: return "doc.on.clipboard.fill"
         case .janelas:   return "rectangle.split.2x1.fill"
         case .mouse:     return "computermouse.fill"
+        case .captura:   return "camera.viewfinder"
         case .brilho:    return "sun.max.fill"
         case .volume:    return "speaker.wave.2.fill"
         case .energia:   return "cup.and.saucer.fill"
@@ -74,6 +76,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .clipboard: return .cyan
         case .janelas:   return .blue
         case .mouse:     return .gray
+        case .captura:   return .purple
         case .brilho:    return .yellow
         case .volume:    return .pink
         case .energia:   return .brown
@@ -201,6 +204,7 @@ struct SettingsWindowView: View {
         case .clipboard: ClipboardSettingsView()
         case .janelas:   JanelasSettingsView()
         case .mouse:     MouseSettingsView()
+        case .captura:   CapturaSettingsView()
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
         case .energia:   EnergiaView()
@@ -1435,6 +1439,69 @@ private struct JanelasSettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+// MARK: - Captura
+
+private struct CapturaSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @State private var permitido = CapturaController.permitido
+    private let relogio = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.capturaControl) {
+                    Text("Captura")
+                    Text("Conta-gotas, texto da tela (com leitor de QR) e captura de área — pelo menu Captura na barra ou por atalho.")
+                }
+                if store.capturaControl {
+                    LabeledContent {
+                        if !permitido {
+                            Button("Abrir Privacidade") { CapturaController.abrirAjustesDePrivacidade() }
+                        }
+                    } label: {
+                        Label(permitido ? "Gravação de Tela concedida" : "Falta conceder a Gravação de Tela",
+                              systemImage: permitido ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
+                            .foregroundStyle(permitido ? .green : .orange)
+                    }
+                }
+            } header: {
+                Text("Módulo com permissão")
+            } footer: {
+                Text("O texto da tela e a captura de área precisam de Gravação de Tela: sem ela, o macOS entrega só o fundo da mesa. O conta-gotas não precisa de nada. O reconhecimento de texto roda no próprio Mac — nenhuma imagem sai daqui. Pode ser preciso reabrir o Docka depois de conceder.")
+            }
+            .onReceive(relogio) { _ in permitido = CapturaController.permitido }
+
+            if store.capturaControl {
+                Section("Conta-gotas") {
+                    Picker("Copiar a cor como", selection: $store.formatoDeCor) {
+                        ForEach(FormatoDeCor.allCases) { Text($0.titulo).tag($0.rawValue) }
+                    }
+                    linha(.contaGotas, "Atalho do conta-gotas")
+                }
+                Section("Texto da tela") {
+                    linha(.textoDaTela, "Atalho")
+                }
+                Section("Captura de área") {
+                    Toggle(isOn: $store.capturaNaMesa) {
+                        Text("Salvar na Mesa")
+                        Text("Desligado, a captura vai para a área de transferência. Espaço troca para captura de janela, como no ⇧⌘4.")
+                    }
+                    linha(.capturaArea, "Atalho")
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    @ViewBuilder
+    private func linha(_ acao: AcaoDeAtalho, _ titulo: String) -> some View {
+        LabeledContent(titulo) { ShortcutRecorder(acao: acao) }
+        if let erro = store.erroDoAtalho(acao) {
+            Label(erro, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange).font(.callout)
+        }
     }
 }
 
