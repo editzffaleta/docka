@@ -4,9 +4,9 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
-## [Não lançado]
+## [1.3.0] — 2026-10-04
 
-### Novo
+### Novo (experimental)
 
 - **Brilho do painel em monitores externos (DDC/CI)**: monitores que
   entendem DDC ajustam o brilho de verdade, pela régua da borda e pelos
@@ -15,6 +15,12 @@ todo o resto por aqui.
   máximo do próprio monitor, e conversa numa fila própria, mandando só o
   último valor do arrasto. Monitor que não responde (ou adaptador que não
   repassa DDC) segue no escurecimento por software.
+
+  **Experimental:** conferido contra a especificação VESA DDC/CI, mas ainda
+  não testado com um monitor externo de verdade. Se o seu monitor não
+  responder ou se comportar mal, rode
+  `Docka.app/Contents/MacOS/Docka --ddc-selftest` (só lê) e abra uma issue
+  com a saída.
 
 ## [1.2.0] — 2026-10-04
 

@@ -179,7 +179,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 | Recurso | Descrição |
 |---------|-----------|
 | **Brilho da tela** | Régua com traços e um botão-sol que corre junto com o nível. Arraste o botão ou a régua; o valor é lido da tela de verdade, não estimado |
-| **Monitores externos (DDC)** | Monitores que entendem DDC/CI ajustam o brilho do próprio painel pela mesma régua. O Docka só lê e muda o brilho — e nunca escreve sem antes ler o valor e o máximo que o monitor informa |
+| **Monitores externos (DDC)** *(experimental)* | Monitores que entendem DDC/CI ajustam o brilho do próprio painel pela mesma régua. O Docka só lê e muda o brilho — e nunca escreve sem antes ler o valor e o máximo que o monitor informa |
 | **Qualquer monitor** | Em telas sem DDC nem controle de brilho, a mesma régua escurece a imagem por software, pela tabela de gama |
 | **Brilho por tela** | Nos ajustes, cada tela conectada tem o seu brilho e um escurecimento que vai abaixo do mínimo do painel — até 80%, para nunca ficar preta; lembrado por monitor e desfeito sozinho se o Docka encerrar |
 | **Volume da saída** | A mesma régua para o áudio, pelo CoreAudio — API pública, sem permissão. O ícone acompanha o nível como no menu de som, zero silencia de fato e subir a régua tira do mudo |
