@@ -69,4 +69,24 @@ struct EncaixeTests {
             #expect(AcaoDeAtalho(id: AcaoDeAtalho.janela(l).id) == .janela(l))
         }
     }
+
+    @Test("Zonas de arrastar: bordas, cantos e a de baixo que não faz nada")
+    func zonas() {
+        let t = CGRect(x: 0, y: 0, width: 1710, height: 1112)
+        #expect(Encaixe.zona(cursor: CGPoint(x: 0, y: 500), tela: t) == .esquerda)
+        #expect(Encaixe.zona(cursor: CGPoint(x: 1709, y: 500), tela: t) == .direita)
+        #expect(Encaixe.zona(cursor: CGPoint(x: 800, y: 1111), tela: t) == .maximizar)
+        #expect(Encaixe.zona(cursor: CGPoint(x: 0, y: 1100), tela: t) == .superiorEsquerdo)
+        #expect(Encaixe.zona(cursor: CGPoint(x: 1650, y: 1111), tela: t) == .superiorDireito)
+        #expect(Encaixe.zona(cursor: CGPoint(x: 1709, y: 20), tela: t) == .inferiorDireito)
+        #expect(Encaixe.zona(cursor: CGPoint(x: 800, y: 0), tela: t) == nil)
+        #expect(Encaixe.zona(cursor: CGPoint(x: 800, y: 500), tela: t) == nil)
+    }
+
+    @Test("Zona numa segunda tela à direita")
+    func zonaSegundaTela() {
+        let t = CGRect(x: 1710, y: -200, width: 2560, height: 1440)
+        #expect(Encaixe.zona(cursor: CGPoint(x: 1710, y: 400), tela: t) == .esquerda)
+        #expect(Encaixe.zona(cursor: CGPoint(x: 3000, y: 1239), tela: t) == .maximizar)
+    }
 }

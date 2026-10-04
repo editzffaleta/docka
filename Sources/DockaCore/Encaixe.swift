@@ -138,4 +138,33 @@ public enum Encaixe {
         abs(a.minX - b.minX) <= folga && abs(a.minY - b.minY) <= folga
             && abs(a.width - b.width) <= folga && abs(a.height - b.height) <= folga
     }
+
+    // MARK: arrastar até a borda
+
+    /// Quão perto da borda o cursor precisa chegar, e o tamanho do canto.
+    public static let margemDaBorda: CGFloat = 4
+    public static let tamanhoDoCanto: CGFloat = 80
+
+    /// O layout para onde a janela vai se for solta com o cursor aqui.
+    /// `tela` em coordenadas do AppKit (y para cima).
+    ///
+    /// Borda de cima maximiza; laterais dão metades; cantos, quartos. A borda
+    /// de baixo sozinha não faz nada: é onde mora o Dock, e soltar uma janela
+    /// ali por acidente é comum demais.
+    public static func zona(cursor p: CGPoint, tela t: CGRect) -> LayoutDeJanela? {
+        let m = margemDaBorda, c = tamanhoDoCanto
+        let esquerda = p.x <= t.minX + m, direita = p.x >= t.maxX - m
+        let cima = p.y >= t.maxY - m, baixo = p.y <= t.minY + m
+        let pertoDeCima = p.y >= t.maxY - c, pertoDeBaixo = p.y <= t.minY + c
+        let pertoDaEsquerda = p.x <= t.minX + c, pertoDaDireita = p.x >= t.maxX - c
+
+        if (esquerda && pertoDeCima) || (cima && pertoDaEsquerda) { return .superiorEsquerdo }
+        if (direita && pertoDeCima) || (cima && pertoDaDireita) { return .superiorDireito }
+        if (esquerda && pertoDeBaixo) || (baixo && pertoDaEsquerda) { return .inferiorEsquerdo }
+        if (direita && pertoDeBaixo) || (baixo && pertoDaDireita) { return .inferiorDireito }
+        if esquerda { return .esquerda }
+        if direita { return .direita }
+        if cima { return .maximizar }
+        return nil
+    }
 }

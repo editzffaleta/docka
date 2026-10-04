@@ -8,7 +8,13 @@ import DockaCore
 final class SnippetsModelo: ObservableObject {
     static let shared = SnippetsModelo()
 
-    @Published var lista: [Snippet] = [] { didSet { gravar() } }
+    @Published var lista: [Snippet] = [] {
+        didSet {
+            gravar()
+            // o tap dos gatilhos só existe se algum snippet tem gatilho
+            GatilhosController.shared.sincronizar()
+        }
+    }
 
     static var arquivo: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]

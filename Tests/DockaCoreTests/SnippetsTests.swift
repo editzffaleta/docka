@@ -38,4 +38,60 @@ struct SnippetsTests {
     func atalho() {
         #expect(AcaoDeAtalho(id: AcaoDeAtalho.snippets.id) == .snippets)
     }
+
+    @Test("O gatilho dispara no fim do que foi digitado, e só uma vez")
+    func gatilho() {
+        let lista = [Snippet(nome: "e", texto: "eu@x.com", gatilho: ";email"),
+                     Snippet(nome: "curto", texto: "?", gatilho: ";em")]
+        var d = DetectorDeGatilho()
+        d.digitou("oi ;e")
+        #expect(d.procurar(em: lista) == nil)
+        d.digitou("m")
+        // ";em" já completou — e é o que dispara aqui
+        #expect(d.procurar(em: lista)?.nome == "curto")
+        d.digitou("ail")
+        #expect(d.procurar(em: lista) == nil)   // zerou: ";email" não sobrou inteiro
+    }
+
+    @Test("Entre dois gatilhos que terminam igual, vence o mais longo")
+    func maisLongo() {
+        let lista = [Snippet(nome: "curto", texto: "", gatilho: "il"),
+                     Snippet(nome: "longo", texto: "", gatilho: ";email")]
+        var d = DetectorDeGatilho()
+        d.digitou(";email")
+        #expect(d.procurar(em: lista)?.nome == "longo")
+    }
+
+    @Test("Apagar corrige, zerar esquece, e a memória é curta")
+    func memoria() {
+        let lista = [Snippet(nome: "x", texto: "", gatilho: ";ok")]
+        var d = DetectorDeGatilho(capacidade: 8)
+        d.digitou(";oj"); d.apagou(); d.digitou("k")
+        #expect(d.procurar(em: lista)?.nome == "x")
+        d.digitou(";o"); d.zerar(); d.digitou("k")
+        #expect(d.procurar(em: lista) == nil)
+        d.digitou("1234567890")
+        #expect(d.digitado.count == 8)
+    }
+
+    @Test("Gatilho sem espaço, de 2 a 20 caracteres e sem repetir")
+    func valido() {
+        let a = Snippet(nome: "a", texto: "", gatilho: ";a")
+        #expect(Snippets.gatilhoValido(";email", entre: [a], ignorando: UUID()))
+        #expect(!Snippets.gatilhoValido("; e", entre: [a], ignorando: UUID()))
+        #expect(!Snippets.gatilhoValido(";", entre: [a], ignorando: UUID()))
+        #expect(!Snippets.gatilhoValido(";a", entre: [a], ignorando: UUID()))
+        #expect(Snippets.gatilhoValido(";a", entre: [a], ignorando: a.id))
+        // começo de outro, nos dois sentidos: o curto engoliria o longo
+        let email = Snippet(nome: "e", texto: "", gatilho: ";email")
+        #expect(!Snippets.gatilhoValido(";em", entre: [email], ignorando: UUID()))
+        #expect(!Snippets.gatilhoValido(";emailx", entre: [email], ignorando: UUID()))
+    }
+
+    @Test("Snippet gravado antes do gatilho continua lendo")
+    func antigo() throws {
+        let json = #"[{"id":"6B1E5C1A-3A33-4C9B-9E43-1A2B3C4D5E6F","nome":"n","texto":"t"}]"#
+        let lidos = try JSONDecoder().decode([Snippet].self, from: Data(json.utf8))
+        #expect(lidos.first?.gatilho == "")
+    }
 }

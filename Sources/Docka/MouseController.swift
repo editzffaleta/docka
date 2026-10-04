@@ -18,6 +18,10 @@ final class MouseController {
     /// os dentes chegam mais rápido que o deslize termina.
     private var fila: [(x: Double, y: Double)] = []
     private var sobra: (x: Double, y: Double) = (0, 0)
+    /// O app da frente, guardado: o tap roda a cada rolagem e não deve
+    /// perguntar ao sistema toda vez. A notificação de ativação o mantém em dia.
+    private var appDaFrente = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+    private var observadorDeAtivacao: NSObjectProtocol?
 
     /// Assinatura dos eventos que o próprio Docka posta: o tap os deixa
     /// passar, senão a rolagem suave se realimentaria sem fim.
@@ -49,6 +53,12 @@ final class MouseController {
                                             MouseController.shared.tratar(tipo, evento)
                                         }, userInfo: nil) else { return }
         tap = t
+        appDaFrente = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        observadorDeAtivacao = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] n in
+            self?.appDaFrente = (n.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.bundleIdentifier
+        }
         fonte = CFMachPortCreateRunLoopSource(nil, t, 0)
         CFRunLoopAddSource(CFRunLoopGetMain(), fonte, .commonModes)
         CGEvent.tapEnable(tap: t, enable: true)
@@ -59,6 +69,8 @@ final class MouseController {
         if let f = fonte { CFRunLoopRemoveSource(CFRunLoopGetMain(), f, .commonModes) }
         tap = nil
         fonte = nil
+        if let o = observadorDeAtivacao { NSWorkspace.shared.notificationCenter.removeObserver(o) }
+        observadorDeAtivacao = nil
         relogio?.invalidate()
         relogio = nil
         fila = []
@@ -81,6 +93,8 @@ final class MouseController {
     /// instalar tap nenhum.
     func processar(_ tipo: CGEventType, _ e: CGEvent) -> CGEvent? {
         if e.getIntegerValueField(.eventSourceUserData) == Self.marca { return e }
+        // app na lista de ignorados: o mouse fica como o sistema manda
+        if let id = appDaFrente, store.mouseIgnorados.contains(id) { return e }
 
         switch tipo {
         case .scrollWheel:
