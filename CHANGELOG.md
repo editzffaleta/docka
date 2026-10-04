@@ -4,6 +4,18 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
+## [Não lançado]
+
+### Novo
+
+- **Brilho do painel em monitores externos (DDC/CI)**: monitores que
+  entendem DDC ajustam o brilho de verdade, pela régua da borda e pelos
+  ajustes de Brilho. O Docka só lê e muda o brilho (código VCP 0x10) — nada
+  de entrada, cor ou padrões —, nunca escreve sem antes ler o valor e o
+  máximo do próprio monitor, e conversa numa fila própria, mandando só o
+  último valor do arrasto. Monitor que não responde (ou adaptador que não
+  repassa DDC) segue no escurecimento por software.
+
 ## [1.2.0] — 2026-10-04
 
 A maior versão do Docka até aqui: mais de vinte recursos novos inspirados no

@@ -179,7 +179,8 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 | Recurso | Descrição |
 |---------|-----------|
 | **Brilho da tela** | Régua com traços e um botão-sol que corre junto com o nível. Arraste o botão ou a régua; o valor é lido da tela de verdade, não estimado |
-| **Qualquer monitor** | Em telas que não aceitam controle de brilho (a maioria dos monitores externos), a mesma régua escurece a imagem por software, pela tabela de gama |
+| **Monitores externos (DDC)** | Monitores que entendem DDC/CI ajustam o brilho do próprio painel pela mesma régua. O Docka só lê e muda o brilho — e nunca escreve sem antes ler o valor e o máximo que o monitor informa |
+| **Qualquer monitor** | Em telas sem DDC nem controle de brilho, a mesma régua escurece a imagem por software, pela tabela de gama |
 | **Brilho por tela** | Nos ajustes, cada tela conectada tem o seu brilho e um escurecimento que vai abaixo do mínimo do painel — até 80%, para nunca ficar preta; lembrado por monitor e desfeito sozinho se o Docka encerrar |
 | **Volume da saída** | A mesma régua para o áudio, pelo CoreAudio — API pública, sem permissão. O ícone acompanha o nível como no menu de som, zero silencia de fato e subir a régua tira do mudo |
 | **Onde ficam** | Lateral esquerda ou direita, alinhadas ao topo, ao centro ou à base. Só laterais: a régua é vertical, e deitada na borda inferior viraria outra coisa |
@@ -224,6 +225,7 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 ├── AnelDaOrbita.swift       — anéis nomeados e itens (app, site, arquivo, pasta)
 ├── Deslizante.swift         — a matemática comum das réguas de brilho e volume
 ├── Escurecimento.swift      — escurecimento por gama: limite, chave da tela, régua
+├── DDC.swift                — pacotes DDC/CI (pedir, escrever, conferir), fabricante EDID
 ├── Favicon.swift            — onde procurar a logo de um site (só no próprio site)
 ├── Acordado.swift           — durações do Manter acordado, fim e tempo restante
 ├── AcaoRapida.swift         — as ações rápidas e quais discos o "Ejetar todos" leva
@@ -249,7 +251,8 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── OrbitaController.swift   — o anel no cursor: seleção por direção, rolagem entre anéis
 ├── DeslizanteController.swift — as réguas de brilho e volume nas laterais
 ├── BrightnessBackend.swift  — DisplayServices: ler/escrever o brilho da tela sob o cursor
-├── TelasDeBrilho.swift      — telas conectadas, brilho de hardware ou gama, por monitor
+├── TelasDeBrilho.swift      — telas conectadas, brilho de hardware, DDC ou gama, por monitor
+├── DDCBackend.swift         — DDC em Apple Silicon: canais de vídeo, I²C numa fila própria
 ├── VolumeBackend.swift      — CoreAudio: volume e mudo da saída padrão
 ├── AcordadoBackend.swift    — IOKit: asserção de energia do Manter acordado
 ├── AcoesRapidasBackend.swift — pmset, NSWorkspace e login.framework: as ações rápidas

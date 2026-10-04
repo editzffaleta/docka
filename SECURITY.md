@@ -54,6 +54,10 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   apenas pelas permissões da sua conta: o histórico pode conter o que você
   copiou (exceto o que foi marcado como sigiloso). Desligue "Lembrar entre
   aberturas" para o histórico viver só na memória
+- **DDC/CI** com monitores externos, pelo cabo de vídeo (funções `IOAVService*` do
+  IOKit, privadas): só lê e escreve o **brilho** (código VCP 0x10), nunca
+  escreve sem uma leitura bem-sucedida antes e mantém o valor entre 0 e o
+  máximo que o monitor informa. Não pede permissão
 - **Contadores do sistema** para o monitor (CPU, memória, rede, bateria, disco)
   e a **tabela de gama** das telas para o escurecimento — APIs públicas, sem permissão
 
