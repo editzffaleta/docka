@@ -176,6 +176,7 @@ final class DockaStore: ObservableObject {
         static let janelas = "docka.windowSnapping"
         static let alternador = "docka.switcher"
         static let alternadorJanelas = "docka.switcherWindows"
+        static let alternadorPrevias = "docka.switcherPreviews"
         static let mouse = "docka.mouse"
         static let mouseInverterV = "docka.mouseInvertVertical"
         static let mouseInverterH = "docka.mouseInvertHorizontal"
@@ -507,6 +508,14 @@ final class DockaStore: ObservableObject {
     /// Abre a captura de área no editor de anotação.
     @Published var capturaEditar: Bool { didSet { defaults.set(capturaEditar, forKey: Key.capturaEditar) } }
 
+    /// Miniaturas das janelas no alternador — pede Gravação de Tela.
+    @Published var alternadorPrevias: Bool {
+        didSet {
+            defaults.set(alternadorPrevias, forKey: Key.alternadorPrevias)
+            if alternadorPrevias && !CapturaController.permitido { CapturaController.pedirPermissao() }
+        }
+    }
+
     /// O vigia da área de transferência só roda se algum recurso dele está
     /// ligado — histórico, limpar links ou apagar depois de um tempo.
     func sincronizarClipboard() {
@@ -788,6 +797,7 @@ final class DockaStore: ObservableObject {
             Key.janelas: false,
             Key.alternador: false,
             Key.alternadorJanelas: false,
+            Key.alternadorPrevias: false,
             Key.mouse: false,
             Key.mouseInverterV: false,
             Key.mouseInverterH: false,
@@ -891,6 +901,7 @@ final class DockaStore: ObservableObject {
         janelasControl = defaults.bool(forKey: Key.janelas)
         alternadorControl = defaults.bool(forKey: Key.alternador)
         alternadorJanelas = defaults.bool(forKey: Key.alternadorJanelas)
+        alternadorPrevias = defaults.bool(forKey: Key.alternadorPrevias)
         mouseControl = defaults.bool(forKey: Key.mouse)
         mouseInverterVertical = defaults.bool(forKey: Key.mouseInverterV)
         mouseInverterHorizontal = defaults.bool(forKey: Key.mouseInverterH)

@@ -146,7 +146,7 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Ciclo de larguras** | Repetir o atalho de uma metade alterna entre ½, ⅓ e ⅔ da tela |
 | **Outra tela** | Leva a janela para a próxima tela mantendo a proporção: a metade esquerda de uma vira a metade esquerda da outra |
 | **Voltar** | Devolve a janela ao tamanho e lugar de antes do primeiro encaixe |
-| **Alternador de apps** | Num atalho próprio (sugestão ⌥Tab): apps na ordem de uso, segure e aperte para avançar, solte para trocar. Sem permissão; com Acessibilidade, uma entrada por janela. Não substitui o ⌘Tab |
+| **Alternador de apps** | Num atalho próprio (sugestão ⌥Tab): apps na ordem de uso, segure e aperte para avançar, solte para trocar. Sem permissão; com Acessibilidade, uma entrada por janela; com Gravação de Tela, miniaturas das janelas. Não substitui o ⌘Tab |
 
 ### Mouse *(módulo opcional, Acessibilidade)*
 
@@ -309,6 +309,7 @@ sem ela continuam funcionando no modo sem permissão.
 |---|---|---|---|
 | Colar sozinho | Acessibilidade | Enviar ⌘V ao app da frente ao escolher no histórico ou num snippet | O item só fica copiado, pronto para o seu ⌘V |
 | Alternador — cada janela | Acessibilidade | Listar janelas pelo título e trazer a escolhida para a frente | O alternador troca de app, sem listar janelas |
+| Alternador — prévias | Gravação de Tela | Miniaturas das janelas enquanto o alternador está aberto; nada é gravado | Ícones no lugar das miniaturas |
 | Captura | Gravação de Tela | Capturar a área que você seleciona, para OCR, QR ou imagem — reconhecimento no próprio Mac | Só o conta-gotas funciona |
 | Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse — nunca o teclado | O mouse segue como o sistema manda |
 | Encaixar janelas | Acessibilidade | Ler e mudar posição e tamanho da janela da frente, no atalho ou no menu Janelas | Os atalhos não fazem nada (um aviso sonoro) e os ajustes mostram o que falta |

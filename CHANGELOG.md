@@ -105,6 +105,11 @@ todo o resto por aqui.
   são gravadas em pixels da captura, então a exportação sai na resolução
   Retina. O borrão pixeliza os pixels de verdade — conferido por OCR: o
   texto sob ele não pode mais ser lido.
+- **Prévias no alternador** (Gravação de Tela): uma miniatura de cada
+  janela no lugar do ícone, pelo ScreenCaptureKit. O alternador abre na
+  hora com os ícones e as miniaturas chegam em seguida; no modo de
+  janelas, cada janela casa com a sua miniatura pela posição na tela, não
+  pelo título.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30
