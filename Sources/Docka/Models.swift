@@ -176,6 +176,13 @@ final class DockaStore: ObservableObject {
         static let janelas = "docka.windowSnapping"
         static let alternador = "docka.switcher"
         static let alternadorJanelas = "docka.switcherWindows"
+        static let mouse = "docka.mouse"
+        static let mouseInverterV = "docka.mouseInvertVertical"
+        static let mouseInverterH = "docka.mouseInvertHorizontal"
+        static let mouseLinhas = "docka.mouseLinesPerNotch"
+        static let mouseSuave = "docka.mouseSmooth"
+        static let mouseDeLado = "docka.mouseSidewaysModifier"
+        static let mouseBotoes = "docka.mouseSideButtons"
     }
 
     private let defaults = UserDefaults.standard
@@ -465,6 +472,23 @@ final class DockaStore: ObservableObject {
         }
     }
 
+    /// Módulo com permissão: a rolagem e os botões do mouse.
+    @Published var mouseControl: Bool {
+        didSet {
+            defaults.set(mouseControl, forKey: Key.mouse)
+            if mouseControl && !Colagem.permitido { Colagem.pedirPermissao() }
+            MouseController.shared.sincronizar()
+        }
+    }
+    @Published var mouseInverterVertical: Bool { didSet { defaults.set(mouseInverterVertical, forKey: Key.mouseInverterV) } }
+    @Published var mouseInverterHorizontal: Bool { didSet { defaults.set(mouseInverterHorizontal, forKey: Key.mouseInverterH) } }
+    /// Linhas por dente da roda; 0 = a aceleração do sistema.
+    @Published var mouseLinhas: Int { didSet { defaults.set(mouseLinhas, forKey: Key.mouseLinhas) } }
+    @Published var mouseSuave: Bool { didSet { defaults.set(mouseSuave, forKey: Key.mouseSuave) } }
+    /// Modificadores (rawValue de Shortcut.Modifiers) que rolam de lado; 0 = nenhum.
+    @Published var mouseDeLado: Int { didSet { defaults.set(mouseDeLado, forKey: Key.mouseDeLado) } }
+    @Published var mouseBotoes: Bool { didSet { defaults.set(mouseBotoes, forKey: Key.mouseBotoes) } }
+
     /// O vigia da área de transferência só roda se algum recurso dele está
     /// ligado — histórico, limpar links ou apagar depois de um tempo.
     func sincronizarClipboard() {
@@ -743,6 +767,13 @@ final class DockaStore: ObservableObject {
             Key.janelas: false,
             Key.alternador: false,
             Key.alternadorJanelas: false,
+            Key.mouse: false,
+            Key.mouseInverterV: false,
+            Key.mouseInverterH: false,
+            Key.mouseLinhas: 0,
+            Key.mouseSuave: false,
+            Key.mouseDeLado: 0,
+            Key.mouseBotoes: false,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -835,6 +866,13 @@ final class DockaStore: ObservableObject {
         janelasControl = defaults.bool(forKey: Key.janelas)
         alternadorControl = defaults.bool(forKey: Key.alternador)
         alternadorJanelas = defaults.bool(forKey: Key.alternadorJanelas)
+        mouseControl = defaults.bool(forKey: Key.mouse)
+        mouseInverterVertical = defaults.bool(forKey: Key.mouseInverterV)
+        mouseInverterHorizontal = defaults.bool(forKey: Key.mouseInverterH)
+        mouseLinhas = defaults.integer(forKey: Key.mouseLinhas)
+        mouseSuave = defaults.bool(forKey: Key.mouseSuave)
+        mouseDeLado = defaults.integer(forKey: Key.mouseDeLado)
+        mouseBotoes = defaults.bool(forKey: Key.mouseBotoes)
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 
@@ -879,6 +917,7 @@ final class DockaStore: ObservableObject {
         DispatchQueue.main.async {
             DockaStore.shared.sincronizarClipboard()
             AlternadorController.shared.ligar(DockaStore.shared.alternadorControl)
+            MouseController.shared.sincronizar()
         }
     }
 

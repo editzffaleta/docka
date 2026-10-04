@@ -56,7 +56,7 @@ identidade visual do Vorssaint.
 |---|---|
 | ✅ Encaixe de janelas e layouts (atalhos e menu) | Acessibilidade — encaixe arrastando até a borda fica para depois |
 | ✅ Alternador de apps | atalho próprio, ordem de uso, sem permissão; janelas por título com Acessibilidade — prévias ao vivo (Gravação de Tela) ficam para depois |
-| Rolagem suave, inverter rolagem, botões laterais | Acessibilidade / Monitoramento de Entrada |
+| ✅ Rolagem suave, inverter rolagem, botões laterais | Acessibilidade (event tap só de mouse) — apps a ignorar e atalhos por botão ficam para depois |
 | Captura de tela com anotação, OCR, conta-gotas | Gravação de Tela |
 
 ## Fora do escopo

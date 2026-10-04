@@ -45,7 +45,13 @@ enum Colagem {
     /// exemplo, o "v" mora noutra tecla, e o código fixo do QWERTY colaria
     /// com a letra errada (⌘. no lugar de ⌘V).
     private static func enviarComandoV() {
-        let tecla = codigoDaTecla(para: "v") ?? CGKeyCode(kVK_ANSI_V)
+        enviarComando("v", reserva: CGKeyCode(kVK_ANSI_V))
+    }
+
+    /// Posta ⌘ + a tecla que produz `letra` no layout em uso — também o
+    /// ⌘[ / ⌘] dos botões laterais do mouse.
+    static func enviarComando(_ letra: Character, reserva: CGKeyCode) {
+        let tecla = codigoDaTecla(para: letra) ?? reserva
         let fonte = CGEventSource(stateID: .combinedSessionState)
         let desce = CGEvent(keyboardEventSource: fonte, virtualKey: tecla, keyDown: true)
         let sobe = CGEvent(keyboardEventSource: fonte, virtualKey: tecla, keyDown: false)

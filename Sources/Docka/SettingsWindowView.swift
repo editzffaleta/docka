@@ -10,11 +10,11 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, brilho, volume, energia, acoes, atalho, sobre
+    case geral, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .notas, .monitor, .clipboard, .janelas, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
+    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .notas, .monitor, .clipboard, .janelas, .mouse, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
 
     var titulo: String {
         switch self {
@@ -28,6 +28,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .monitor:   return "Monitor do sistema"
         case .clipboard: return "Área de transferência"
         case .janelas:   return "Janelas"
+        case .mouse:     return "Mouse"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
         case .energia:   return "Energia"
@@ -49,6 +50,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .monitor:   return "gauge.with.dots.needle.67percent"
         case .clipboard: return "doc.on.clipboard.fill"
         case .janelas:   return "rectangle.split.2x1.fill"
+        case .mouse:     return "computermouse.fill"
         case .brilho:    return "sun.max.fill"
         case .volume:    return "speaker.wave.2.fill"
         case .energia:   return "cup.and.saucer.fill"
@@ -71,6 +73,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .monitor:   return .mint
         case .clipboard: return .cyan
         case .janelas:   return .blue
+        case .mouse:     return .gray
         case .brilho:    return .yellow
         case .volume:    return .pink
         case .energia:   return .brown
@@ -197,6 +200,7 @@ struct SettingsWindowView: View {
         case .monitor:   MonitorSettingsView()
         case .clipboard: ClipboardSettingsView()
         case .janelas:   JanelasSettingsView()
+        case .mouse:     MouseSettingsView()
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
         case .energia:   EnergiaView()
@@ -1426,6 +1430,86 @@ private struct JanelasSettingsView: View {
                                     .foregroundStyle(.orange).font(.callout)
                             }
                         }
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Mouse
+
+private struct MouseSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @State private var permitido = Colagem.permitido
+    private let relogio = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.mouseControl) {
+                    Text("Ajustes do mouse")
+                    Text("Rolagem e botões do mouse com fio ou Bluetooth. O trackpad e o Magic Mouse ficam como estão.")
+                }
+                if store.mouseControl {
+                    LabeledContent {
+                        if !permitido {
+                            Button("Abrir Privacidade") { Colagem.abrirAjustesDePrivacidade() }
+                        }
+                    } label: {
+                        Label(permitido ? "Acessibilidade concedida" : "Falta conceder a Acessibilidade",
+                              systemImage: permitido ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
+                            .foregroundStyle(permitido ? .green : .orange)
+                    }
+                }
+            } header: {
+                Text("Módulo com permissão")
+            } footer: {
+                Text("Mudar a rolagem e os cliques de outros apps exige interceptar esses eventos, o que só a Acessibilidade permite. Só eventos do mouse passam pelo Docka — o teclado não.")
+            }
+            .onReceive(relogio) { _ in
+                if permitido != Colagem.permitido {
+                    permitido = Colagem.permitido
+                    MouseController.shared.sincronizar()   // concedeu agora: liga sem reabrir
+                }
+            }
+
+            if store.mouseControl {
+                Section("Rolagem") {
+                    Toggle("Inverter a rolagem vertical", isOn: $store.mouseInverterVertical)
+                    Toggle("Inverter a rolagem horizontal", isOn: $store.mouseInverterHorizontal)
+                    Picker(selection: $store.mouseLinhas) {
+                        Text("Do sistema (com aceleração)").tag(0)
+                        ForEach([1, 3, 5, 10], id: \.self) { Text("\($0) \($0 == 1 ? "linha" : "linhas") por dente").tag($0) }
+                    } label: {
+                        Text("Rolagem linear")
+                        Text("Cada dente da roda rola sempre o mesmo, por mais rápido que se gire.")
+                    }
+                    Toggle(isOn: $store.mouseSuave) {
+                        Text("Rolagem suave")
+                        Text("Cada dente vira um deslize curto, em vez de um salto.")
+                    }
+                    Picker(selection: $store.mouseDeLado) {
+                        Text("Nenhuma").tag(0)
+                        Text("⌥ Option").tag(Int(Shortcut.Modifiers.option.rawValue))
+                        Text("⌃ Control").tag(Int(Shortcut.Modifiers.control.rawValue))
+                        Text("⌘ Command").tag(Int(Shortcut.Modifiers.command.rawValue))
+                    } label: {
+                        Text("Rolar de lado segurando")
+                        Text("A roda rola na horizontal enquanto a tecla está apertada. (⇧ já faz isso no macOS.)")
+                    }
+                }
+                Section {
+                    Toggle(isOn: $store.mouseBotoes) {
+                        Text("Botões laterais voltam e avançam")
+                        Text("No Finder, no Safari, no Chrome e em outros apps que entendem ⌘[ e ⌘].")
+                    }
+                } header: {
+                    Text("Botões")
+                } footer: {
+                    if store.orbitaControl && BotaoDoMouse.valido(store.orbitaBotao) {
+                        Text("O \(BotaoDoMouse.nome(store.orbitaBotao).lowercased()) abre a Órbita e continua com ela.")
                     }
                 }
             }

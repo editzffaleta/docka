@@ -88,6 +88,12 @@ todo o resto por aqui.
   opcionalmente lista cada janela pelo título e traz a escolhida para a
   frente. A ativação passa pelo LaunchServices, que funciona mesmo com a
   ativação cooperativa do macOS 14+.
+- **Ajustes do mouse** (módulo opcional, Acessibilidade): inverter a
+  rolagem da roda (vertical e horizontal, separadas) sem mexer no
+  trackpad, rolagem linear (cada dente vale o mesmo), rolagem suave
+  (deslize com desaceleração), rolar de lado segurando ⌥/⌃/⌘ e botões
+  laterais como voltar/avançar (⌘[ / ⌘]). O botão usado pela Órbita fica
+  com ela. Só eventos do mouse passam pelo Docka.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30

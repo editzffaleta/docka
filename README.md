@@ -148,6 +148,16 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Voltar** | Devolve a janela ao tamanho e lugar de antes do primeiro encaixe |
 | **Alternador de apps** | Num atalho próprio (sugestão ⌥Tab): apps na ordem de uso, segure e aperte para avançar, solte para trocar. Sem permissão; com Acessibilidade, uma entrada por janela. Não substitui o ⌘Tab |
 
+### Mouse *(módulo opcional, Acessibilidade)*
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Inverter só o mouse** | Vertical e horizontal separados; o trackpad e o Magic Mouse ficam como o sistema manda |
+| **Rolagem linear** | Cada dente da roda rola sempre 1, 3, 5 ou 10 linhas, por mais rápido que se gire |
+| **Rolagem suave** | Cada dente vira um deslize curto com desaceleração; dentes seguidos se somam |
+| **Rolar de lado** | Segurando ⌥, ⌃ ou ⌘, a roda rola na horizontal |
+| **Botões laterais** | Voltam e avançam no Finder, Safari, Chrome e outros (⌘[ / ⌘]); o botão da Órbita continua com ela |
+
 ### Controles de borda
 
 Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a bandeja — encostando o cursor na borda. Não são itens da bandeja: cada uma tem painel próprio.
@@ -187,7 +197,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 No formato dos **Ajustes do Sistema**: barra lateral com busca e navegação com
 histórico, e uma seção por assunto — **Geral**, **Apps**, **Aparência** (Tom e
 material do painel com prévia simulada), **Bandeja**, **Órbita** (com o editor
-visual do anel), **Prateleira**, **Bloco de notas**, **Monitor do sistema**, **Área de transferência**, **Janelas**, **Brilho**, **Volume**, **Energia**, **Ações rápidas**, **Atalhos** e **Sobre**.
+visual do anel), **Prateleira**, **Bloco de notas**, **Monitor do sistema**, **Área de transferência**, **Janelas**, **Mouse**, **Brilho**, **Volume**, **Energia**, **Ações rápidas**, **Atalhos** e **Sobre**.
 
 ## Arquitetura
 
@@ -211,6 +221,7 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 ├── Snippets.swift           — snippets, variáveis e busca
 ├── Encaixe.swift            — layouts de janela, ciclo de larguras, coordenadas
 ├── Alternador.swift         — ordem de uso, seleção e soltar do modificador
+├── Rolagem.swift            — inverter, linear, de lado, deslize suave, botões laterais
 ├── AcaoDeAtalho.swift       — uma combinação por ação, com limpeza de órfãos
 ├── Shortcut.swift           — atalho global: validação e exibição
 └── AppScanner.swift         — varredura de /Applications, nome do app, reordenação
@@ -235,6 +246,7 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── SnippetsController.swift — snippets em disco e o painel de escolha
 ├── JanelasBackend.swift     — módulo "Encaixar janelas": a janela da frente pela Acessibilidade
 ├── AlternadorController.swift — o alternador: histórico de uso, painel e ativação
+├── MouseController.swift    — módulo do mouse: o event tap e a rolagem suave
 ├── FaviconStore.swift       — a logo do site, baixada do próprio site e cacheada
 ├── ArrastoAppKit.swift      — arrasto e clique que funcionam em painel não-ativante
 ├── HotKey.swift             — atalhos globais (Carbon, sem permissões)
@@ -282,6 +294,7 @@ sem ela continuam funcionando no modo sem permissão.
 |---|---|---|---|
 | Colar sozinho | Acessibilidade | Enviar ⌘V ao app da frente ao escolher no histórico ou num snippet | O item só fica copiado, pronto para o seu ⌘V |
 | Alternador — cada janela | Acessibilidade | Listar janelas pelo título e trazer a escolhida para a frente | O alternador troca de app, sem listar janelas |
+| Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse — nunca o teclado | O mouse segue como o sistema manda |
 | Encaixar janelas | Acessibilidade | Ler e mudar posição e tamanho da janela da frente, no atalho ou no menu Janelas | Os atalhos não fazem nada (um aviso sonoro) e os ajustes mostram o que falta |
 
 > Assinado sem certificado de desenvolvedor (ad-hoc), o Docka muda de assinatura a cada versão compilada, e o macOS pode pedir a permissão de novo depois de uma atualização.
