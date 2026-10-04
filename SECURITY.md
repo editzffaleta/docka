@@ -44,9 +44,28 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
 - **Lista de apps** em `/Applications` e `/System/Applications` (somente leitura de nomes/ícones)
 - **Preferências próprias** em `UserDefaults` (caminhos dos apps fixados e ajustes)
 - **Lançamento de apps** via `NSWorkspace` (mesmo mecanismo do Finder)
+- **Área de transferência**, só com o histórico, a limpeza de links ou o
+  "apagar depois de um tempo" ligados: lê o conteúdo quando o contador de
+  mudanças muda. Itens marcados como sigilosos pela convenção
+  nspasteboard.org (senhas de gerenciadores) são ignorados
+- **Arquivos próprios** em `~/Library/Application Support/Docka/`: `notas.json`
+  (bloco de notas), `snippets.json` e — com "Lembrar entre aberturas" ligado —
+  `historico.json`. São **JSON em texto puro, sem criptografia**, protegidos
+  apenas pelas permissões da sua conta: o histórico pode conter o que você
+  copiou (exceto o que foi marcado como sigiloso). Desligue "Lembrar entre
+  aberturas" para o histórico viver só na memória
+- **Contadores do sistema** para o monitor (CPU, memória, rede, bateria, disco)
+  e a **tabela de gama** das telas para o escurecimento — APIs públicas, sem permissão
 
 ### O que o Docka NÃO faz
-- ❌ Não pede permissão de Acessibilidade, Monitoramento de Entrada ou Gravação de Tela
+- ❌ O núcleo não pede permissão de Acessibilidade, Monitoramento de Entrada ou
+  Gravação de Tela. Permissões só existem em **módulos opcionais**, desligados
+  por padrão e pedidos apenas quando você os liga:
+
+  | Módulo | Permissão | Para quê, e só isso |
+  |---|---|---|
+  | Colar sozinho | Acessibilidade | Enviar um ⌘V ao app da frente depois que você escolhe um item do histórico ou um snippet |
+
 - ❌ Não captura teclado (o atalho ⌘⇧D usa `RegisterEventHotKey`, que entrega apenas aquele atalho)
 - ⚠️ Acessa a rede em UM caso só: ao adicionar um site à órbita, busca o ícone
   (apple-touch-icon/favicon) **no próprio site digitado** — nunca em resolvedor de
@@ -61,6 +80,8 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
 - Manuseio de URLs no arrastar-e-soltar (`.dropDestination`) — injeção de caminhos maliciosos
 - Persistência de caminhos em `UserDefaults` — apontar itens fixados para binários inesperados
 - O painel `NSPanel` em `level: .mainMenu` — sobreposição/spoofing de interface de outros apps
+- O histórico da área de transferência — vazamento de conteúdo sigiloso que não use as marcas de nspasteboard.org
+- O ⌘V sintético do "Colar sozinho" — colar no app errado se o foco mudar no intervalo de ~0,1 s
 
 ## Verificação de integridade das releases
 

@@ -172,6 +172,7 @@ final class DockaStore: ObservableObject {
         static let historicoLembrar = "docka.clipboardRemember"
         static let limparLinks = "docka.cleanLinksOnCopy"
         static let apagarClipboard = "docka.clearClipboardAfter"
+        static let colarSozinho = "docka.autoPaste"
     }
 
     private let defaults = UserDefaults.standard
@@ -429,6 +430,15 @@ final class DockaStore: ObservableObject {
         didSet { defaults.set(apagarClipboard, forKey: Key.apagarClipboard); sincronizarClipboard() }
     }
 
+    /// Módulo com permissão: cola sozinho o que se escolhe no histórico e
+    /// nos snippets. Ligar pede a Acessibilidade, se ainda não houver.
+    @Published var colarSozinho: Bool {
+        didSet {
+            defaults.set(colarSozinho, forKey: Key.colarSozinho)
+            if colarSozinho && !Colagem.permitido { Colagem.pedirPermissao() }
+        }
+    }
+
     /// O vigia da área de transferência só roda se algum recurso dele está
     /// ligado — histórico, limpar links ou apagar depois de um tempo.
     func sincronizarClipboard() {
@@ -550,6 +560,7 @@ final class DockaStore: ObservableObject {
         case .monitor: return "Monitor do sistema"
         case .historico: return "Histórico da área de transferência"
         case .textoPuro: return "Colar sem formatação"
+        case .snippets: return "Snippets"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -700,6 +711,7 @@ final class DockaStore: ObservableObject {
             Key.historicoLembrar: true,
             Key.limparLinks: false,
             Key.apagarClipboard: 0,
+            Key.colarSozinho: false,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -788,6 +800,7 @@ final class DockaStore: ObservableObject {
         historicoLembrar = defaults.bool(forKey: Key.historicoLembrar)
         limparLinksAoCopiar = defaults.bool(forKey: Key.limparLinks)
         apagarClipboard = defaults.integer(forKey: Key.apagarClipboard)
+        colarSozinho = defaults.bool(forKey: Key.colarSozinho)
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 

@@ -395,6 +395,7 @@ final class TrayManager {
         case .monitor:         monitor?.toggleFromHotKey()
         case .historico:       if store.historicoControl { HistoricoController.shared.alternar() }
         case .textoPuro:       HistoricoModelo.shared.soTexto()
+        case .snippets:        SnippetsController.shared.alternar()
         }
     }
 

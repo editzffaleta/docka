@@ -68,6 +68,14 @@ todo o resto por aqui.
   convenção nspasteboard.org) não entram. Pode viver só na memória.
 - **Colar sem formatação**, **limpar rastreadores de links** (manual ou a
   cada cópia) e **apagar a área de transferência** depois de um tempo.
+- **Snippets**: textos prontos com `{data}`, `{hora}`, `{dia}` e
+  `{clipboard}`, escolhidos num painel com busca pelo atalho.
+- **Colar sozinho** — o primeiro **módulo opcional com permissão**: com a
+  Acessibilidade concedida, escolher no histórico ou num snippet cola direto
+  no app da frente (o ⌘V usa a tecla certa do layout em uso). O snippet
+  devolve depois o que estava copiado antes. Sem a permissão, tudo continua
+  só copiando. README e SECURITY.md passam a listar as permissões por módulo
+  e o que fica gravado em disco.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30

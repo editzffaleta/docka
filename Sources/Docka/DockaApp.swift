@@ -147,6 +147,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--colagem-selftest") {
+            // aberto pelo `open`, o app não herda a permissão de um terminal
+            // e não tem stdout: o resultado vai também para um arquivo
+            let r = Colagem.autoteste()
+            let saida = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"]
+                ?? "/tmp/docka-colagem-selftest.txt"
+            try? r.write(toFile: saida, atomically: true, encoding: .utf8)
+            print("colagem:\n\(r)")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
         if CommandLine.arguments.contains("--demo") {
             TrayManager.shared.startDemo()
         }

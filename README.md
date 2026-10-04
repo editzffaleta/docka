@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Bandejas de apps, réguas de brilho e volume e uma órbita de lançamento — tudo escondido nas bordas da tela, a um empurrão de cursor de distância.</strong><br>
-  Leve, 100% SwiftUI e sem pedir nenhuma permissão do sistema.
+  Leve, 100% SwiftUI, com um núcleo que não pede nenhuma permissão — e módulos opcionais que só pedem quando você liga.
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
   <img src="https://img.shields.io/badge/plataforma-macOS%2014%2B-blue?style=flat-square" alt="macOS 14+" />
   <img src="https://img.shields.io/badge/swift-5.9-orange?style=flat-square" alt="Swift 5.9" />
   <img src="https://img.shields.io/badge/depend%C3%AAncias-zero-brightgreen?style=flat-square" alt="Zero dependências" />
-  <img src="https://img.shields.io/badge/permiss%C3%B5es-nenhuma-14b8a6?style=flat-square" alt="Nenhuma permissão" />
+  <img src="https://img.shields.io/badge/permiss%C3%B5es-s%C3%B3%20m%C3%B3dulos%20opcionais-14b8a6?style=flat-square" alt="Permissões só em módulos opcionais" />
   <img src="https://img.shields.io/badge/idioma-Portugu%C3%AAs%20(BR)-009c3b?style=flat-square" alt="Português (BR)" />
   <img src="https://img.shields.io/badge/licen%C3%A7a-MIT-green?style=flat-square" alt="Licença MIT" />
 </p>
@@ -33,7 +33,7 @@ O **Docka** é um conjunto de superfícies de borda **gratuito e de código aber
 
 Perfeito para quem mantém o Dock enxuto mas quer um segundo escalão de apps, sites e pastas sempre à mão — sem poluir a tela, sem apps de barra de menus pesados.
 
-**Sem dependências. Sem telemetria. Sem permissões de Acessibilidade. Só um empurrão de cursor.**
+**Sem dependências. Sem telemetria. Núcleo sem permissões. Só um empurrão de cursor.**
 
 ## Recursos
 
@@ -128,6 +128,8 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 
 | Recurso | Descrição |
 |---------|-----------|
+| **Snippets** | Textos prontos com variáveis (`{data}`, `{hora}`, `{dia}`, `{clipboard}`), escolhidos num painel com busca. Com o "Colar sozinho", entram direto no app da frente e o que estava copiado antes volta |
+| **Colar sozinho** *(módulo opcional, Acessibilidade)* | Escolher no histórico ou num snippet cola direto, em vez de só copiar |
 | **Histórico** | Textos, links e arquivos copiados, com busca, fixar no topo e navegação pelo teclado (↑↓ e ↩). Escolher devolve o item à área de transferência, pronto para ⌘V |
 | **Senhas ficam de fora** | O que gerenciadores de senha marcam como sigiloso (convenção nspasteboard.org) nunca entra no histórico |
 | **Colar sem formatação** | Deixa o que está copiado em texto puro — sem negrito, cor nem fonte |
@@ -196,6 +198,7 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 ├── Metricas.swift           — CPU, memória e rede a partir dos contadores; histórico
 ├── Alertas.swift            — quando avisar: limites, tempo contínuo e rearme
 ├── Clipboard.swift          — histórico (sigilo, limite, busca), limpar link, apagar
+├── Snippets.swift           — snippets, variáveis e busca
 ├── AcaoDeAtalho.swift       — uma combinação por ação, com limpeza de órfãos
 ├── Shortcut.swift           — atalho global: validação e exibição
 └── AppScanner.swift         — varredura de /Applications, nome do app, reordenação
@@ -216,6 +219,8 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── MonitorController.swift  — leitura dos contadores, painel do sistema e barra de menus
 ├── AlertasController.swift  — o vigia (10 s + eventos do sistema) e o cartão de aviso
 ├── ClipboardController.swift — vigia da área de transferência e painel do histórico
+├── Colagem.swift            — módulo "Colar sozinho": Acessibilidade e ⌘V no layout certo
+├── SnippetsController.swift — snippets em disco e o painel de escolha
 ├── FaviconStore.swift       — a logo do site, baixada do próprio site e cacheada
 ├── ArrastoAppKit.swift      — arrasto e clique que funcionam em painel não-ativante
 ├── HotKey.swift             — atalhos globais (Carbon, sem permissões)
@@ -252,7 +257,20 @@ moram no `DockaCore`, onde `swift test` alcança.
 | Ações rápidas | `pmset`, `NSWorkspace.unmountAndEjectDevice`, `defaults` do Finder e `SACLockScreenImmediate` (login.framework, resolvido em runtime — some do menu se o macOS removê-lo) |
 | Testes | swift-testing (`@Test`/`#expect`) sobre o alvo `DockaCore` |
 
-### Por que nenhuma permissão?
+### Permissões
+
+O núcleo — bandejas, órbita, réguas, prateleira, notas, monitor e histórico —
+não pede permissão nenhuma. Recursos que precisam de uma vêm como **módulos
+opcionais**: desligados por padrão, pedem a permissão só quando você os liga, e
+sem ela continuam funcionando no modo sem permissão.
+
+| Módulo | Permissão | Para quê, e só isso | Sem a permissão |
+|---|---|---|---|
+| Colar sozinho | Acessibilidade | Enviar ⌘V ao app da frente ao escolher no histórico ou num snippet | O item só fica copiado, pronto para o seu ⌘V |
+
+> Assinado sem certificado de desenvolvedor (ad-hoc), o Docka muda de assinatura a cada versão compilada, e o macOS pode pedir a permissão de novo depois de uma atualização.
+
+### Por que o núcleo não pede permissão?
 
 A maioria dos utilitários de borda de tela pede Acessibilidade ou Monitoramento de Entrada. O Docka evita as duas:
 

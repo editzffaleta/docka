@@ -45,7 +45,9 @@ identidade visual do Vorssaint.
 | ✅ Histórico do clipboard | polling do `NSPasteboard.changeCount` (sem permissão); colar automaticamente exige Acessibilidade |
 | ✅ Colar sem formatação | reescreve o pasteboard como texto puro |
 | ✅ Limpar o clipboard automaticamente | temporizador de 1 min a 1 h (apagar ao bloquear a tela ou dormir fica para depois) |
-| Snippets de texto | expandir gatilhos exige Monitoramento de Entrada; o modo "menu pesquisável" não exige |
+| ✅ Snippets de texto (painel) | painel pesquisável com variáveis; com o módulo "Colar sozinho" (Acessibilidade) insere direto |
+| ✅ Colar sozinho | módulo opcional com Acessibilidade: ⌘V sintético no layout do teclado em uso |
+| Expandir gatilhos digitados | exige Monitoramento de Entrada (ler tudo o que se digita) — decisão pendente |
 | ✅ Limpar URL | remove `utm_*`, `fbclid` etc. do link copiado |
 
 ## Fase 4 — Janelas, mouse e captura (pede Acessibilidade e Gravação de Tela)

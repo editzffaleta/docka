@@ -301,6 +301,8 @@ final class HistoricoController {
         HistoricoModelo.shared.copiar(item)
         DockaStore.shared.playSound("Tink", volume: 0.3)
         fechar()
+        // com o módulo de colar ligado e permitido, vai direto para o app
+        Colagem.colarSePuder()
     }
 }
 

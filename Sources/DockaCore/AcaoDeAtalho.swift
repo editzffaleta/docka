@@ -32,6 +32,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case historico
     /// Troca o que está copiado pela versão sem formatação.
     case textoPuro
+    /// Abre a lista de snippets.
+    case snippets
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -49,6 +51,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .monitor:           return "monitor"
         case .historico:         return "historico"
         case .textoPuro:         return "textoPuro"
+        case .snippets:          return "snippets"
         }
     }
 
@@ -64,6 +67,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "monitor": self = .monitor
         case "historico": self = .historico
         case "textoPuro": self = .textoPuro
+        case "snippets": self = .snippets
         default:
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {

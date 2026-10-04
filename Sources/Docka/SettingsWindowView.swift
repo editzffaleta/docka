@@ -1349,6 +1349,10 @@ private struct ClipboardSettingsView: View {
                 Text("Privacidade")
             }
 
+            SecaoColarSozinho()
+
+            SecaoDeSnippets()
+
             Section {
                 LabeledContent {
                     Button("Aplicar agora") { HistoricoModelo.shared.soTexto() }
@@ -1367,6 +1371,78 @@ private struct ClipboardSettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// O módulo com permissão: o interruptor, o estado da Acessibilidade e o
+/// caminho para concedê-la.
+private struct SecaoColarSozinho: View {
+    @EnvironmentObject var store: DockaStore
+    @State private var permitido = Colagem.permitido
+    private let relogio = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        Section {
+            Toggle(isOn: $store.colarSozinho) {
+                Text("Colar sozinho")
+                Text("Ao escolher no histórico ou num snippet, o Docka cola direto no app da frente, em vez de só deixar pronto para o ⌘V.")
+            }
+            if store.colarSozinho {
+                LabeledContent {
+                    if !permitido {
+                        Button("Abrir Privacidade") { Colagem.abrirAjustesDePrivacidade() }
+                    }
+                } label: {
+                    Label(permitido ? "Acessibilidade concedida" : "Falta conceder a Acessibilidade",
+                          systemImage: permitido ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
+                        .foregroundStyle(permitido ? .green : .orange)
+                }
+            }
+        } header: {
+            Text("Módulo com permissão")
+        } footer: {
+            Text("Mandar um ⌘V para outro app exige a permissão de Acessibilidade — é a única coisa que o Docka faz com ela. Sem a permissão, nada quebra: o item só fica copiado. Com o Docka assinado sem certificado de desenvolvedor, o macOS pode pedir a permissão de novo a cada versão nova.")
+        }
+        // a permissão é dada nos Ajustes do Sistema, fora do Docka: relê sozinho
+        .onReceive(relogio) { _ in permitido = Colagem.permitido }
+    }
+}
+
+/// Lista e editor dos snippets.
+private struct SecaoDeSnippets: View {
+    @ObservedObject private var modelo = SnippetsModelo.shared
+    @State private var editando: UUID?
+
+    var body: some View {
+        Section {
+            ForEach($modelo.lista) { $s in
+                DisclosureGroup(isExpanded: Binding(get: { editando == s.id },
+                                                    set: { editando = $0 ? s.id : nil })) {
+                    TextField("Nome", text: $s.nome)
+                    TextEditor(text: $s.texto)
+                        .font(.system(size: 12, design: .monospaced))
+                        .frame(minHeight: 70)
+                    HStack {
+                        Text("Prévia: \(SnippetsModelo.expandido(s))")
+                            .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                        Spacer()
+                        Button("Apagar", role: .destructive) { modelo.remover(s.id) }
+                    }
+                } label: {
+                    Text(s.nome)
+                }
+            }
+            HStack {
+                Button("Novo snippet") { editando = modelo.novo().id }
+                Spacer()
+                Button("Abrir a lista") { SnippetsController.shared.abrir() }
+                    .disabled(modelo.lista.isEmpty)
+            }
+        } header: {
+            Text("Snippets")
+        } footer: {
+            Text("Textos prontos, escolhidos pelo atalho dos snippets. Variáveis: " + Snippets.variaveis.map { "\($0.chave) — \($0.descricao)" }.joined(separator: "; ") + ". Expandir um gatilho digitado (como ;email) pediria Monitoramento de Entrada e fica para depois.")
+        }
     }
 }
 
@@ -1698,6 +1774,8 @@ private struct AtalhoView: View {
                 }
                 linha(.textoPuro, titulo: "Colar sem formatação",
                       detalhe: "Deixa o que está copiado em texto puro — depois é só ⌘V")
+                linha(.snippets, titulo: "Snippets",
+                      detalhe: "Abre a lista; ↩ insere o escolhido")
             } header: {
                 Text("Área de transferência")
             }
