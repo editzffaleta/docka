@@ -16,6 +16,8 @@ final class TelasDeBrilho: ObservableObject {
         let chave: String
         /// Aceita brilho de hardware pelo DisplayServices?
         let hardware: Bool
+        /// Monitor externo que respondeu ao DDC: brilho do próprio painel.
+        var ddc: Bool = false
     }
 
     @Published private(set) var telas: [Tela] = []
@@ -39,9 +41,22 @@ final class TelasDeBrilho: ObservableObject {
                                             modelo: CGDisplayModelNumber(id),
                                             serie: CGDisplaySerialNumber(id))
             return Tela(id: id, nome: s.localizedName, chave: chave,
-                        hardware: BrightnessBackend.ler(id) != nil)
+                        hardware: BrightnessBackend.ler(id) != nil,
+                        ddc: DDCBackend.shared.monitores[id] != nil)
         }
         aplicarTodas()
+        // o DDC conversa com o monitor (dezenas de ms): descobre em segundo
+        // plano e marca as telas que responderam quando terminar
+        let externas = telas.filter { !$0.hardware }.map(\.id)
+        guard !externas.isEmpty else { return }
+        DDCBackend.shared.atualizar(externas) { [weak self] in
+            guard let self else { return }
+            self.telas = self.telas.map { t in
+                var t = t
+                t.ddc = DDCBackend.shared.monitores[t.id] != nil
+                return t
+            }
+        }
     }
 
     func escurecimento(_ tela: Tela) -> Double { escurecimentos[tela.chave] ?? 0 }
@@ -85,6 +100,7 @@ final class TelasDeBrilho: ObservableObject {
     func lerRegua() -> Double? {
         guard let t = telaSobOCursor() else { return BrightnessBackend.ler() }
         if t.hardware { return BrightnessBackend.ler(t.id) }
+        if t.ddc, let n = DDCBackend.shared.nivel(t.id) { return n }
         return Escurecimento.nivelDaRegua(escurecimento: escurecimento(t))
     }
 
@@ -92,6 +108,8 @@ final class TelasDeBrilho: ObservableObject {
         guard let t = telaSobOCursor() else { BrightnessBackend.escrever(nivel); return }
         if t.hardware {
             BrightnessBackend.escrever(nivel, t.id)
+        } else if t.ddc {
+            DDCBackend.shared.escrever(nivel, em: t.id)
         } else {
             definirEscurecimento(Escurecimento.escurecimento(nivelDaRegua: nivel), em: t)
         }

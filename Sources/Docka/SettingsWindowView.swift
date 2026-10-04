@@ -2039,11 +2039,13 @@ private struct TelasDeBrilhoSection: View {
                     HStack {
                         Label(tela.nome, systemImage: tela.hardware ? "laptopcomputer" : "display")
                         Spacer()
-                        Text(tela.hardware ? "Brilho do painel" : "Só por software")
+                        Text(tela.hardware ? "Brilho do painel" : (tela.ddc ? "Brilho do monitor (DDC)" : "Só por software"))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     if tela.hardware {
                         LinhaDeBrilho(tela: tela)
+                    } else if tela.ddc {
+                        LinhaDeBrilhoDDC(tela: tela)
                     }
                     LabeledContent {
                         HStack {
@@ -2063,9 +2065,33 @@ private struct TelasDeBrilhoSection: View {
         } header: {
             Text("Telas")
         } footer: {
-            Text("O escurecimento pinta a imagem mais escura pela tabela de gama — funciona em qualquer monitor, inclusive nos que não aceitam controle de brilho, e para em \(Int(Escurecimento.maximo * 100))% para a tela nunca ficar preta. Se o Docka for encerrado, as cores voltam ao normal sozinhas.")
+            Text("Monitores externos que entendem DDC/CI ajustam o brilho do próprio painel — o Docka só lê e muda o brilho, nada mais; quem não responde fica no escurecimento. O escurecimento pinta a imagem mais escura pela tabela de gama — funciona em qualquer monitor, inclusive nos que não aceitam controle de brilho, e para em \(Int(Escurecimento.maximo * 100))% para a tela nunca ficar preta. Se o Docka for encerrado, as cores voltam ao normal sozinhas.")
         }
         .onAppear { telas.atualizarTelas() }
+    }
+}
+
+/// O brilho do painel de um monitor externo, pelo DDC — escrito na fila,
+/// só o último valor do arrasto.
+private struct LinhaDeBrilhoDDC: View {
+    let tela: TelasDeBrilho.Tela
+    @State private var nivel: Double = 0.5
+
+    var body: some View {
+        LabeledContent {
+            HStack {
+                Slider(value: Binding(get: { nivel }, set: {
+                    nivel = $0
+                    DDCBackend.shared.escrever($0, em: tela.id)
+                }), in: 0...1)
+                Text("\(Int((nivel * 100).rounded()))%")
+                    .monospacedDigit()
+                    .frame(width: 40, alignment: .trailing)
+            }
+        } label: {
+            Text("Brilho")
+        }
+        .onAppear { nivel = DDCBackend.shared.nivel(tela.id) ?? nivel }
     }
 }
 
