@@ -4,7 +4,7 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
-## [1.2.0] — 2026-10-03
+## [1.2.0] — 2026-10-04
 
 A maior versão do Docka até aqui: mais de vinte recursos novos inspirados no
 [Vorssaint](https://github.com/vorssaint/vorssaint-utils) — reescritos do
