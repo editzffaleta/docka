@@ -35,7 +35,7 @@ identidade visual do Vorssaint.
 |---|---|
 | ✅ Monitor do sistema | CPU/memória (`host_statistics`), bateria (`IOPowerSources`), disco, rede (`getifaddrs`) — régua ou painel de borda |
 | ✅ Leituras na barra de menus | texto curto no `MenuBarExtra` |
-| Alertas | CPU alta contínua, disco cheio, bateria baixa via `UserNotifications` |
+| ✅ Alertas | CPU alta contínua, memória, disco, bateria e temperatura — cartão próprio (as notificações do sistema pediriam autorização) |
 | Brilho por monitor | estender o `BrightnessBackend` para várias telas |
 
 ## Fase 3 — Área de transferência e texto (pede Acessibilidade para colar)

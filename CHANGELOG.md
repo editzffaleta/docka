@@ -46,6 +46,13 @@ todo o resto por aqui.
   mostra uma leitura ao lado do ícone na barra de menus. Só mede enquanto o
   painel está aberto ou há leitura na barra. Conferido contra `top`,
   `vm_stat` e `pmset`; memória em base 1024, como o Monitor de Atividade.
+- **Alertas**: um aviso de vidro no canto superior direito quando a CPU
+  fica alta por minutos seguidos, a memória aperta, o disco está quase
+  cheio, a bateria está baixa ou o Mac esquenta. Limites ajustáveis; cada
+  alerta avisa uma vez e só volta a avisar depois que a situação normaliza
+  com folga. O aviso é do próprio Docka — notificações do sistema pediriam
+  autorização. Memória e temperatura chegam por evento do sistema, sem
+  medição contínua.
 - Roteiro dos próximos recursos em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## [1.1.2] — 2026-07-30

@@ -157,6 +157,16 @@ final class DockaStore: ObservableObject {
         static let monitorBorda = "docka.monitorEdge"
         static let monitorAlinhamento = "docka.monitorAlignment"
         static let leituraDaBarra = "docka.menuBarReading"
+        static let alertas = "docka.alerts"
+        static let alertaCPU = "docka.alertCPU"
+        static let alertaCPULimite = "docka.alertCPULimit"
+        static let alertaCPUMinutos = "docka.alertCPUMinutes"
+        static let alertaMemoria = "docka.alertMemory"
+        static let alertaDisco = "docka.alertDisk"
+        static let alertaDiscoGB = "docka.alertDiskGB"
+        static let alertaBateria = "docka.alertBattery"
+        static let alertaBateriaLimite = "docka.alertBatteryLimit"
+        static let alertaTemperatura = "docka.alertThermal"
     }
 
     private let defaults = UserDefaults.standard
@@ -383,6 +393,18 @@ final class DockaStore: ObservableObject {
             MonitorModelo.shared.interesse("barra", leituraDaBarra != .nenhuma)
         }
     }
+
+    /// Liga os alertas; cada um tem o seu interruptor e limite.
+    @Published var alertas: Bool { didSet { defaults.set(alertas, forKey: Key.alertas) } }
+    @Published var alertaCPU: Bool { didSet { defaults.set(alertaCPU, forKey: Key.alertaCPU) } }
+    @Published var alertaCPULimite: Double { didSet { defaults.set(alertaCPULimite, forKey: Key.alertaCPULimite) } }
+    @Published var alertaCPUMinutos: Int { didSet { defaults.set(alertaCPUMinutos, forKey: Key.alertaCPUMinutos) } }
+    @Published var alertaMemoria: Bool { didSet { defaults.set(alertaMemoria, forKey: Key.alertaMemoria) } }
+    @Published var alertaDisco: Bool { didSet { defaults.set(alertaDisco, forKey: Key.alertaDisco) } }
+    @Published var alertaDiscoGB: Int { didSet { defaults.set(alertaDiscoGB, forKey: Key.alertaDiscoGB) } }
+    @Published var alertaBateria: Bool { didSet { defaults.set(alertaBateria, forKey: Key.alertaBateria) } }
+    @Published var alertaBateriaLimite: Double { didSet { defaults.set(alertaBateriaLimite, forKey: Key.alertaBateriaLimite) } }
+    @Published var alertaTemperatura: Bool { didSet { defaults.set(alertaTemperatura, forKey: Key.alertaTemperatura) } }
 
     /// Mostra o submenu "Ações rápidas" na barra de menus.
     @Published var acoesRapidas: Bool { didSet { defaults.set(acoesRapidas, forKey: Key.acoesRapidas) } }
@@ -631,6 +653,17 @@ final class DockaStore: ObservableObject {
             // a prateleira fica no topo da direita: o monitor, na base
             Key.monitorAlinhamento: TrayAlignment.end.rawValue,
             Key.leituraDaBarra: LeituraDaBarra.nenhuma.rawValue,
+            // desligados em bloco por padrão; ligando, todos já vêm marcados
+            Key.alertas: false,
+            Key.alertaCPU: true,
+            Key.alertaCPULimite: 0.85,
+            Key.alertaCPUMinutos: 2,
+            Key.alertaMemoria: true,
+            Key.alertaDisco: true,
+            Key.alertaDiscoGB: 10,
+            Key.alertaBateria: true,
+            Key.alertaBateriaLimite: 0.20,
+            Key.alertaTemperatura: true,
 
             Key.orbitaCanto: "",
             Key.orbitaBotao: BotaoDoMouse.nenhum,
@@ -704,6 +737,16 @@ final class DockaStore: ObservableObject {
         monitorBorda = defaults.string(forKey: Key.monitorBorda) ?? TrayEdge.right.rawValue
         monitorAlinhamento = defaults.string(forKey: Key.monitorAlinhamento) ?? TrayAlignment.end.rawValue
         leituraDaBarra = LeituraDaBarra(persisted: defaults.string(forKey: Key.leituraDaBarra) ?? "")
+        alertas = defaults.bool(forKey: Key.alertas)
+        alertaCPU = defaults.bool(forKey: Key.alertaCPU)
+        alertaCPULimite = defaults.double(forKey: Key.alertaCPULimite)
+        alertaCPUMinutos = defaults.integer(forKey: Key.alertaCPUMinutos)
+        alertaMemoria = defaults.bool(forKey: Key.alertaMemoria)
+        alertaDisco = defaults.bool(forKey: Key.alertaDisco)
+        alertaDiscoGB = defaults.integer(forKey: Key.alertaDiscoGB)
+        alertaBateria = defaults.bool(forKey: Key.alertaBateria)
+        alertaBateriaLimite = defaults.double(forKey: Key.alertaBateriaLimite)
+        alertaTemperatura = defaults.bool(forKey: Key.alertaTemperatura)
         glassTint = defaults.double(forKey: Key.glassTint)
         appearance = defaults.string(forKey: Key.appearance) ?? TrayAppearance.automatico.rawValue
 

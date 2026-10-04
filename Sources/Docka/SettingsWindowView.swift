@@ -1227,6 +1227,55 @@ private struct MonitorSettingsView: View {
             } footer: {
                 Text("As medições só rodam enquanto o painel está aberto ou há uma leitura na barra — parado, o monitor não gasta nada. Tudo vem de APIs públicas do sistema, sem permissão.")
             }
+
+            Section {
+                Toggle(isOn: $store.alertas) {
+                    Text("Alertas")
+                    Text("Um aviso no canto da tela quando algo passa do limite. Cada alerta avisa uma vez e só volta a avisar depois que a situação normaliza.")
+                }
+                if store.alertas {
+                    Toggle("CPU alta", isOn: $store.alertaCPU)
+                    if store.alertaCPU {
+                        Picker("Acima de", selection: $store.alertaCPULimite) {
+                            ForEach([0.70, 0.80, 0.85, 0.90, 0.95], id: \.self) {
+                                Text(Metricas.porcentagem($0)).tag($0)
+                            }
+                        }
+                        Picker("Por", selection: $store.alertaCPUMinutos) {
+                            ForEach([1, 2, 5, 10], id: \.self) { Text("\($0) min seguidos").tag($0) }
+                        }
+                    }
+                    Toggle("Memória apertada", isOn: $store.alertaMemoria)
+                    Toggle("Disco quase cheio", isOn: $store.alertaDisco)
+                    if store.alertaDisco {
+                        Picker("Com menos de", selection: $store.alertaDiscoGB) {
+                            ForEach([5, 10, 20, 50], id: \.self) { Text("\($0) GB livres").tag($0) }
+                        }
+                    }
+                    Toggle("Bateria baixa", isOn: $store.alertaBateria)
+                    if store.alertaBateria {
+                        Picker("Em", selection: $store.alertaBateriaLimite) {
+                            ForEach([0.10, 0.15, 0.20, 0.30], id: \.self) {
+                                Text(Metricas.porcentagem($0)).tag($0)
+                            }
+                        }
+                    }
+                    Toggle("Mac esquentando", isOn: $store.alertaTemperatura)
+                    LabeledContent {
+                        Button("Mostrar um aviso de exemplo") {
+                            AvisoController.shared.mostrar(Alerta(
+                                tipo: .cpu, titulo: "Assim chega um alerta",
+                                mensagem: "Ele some sozinho em alguns segundos, ou no ✕."))
+                        }
+                    } label: {
+                        Text("Prévia")
+                    }
+                }
+            } footer: {
+                if store.alertas {
+                    Text("O aviso é do próprio Docka, e não uma notificação do sistema — as notificações pediriam autorização. CPU, disco e bateria são lidos a cada 10 segundos; memória e temperatura chegam como evento do sistema.")
+                }
+            }
         }
         .formStyle(.grouped)
     }

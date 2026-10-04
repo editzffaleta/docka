@@ -119,6 +119,7 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Painel de borda** | CPU, memória e rede com gráfico dos últimos dois minutos; disco livre e bateria (com tempo restante); aviso quando o Mac esquenta |
 | **Na barra de menus** | Uma leitura opcional ao lado do ícone: CPU, memória, download ou bateria |
 | **Parado não gasta** | As medições só rodam com o painel aberto ou com leitura na barra |
+| **Alertas** | Aviso no canto da tela para CPU alta por minutos seguidos, memória apertada, disco quase cheio, bateria baixa e Mac esquentando — com limites ajustáveis, uma vez por ocorrência. É um cartão do próprio Docka: notificações do sistema pediriam autorização |
 | **Números de verdade** | CPU pelo intervalo (não a média desde o boot), memória como o Monitor de Atividade conta, rede só das interfaces físicas — a VPN não conta em dobro |
 
 > Tudo por API pública e sem permissão: Mach (`host_processor_info`, `host_statistics64`) para CPU e memória, IOKit (`IOPowerSources`) para bateria, `getifaddrs` para rede e o `FileManager` para disco.
@@ -178,6 +179,7 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 ├── Prateleira.swift         — itens da prateleira, classificação, limite e arrasto
 ├── BlocoDeNotas.swift       — notas, título da aba, tarefas e Markdown por blocos
 ├── Metricas.swift           — CPU, memória e rede a partir dos contadores; histórico
+├── Alertas.swift            — quando avisar: limites, tempo contínuo e rearme
 ├── AcaoDeAtalho.swift       — uma combinação por ação, com limpeza de órfãos
 ├── Shortcut.swift           — atalho global: validação e exibição
 └── AppScanner.swift         — varredura de /Applications, nome do app, reordenação
@@ -195,6 +197,7 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── PrateleiraController.swift — o painel da prateleira, soltar e arrastar para fora
 ├── NotasController.swift    — o bloco de notas: painel com teclado, abas e gravação
 ├── MonitorController.swift  — leitura dos contadores, painel do sistema e barra de menus
+├── AlertasController.swift  — o vigia (10 s + eventos do sistema) e o cartão de aviso
 ├── FaviconStore.swift       — a logo do site, baixada do próprio site e cacheada
 ├── ArrastoAppKit.swift      — arrasto e clique que funcionam em painel não-ativante
 ├── HotKey.swift             — atalhos globais (Carbon, sem permissões)

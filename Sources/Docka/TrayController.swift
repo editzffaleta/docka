@@ -203,6 +203,7 @@ final class TrayManager {
     private var prateleira: PrateleiraController?
     private var notas: NotasController?
     private var monitor: MonitorController?
+    private var vigia: VigiaController?
     private var botaoDaOrbita: MonitorDeBotao?
     /// Evita reabrir sem parar enquanto o cursor fica parado na quina.
     private var cantoArmado = true
@@ -305,6 +306,14 @@ final class TrayManager {
             monitor = nil
         }
         monitor?.layout()
+
+        if store.alertas {
+            if vigia == nil { vigia = VigiaController() }
+            vigia?.atualizarLimites()
+        } else if vigia != nil {
+            vigia?.encerrar()
+            vigia = nil
+        }
 
         // o layout do brilho vem antes: o do volume consulta o quadro dele
         brilho?.layout()
