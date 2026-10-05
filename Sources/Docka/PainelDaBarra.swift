@@ -438,7 +438,7 @@ private struct AbaControles: View {
                 LinhaComInterruptor(simbolo: "speaker.wave.2", titulo: "Régua de volume",
                                     descricao: "Volume da saída numa lateral", ligado: $store.volumeControl)
             }
-            grupo("janelas", "Janelas", contagem: [store.janelasControl, store.janelasArrastar, store.alternadorControl,
+            grupo("janelas", "Janelas", contagem: [store.janelasControl, store.janelasArrastar, store.arrastarComTecla, store.alternadorControl,
                                                    store.botaoVerdeMaximiza, store.sairAoFecharControl,
                                                    store.protecaoQ, store.cliquesNoDock]) {
                 LinhaComInterruptor(simbolo: "rectangle.split.2x1", titulo: "Encaixar janelas",
@@ -447,6 +447,9 @@ private struct AbaControles: View {
                 Separador()
                 LinhaComInterruptor(simbolo: "arrow.up.left.and.arrow.down.right", titulo: "Arrastar até a borda",
                                     descricao: "Solte a janela na borda para encaixar", ligado: $store.janelasArrastar)
+                Separador()
+                LinhaComInterruptor(simbolo: "hand.draw", titulo: "Arrastar segurando teclas",
+                                    descricao: "Mova a janela de qualquer ponto", ligado: $store.arrastarComTecla)
                 Separador()
                 LinhaComInterruptor(simbolo: "square.stack", titulo: "Alternador de apps",
                                     descricao: "Apps na ordem de uso, num atalho próprio", ligado: $store.alternadorControl)

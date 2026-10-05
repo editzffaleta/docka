@@ -275,6 +275,7 @@ extension DockaStore {
             RecursoComPermissao(nome: "Encaixar janelas", permissoes: [.acessibilidade], ligado: janelasControl),
             RecursoComPermissao(nome: "Arrastar até a borda", permissoes: [.acessibilidade],
                                 ligado: janelasControl && janelasArrastar),
+            RecursoComPermissao(nome: "Arrastar segurando teclas", permissoes: [.acessibilidade], ligado: arrastarComTecla),
             RecursoComPermissao(nome: "Alternador com janelas e filtros", permissoes: [.acessibilidade],
                                 ligado: alternadorControl && (alternadorJanelas || alternadorSoTela || alternadorSemJanela)),
             RecursoComPermissao(nome: "Ajustes do mouse", permissoes: [.acessibilidade], ligado: mouseControl),
@@ -370,6 +371,7 @@ private struct ListaDeRecursos: View {
         grupo("Controles de janela", [
             ("rectangle.split.2x1", "Encaixe de janelas", "Metades, quartos e terços por atalho", $store.janelasControl, [.acessibilidade]),
             ("arrow.up.left.and.arrow.down.right", "Arrastar até a borda", "Solte a janela na borda para encaixar", $store.janelasArrastar, [.acessibilidade]),
+            ("hand.draw", "Arrastar segurando teclas", "Mova e redimensione de qualquer ponto da janela", $store.arrastarComTecla, [.acessibilidade]),
             ("rectangle.on.rectangle", "Alternador", "Apps na ordem de uso, num atalho próprio", $store.alternadorControl, []),
             ("computermouse", "Ajustes do mouse", "Inverter, rolagem linear ou suave, botões laterais", $store.mouseControl, [.acessibilidade]),
             ("plus.rectangle", "Botão verde maximiza", "Preenche a tela sem criar outro Espaço", $store.botaoVerdeMaximiza, [.acessibilidade]),
@@ -1685,6 +1687,24 @@ private struct JanelasSettingsView: View {
                     permitido = Colagem.permitido
                     ArrastoDeJanelas.shared.sincronizar()
                 }
+            }
+
+            Section {
+                Toggle(isOn: $store.arrastarComTecla) {
+                    Text("Arrastar segurando teclas")
+                    Text("Segure as teclas e arraste de qualquer ponto da janela para movê-la — sem mirar na barra de título. Pede Acessibilidade.")
+                }
+                if store.arrastarComTecla {
+                    Picker("Teclas", selection: $store.arrastarTeclas) {
+                        ForEach(TeclasDoArrasto.allCases) { Text($0.simbolo).tag($0.rawValue) }
+                    }
+                    Toggle(isOn: $store.arrastarRedimensiona) {
+                        Text("Botão direito redimensiona")
+                        Text("Com as mesmas teclas, o botão direito puxa o canto da janela mais perto do clique.")
+                    }
+                }
+            } footer: {
+                Text("Sem as teclas, nenhum clique é tocado. Com elas, o clique não chega ao app de baixo — só move a janela.")
             }
 
             if store.janelasControl {

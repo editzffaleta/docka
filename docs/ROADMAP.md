@@ -73,7 +73,7 @@ registro — acrescentados aqui.
 | Cliques no Dock: minimizar, ocultar ou alternar janelas | Acessibilidade | ✅ |
 | Prévia do Dock: janelas do app ao passar o mouse no ícone | Acessibilidade + Gravação de Tela | ⏳ |
 | Alternador: busca e filtros | — (filtros: Acessibilidade) | ✅ |
-| Arrastar janelas segurando uma tecla, de qualquer ponto | Acessibilidade | ⏳ |
+| Arrastar janelas segurando uma tecla, de qualquer ponto | Acessibilidade | ✅ |
 
 ## Fora do escopo
 

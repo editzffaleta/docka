@@ -97,4 +97,37 @@ struct JanelasEDockTests {
         #expect(ModoDeProtecao(persisted: "lixo") == .segurar)
         #expect(AcaoNoCliqueDoDock(persisted: "lixo") == .minimizar)
     }
+
+    @Test("Teclas do arrasto: exatamente a combinação, ⇧ à parte")
+    func teclasDoArrasto() {
+        #expect(TeclasDoArrasto.controleOpcao.confere(comando: false, opcao: true, controle: true))
+        #expect(!TeclasDoArrasto.controleOpcao.confere(comando: true, opcao: true, controle: true))
+        #expect(!TeclasDoArrasto.controleOpcao.confere(comando: false, opcao: true, controle: false))
+        #expect(TeclasDoArrasto.controleOpcaoComando.confere(comando: true, opcao: true, controle: true))
+        #expect(TeclasDoArrasto(persisted: "lixo") == .controleOpcao)
+    }
+
+    @Test("Mover: a janela anda junto com o cursor")
+    func moverComTecla() {
+        let q = CGRect(x: 100, y: 100, width: 800, height: 600)
+        #expect(ArrastoComTecla.mover(q, delta: CGPoint(x: 30, y: -20)) == CGRect(x: 130, y: 80, width: 800, height: 600))
+    }
+
+    @Test("Redimensionar: o canto perto do clique anda, o oposto fica")
+    func redimensionarComTecla() {
+        let q = CGRect(x: 100, y: 100, width: 800, height: 600)
+        // clique perto do canto de baixo à direita
+        let c = ArrastoComTecla.canto(clique: CGPoint(x: 850, y: 650), quadro: q)
+        #expect(c == .init(esquerda: false, topo: false))
+        #expect(ArrastoComTecla.redimensionar(q, delta: CGPoint(x: 50, y: 40), canto: c)
+                == CGRect(x: 100, y: 100, width: 850, height: 640))
+        // canto de cima à esquerda: a origem anda, o canto de baixo à direita fica
+        let ce = ArrastoComTecla.Canto(esquerda: true, topo: true)
+        #expect(ArrastoComTecla.redimensionar(q, delta: CGPoint(x: 50, y: 40), canto: ce)
+                == CGRect(x: 150, y: 140, width: 750, height: 560))
+        // encolher demais para no mínimo, sem atravessar o canto oposto
+        let r = ArrastoComTecla.redimensionar(q, delta: CGPoint(x: 2000, y: 2000), canto: ce)
+        #expect(r.size == ArrastoComTecla.tamanhoMinimo)
+        #expect(r.maxX == q.maxX && r.maxY == q.maxY)
+    }
 }

@@ -189,3 +189,78 @@ public enum CliqueNoDock {
         total <= 0 ? 0 : (atual + 1) % total
     }
 }
+
+// MARK: - Arrastar segurando uma tecla
+
+/// As teclas que, seguradas, transformam o clique em qualquer ponto da
+/// janela num arrasto. Só combinações com ⌃ ou ⌥ e mais uma: ⌘ sozinho já é
+/// do sistema (arrastar janela de fundo sem trazê-la para a frente).
+public enum TeclasDoArrasto: String, CaseIterable, Identifiable, Sendable {
+    case controleOpcao, controleComando, opcaoComando, controleOpcaoComando
+
+    public var id: String { rawValue }
+
+    public var simbolo: String {
+        switch self {
+        case .controleOpcao:        return "⌃⌥"
+        case .controleComando:      return "⌃⌘"
+        case .opcaoComando:         return "⌥⌘"
+        case .controleOpcaoComando: return "⌃⌥⌘"
+        }
+    }
+
+    public init(persisted: String) { self = TeclasDoArrasto(rawValue: persisted) ?? .controleOpcao }
+
+    /// Exatamente estas entre ⌘, ⌥ e ⌃ — ⇧ tanto faz. ⌃⌥⌘ apertado não
+    /// dispara o ⌃⌥: seria tomar um atalho de outro app.
+    public func confere(comando: Bool, opcao: Bool, controle: Bool) -> Bool {
+        switch self {
+        case .controleOpcao:        return controle && opcao && !comando
+        case .controleComando:      return controle && comando && !opcao
+        case .opcaoComando:         return opcao && comando && !controle
+        case .controleOpcaoComando: return controle && opcao && comando
+        }
+    }
+}
+
+/// As contas do arrasto: tudo em coordenadas da Acessibilidade (origem no
+/// topo, y crescendo para baixo), as mesmas do evento de mouse.
+public enum ArrastoComTecla {
+    /// O canto que acompanha o cursor ao redimensionar: o mais perto de onde
+    /// o clique caiu.
+    public struct Canto: Equatable, Sendable {
+        public let esquerda: Bool
+        public let topo: Bool
+        public init(esquerda: Bool, topo: Bool) { self.esquerda = esquerda; self.topo = topo }
+    }
+
+    public static let tamanhoMinimo = CGSize(width: 160, height: 100)
+
+    public static func canto(clique: CGPoint, quadro: CGRect) -> Canto {
+        Canto(esquerda: clique.x < quadro.midX, topo: clique.y < quadro.midY)
+    }
+
+    public static func mover(_ q: CGRect, delta: CGPoint) -> CGRect {
+        q.offsetBy(dx: delta.x, dy: delta.y)
+    }
+
+    /// O canto escolhido anda com o cursor; o oposto fica parado. Abaixo do
+    /// mínimo, a janela para de encolher — sem atravessar o canto oposto.
+    public static func redimensionar(_ q: CGRect, delta: CGPoint, canto: Canto,
+                                     minimo: CGSize = tamanhoMinimo) -> CGRect {
+        var x = q.minX, y = q.minY, l = q.width, a = q.height
+        if canto.esquerda {
+            l = max(minimo.width, q.width - delta.x)
+            x = q.maxX - l
+        } else {
+            l = max(minimo.width, q.width + delta.x)
+        }
+        if canto.topo {
+            a = max(minimo.height, q.height - delta.y)
+            y = q.maxY - a
+        } else {
+            a = max(minimo.height, q.height + delta.y)
+        }
+        return CGRect(x: x, y: y, width: l, height: a)
+    }
+}

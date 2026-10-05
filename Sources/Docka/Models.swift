@@ -184,6 +184,9 @@ final class DockaStore: ObservableObject {
         static let protecaoModo = "docka.protectMode"
         static let protecaoApps = "docka.protectApps"
         static let botaoVerde = "docka.greenButtonMaximizes"
+        static let arrastarComTecla = "docka.modifierDrag"
+        static let arrastarTeclas = "docka.modifierDragKeys"
+        static let arrastarRedimensiona = "docka.modifierDragResize"
         static let cliquesNoDock = "docka.dockClicks"
         static let acaoNoCliqueDoDock = "docka.dockClickAction"
         static let alternador = "docka.switcher"
@@ -517,6 +520,7 @@ final class DockaStore: ObservableObject {
         MouseController.shared.sincronizar()
         GatilhosController.shared.sincronizar()
         ArrastoDeJanelas.shared.sincronizar()
+        ArrastoComTeclaController.shared.sincronizar()
     }
 
     /// Liga ou desliga os vigias e taps destes recursos conforme os ajustes.
@@ -525,6 +529,17 @@ final class DockaStore: ObservableObject {
         ProtecaoController.shared.sincronizar()
         CliquesDoSistema.shared.sincronizar()
     }
+
+    /// Mover e redimensionar a janela de qualquer ponto, segurando teclas.
+    @Published var arrastarComTecla: Bool {
+        didSet {
+            defaults.set(arrastarComTecla, forKey: Key.arrastarComTecla)
+            pedirAcessibilidadeSe(arrastarComTecla)
+            ArrastoComTeclaController.shared.sincronizar()
+        }
+    }
+    @Published var arrastarTeclas: String { didSet { defaults.set(arrastarTeclas, forKey: Key.arrastarTeclas) } }
+    @Published var arrastarRedimensiona: Bool { didSet { defaults.set(arrastarRedimensiona, forKey: Key.arrastarRedimensiona) } }
 
     /// Encaixar arrastando a janela até a borda da tela.
     @Published var janelasArrastar: Bool {
@@ -906,6 +921,9 @@ final class DockaStore: ObservableObject {
             Key.protecaoW: false,
             Key.protecaoModo: ModoDeProtecao.segurar.rawValue,
             Key.botaoVerde: false,
+            Key.arrastarComTecla: false,
+            Key.arrastarTeclas: TeclasDoArrasto.controleOpcao.rawValue,
+            Key.arrastarRedimensiona: true,
             Key.cliquesNoDock: false,
             Key.acaoNoCliqueDoDock: AcaoNoCliqueDoDock.minimizar.rawValue,
             Key.alternador: false,
@@ -1024,6 +1042,9 @@ final class DockaStore: ObservableObject {
         protecaoModo = defaults.string(forKey: Key.protecaoModo) ?? ModoDeProtecao.segurar.rawValue
         protecaoApps = defaults.stringArray(forKey: Key.protecaoApps) ?? []
         botaoVerdeMaximiza = defaults.bool(forKey: Key.botaoVerde)
+        arrastarComTecla = defaults.bool(forKey: Key.arrastarComTecla)
+        arrastarTeclas = defaults.string(forKey: Key.arrastarTeclas) ?? TeclasDoArrasto.controleOpcao.rawValue
+        arrastarRedimensiona = defaults.bool(forKey: Key.arrastarRedimensiona)
         cliquesNoDock = defaults.bool(forKey: Key.cliquesNoDock)
         acaoNoCliqueDoDock = defaults.string(forKey: Key.acaoNoCliqueDoDock) ?? AcaoNoCliqueDoDock.minimizar.rawValue
         alternadorControl = defaults.bool(forKey: Key.alternador)
