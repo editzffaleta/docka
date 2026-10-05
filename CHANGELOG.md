@@ -6,6 +6,13 @@ todo o resto por aqui.
 
 ## [Não lançado]
 
+## [1.6.0] — 2026-10-05
+
+O resto da lista: ajustes do sistema, mouse e teclado, Finder, barra de
+comando e painel rápido, som por app e microfones, gravação de tela e
+ferramentas de mídia, e uma janela de manutenção — tudo opcional e
+desligado por padrão.
+
 ### Novo
 
 - **Ajustes do sistema** (página nova nos ajustes):
