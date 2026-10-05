@@ -8,7 +8,7 @@ todo o resto por aqui.
 
 ### Novo
 
-- **Ilha Dinâmica** (em construção): uma ilha preta em volta do recorte da
+- **Ilha Dinâmica**: uma ilha preta em volta do recorte da
   câmera — ou simulada no meio do topo, em Macs sem recorte. Passar o
   cursor faz ela crescer; parar (ou clicar) abre uma grade de seções, com
   botões redondos dos lados. Fechada, mostra o que está correndo nas asas,
@@ -63,6 +63,11 @@ todo o resto por aqui.
   trabalhando, as asas mostram há quanto tempo; quando uma tarefa longa
   termina, a ilha abre com um aviso e um som. Só números e horários são
   lidos — o texto das conversas, nunca.
+- **Avisos rápidos nas asas da ilha**, além do que o original tem: ligar e
+  tirar o carregador (com a porcentagem), bateria em 20%, 10% e 5%, fone
+  conectando (com o nome e o ícone dos AirPods), mudança de volume e de
+  brilho (com uma barrinha) e, se quiser, "copiado". Cada um escolhido nos
+  ajustes; nenhum pede permissão.
 
 ## [1.4.0] — 2026-10-05
 

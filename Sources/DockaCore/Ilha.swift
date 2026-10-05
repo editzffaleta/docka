@@ -244,7 +244,7 @@ public enum Ilha {
     /// O que a ilha fechada mostra nas asas: um ícone à esquerda e um valor à
     /// direita (o timer: relógio e "14m").
     public struct Atividade: Equatable, Identifiable, Sendable {
-        public enum Tipo: String, Sendable { case timer, pomodoro, cronometro, download, musica, calendario, agente, aviso }
+        public enum Tipo: String, Sendable { case timer, pomodoro, cronometro, download, musica, calendario, agente, bateria, nivel, aviso }
 
         public let id: String
         public let tipo: Tipo

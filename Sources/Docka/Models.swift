@@ -199,6 +199,11 @@ final class DockaStore: ObservableObject {
         static let ilhaLetra = "docka.islandLyrics"
         static let ilhaNotificacoes = "docka.islandNotifications"
         static let ilhaAvisoAgentes = "docka.islandAgentNotice"
+        static let ilhaAvisoBateria = "docka.islandNoticeBattery"
+        static let ilhaAvisoFones = "docka.islandNoticeHeadphones"
+        static let ilhaAvisoVolume = "docka.islandNoticeVolume"
+        static let ilhaAvisoBrilho = "docka.islandNoticeBrightness"
+        static let ilhaAvisoCopiado = "docka.islandNoticeCopy"
         static let ilhaAvisoAgentesMinutos = "docka.islandAgentNoticeMinutes"
         static let ilhaEqualizadorAoVivo = "docka.islandLiveEqualizer"
         static let previaDoDock = "docka.dockPreview"
@@ -539,6 +544,12 @@ final class DockaStore: ObservableObject {
             NotificacoesModelo.shared.sincronizar()
         }
     }
+    /// Avisos rápidos nas asas da ilha.
+    @Published var ilhaAvisoBateria: Bool { didSet { defaults.set(ilhaAvisoBateria, forKey: Key.ilhaAvisoBateria) } }
+    @Published var ilhaAvisoFones: Bool { didSet { defaults.set(ilhaAvisoFones, forKey: Key.ilhaAvisoFones) } }
+    @Published var ilhaAvisoVolume: Bool { didSet { defaults.set(ilhaAvisoVolume, forKey: Key.ilhaAvisoVolume) } }
+    @Published var ilhaAvisoBrilho: Bool { didSet { defaults.set(ilhaAvisoBrilho, forKey: Key.ilhaAvisoBrilho) } }
+    @Published var ilhaAvisoCopiado: Bool { didSet { defaults.set(ilhaAvisoCopiado, forKey: Key.ilhaAvisoCopiado) } }
     /// Avisar na ilha quando um agente de IA termina uma tarefa longa.
     @Published var ilhaAvisoAgentes: Bool { didSet { defaults.set(ilhaAvisoAgentes, forKey: Key.ilhaAvisoAgentes) } }
     @Published var ilhaAvisoAgentesMinutos: Double { didSet { defaults.set(ilhaAvisoAgentesMinutos, forKey: Key.ilhaAvisoAgentesMinutos) } }
@@ -1006,6 +1017,11 @@ final class DockaStore: ObservableObject {
             Key.ilhaLetra: false,
             Key.ilhaNotificacoes: false,
             Key.ilhaAvisoAgentes: true,
+            Key.ilhaAvisoBateria: true,
+            Key.ilhaAvisoFones: true,
+            Key.ilhaAvisoVolume: true,
+            Key.ilhaAvisoBrilho: true,
+            Key.ilhaAvisoCopiado: false,
             Key.ilhaAvisoAgentesMinutos: 3.0,
             Key.ilhaEqualizadorAoVivo: false,
             Key.previaDoDock: false,
@@ -1140,6 +1156,11 @@ final class DockaStore: ObservableObject {
         ilhaLetra = defaults.bool(forKey: Key.ilhaLetra)
         ilhaNotificacoes = defaults.bool(forKey: Key.ilhaNotificacoes)
         ilhaAvisoAgentes = defaults.bool(forKey: Key.ilhaAvisoAgentes)
+        ilhaAvisoBateria = defaults.bool(forKey: Key.ilhaAvisoBateria)
+        ilhaAvisoFones = defaults.bool(forKey: Key.ilhaAvisoFones)
+        ilhaAvisoVolume = defaults.bool(forKey: Key.ilhaAvisoVolume)
+        ilhaAvisoBrilho = defaults.bool(forKey: Key.ilhaAvisoBrilho)
+        ilhaAvisoCopiado = defaults.bool(forKey: Key.ilhaAvisoCopiado)
         ilhaAvisoAgentesMinutos = defaults.double(forKey: Key.ilhaAvisoAgentesMinutos)
         ilhaEqualizadorAoVivo = defaults.bool(forKey: Key.ilhaEqualizadorAoVivo)
         ilhaOcultas = defaults.stringArray(forKey: Key.ilhaOcultas) ?? []

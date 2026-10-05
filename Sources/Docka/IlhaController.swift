@@ -80,6 +80,8 @@ final class IlhaController {
             self?.avisar("\(agente) terminou em \(projeto) · \(AgentesDaIlha.duracao(duracao))", secao: .agentes)
         }
         AgentesModelo.shared.ligar(!store.ilhaOcultas.contains(Ilha.Secao.agentes.rawValue))
+        AvisosRapidosModelo.shared.aoAvisar = { [weak self] in self?.atualizarAtividades(Date()) }
+        AvisosRapidosModelo.shared.ligar(true)
         p.setFrame(estado.quadroDoPainel, display: true)
         p.orderFrontRegardless()
 
@@ -100,6 +102,7 @@ final class IlhaController {
         ArquivosDaIlhaModelo.shared.observarDownloads(false)
         MusicaModelo.shared.ligar(false)
         AgentesModelo.shared.ligar(false)
+        AvisosRapidosModelo.shared.ligar(false)
         MixerModelo.shared.desfazerTudo()
         if panel?.isKeyWindow == true { panel?.resignKey() }
         if let m = monitorDeClique { NSEvent.removeMonitor(m) }
@@ -153,6 +156,8 @@ final class IlhaController {
         if tiques % 1800 == 1, !store.ilhaOcultas.contains(Ilha.Secao.calendario.rawValue) {
             CalendarioModelo.shared.atualizar()
         }
+        // um aviso rápido vencido sai das asas sem esperar o meio segundo
+        if tiques % 5 == 0, !AvisosRapidosModelo.shared.lista.isEmpty { atualizarAtividades(agora) }
         if tiques % 15 == 0 {
             ArquivosDaIlhaModelo.shared.lerProgressos()
             atualizarAtividades(agora)
@@ -259,6 +264,7 @@ final class IlhaController {
         if let a = MusicaModelo.shared.atividade { lista.append(a) }
         if let a = CalendarioModelo.shared.atividade { lista.append(a) }
         if let a = AgentesModelo.shared.atividade { lista.append(a) }
+        lista += AvisosRapidosModelo.shared.vivas()
         let visiveis = Ilha.visiveis(lista, combinar: store.ilhaCombinar, escolhida: estado.escolhida)
         if visiveis != estado.atividades { estado.atividades = visiveis }
     }
@@ -628,6 +634,21 @@ private struct AsasDaIlha: View {
                 Text(a.valor).foregroundStyle(cor(a)).monospacedDigit()
             }
             .font(.system(size: 11, weight: .semibold))
+        } else if let a = atividades.first, a.tipo == .nivel || a.tipo == .bateria, let p = a.progresso {
+            if esquerda {
+                Image(systemName: a.simbolo).font(.system(size: 12, weight: .semibold)).foregroundStyle(cor(a))
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 14)
+            } else {
+                HStack(spacing: 6) {
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.white.opacity(0.2))
+                        Capsule().fill(cor(a)).frame(width: 34 * CGFloat(min(1, max(0, p))))
+                    }
+                    .frame(width: 34, height: 4)
+                    Text(a.valor).font(.system(size: 11, weight: .semibold)).monospacedDigit().foregroundStyle(cor(a))
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing).padding(.trailing, 12)
+            }
         } else if let a = atividades.first {
             if esquerda {
                 Image(systemName: a.simbolo).font(.system(size: 12, weight: .semibold)).foregroundStyle(cor(a))
@@ -647,6 +668,8 @@ private struct AsasDaIlha: View {
         case .musica:             return .pink
         case .calendario:         return .red
         case .agente:             return Color(red: 0.85, green: 0.47, blue: 0.34)
+        case .bateria:            return .green
+        case .nivel:              return .white
         case .aviso:              return .yellow
         }
     }

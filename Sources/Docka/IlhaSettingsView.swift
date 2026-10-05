@@ -88,6 +88,18 @@ struct IlhaSettingsView: View {
                     Text("A ilha lê os registros que o Claude Code e o Codex gravam no Mac (~/.claude e ~/.codex): só números de uso, modelos e horários — o texto das conversas nunca é lido para guardar. O valor em dólares é uma estimativa pelos preços públicos da API, e só aparece para modelos com preço conhecido.")
                 }
 
+                Section {
+                    Toggle("Carregador e bateria baixa", isOn: $store.ilhaAvisoBateria)
+                    Toggle("Fones conectando", isOn: $store.ilhaAvisoFones)
+                    Toggle("Volume", isOn: $store.ilhaAvisoVolume)
+                    Toggle("Brilho da tela do Mac", isOn: $store.ilhaAvisoBrilho)
+                    Toggle("Algo copiado", isOn: $store.ilhaAvisoCopiado)
+                } header: {
+                    Text("Avisos rápidos")
+                } footer: {
+                    Text("Aparecem nas asas da ilha fechada por alguns segundos: ao ligar ou tirar o carregador, com a bateria em 20%, 10% e 5%, quando um fone conecta, ao mudar o volume ou o brilho e ao copiar algo. Não pedem permissão.")
+                }
+
                 Section("Botões dos lados") {
                     lado("Esquerda", $store.ilhaBotoesEsquerda)
                     lado("Direita", $store.ilhaBotoesDireita)

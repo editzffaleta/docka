@@ -93,7 +93,7 @@ outro projeto.
 | 5. Calendário e mixer | agenda do dia e do mês; volume por app | Calendários | ✅ |
 | 6. Câmera e notificações | espelho da câmera; notificações recentes na ilha | Câmera; Acessibilidade | ✅ |
 | 7. Agentes de IA | Claude Code e outros: limites, tokens, modelo, projeto e aviso de tarefa longa terminada, lendo os registros locais | — | ✅ |
-| 8. Além do original | bateria e carregamento, AirPods e fones conectando, Foco, área de transferência, substituto dos avisos de volume e brilho | a definir | ⏳ |
+| 8. Além do original | bateria e carregamento, fones conectando, área de transferência, avisos de volume e brilho (o Foco ficou de fora: o macOS só o informa a apps com um direito especial da Apple ou com Acesso Total ao Disco) | — | ✅ |
 
 ## Fora do escopo
 
