@@ -10,7 +10,7 @@ import DockaCore
 enum JanelasBackend {
 
     /// Quadro de antes do primeiro encaixe, por janela — o "voltar".
-    fileprivate static var anteriores: [String: CGRect] = [:]
+    static var anteriores: [String: CGRect] = [:]
     /// O último encaixe: qual janela, que layout, em que passo do ciclo e o
     /// quadro aplicado. Repetir o atalho só avança o ciclo se a janela ainda
     /// estiver onde o Docka a deixou — mexeu nela à mão, recomeça da metade.
@@ -71,16 +71,16 @@ enum JanelasBackend {
 
     /// Chave estável da janela enquanto ela existe: o processo e o hash do
     /// elemento de Acessibilidade (o mesmo elemento devolve o mesmo hash).
-    fileprivate static func identidade(_ janela: AXUIElement) -> String {
+    static func identidade(_ janela: AXUIElement) -> String {
         var pid: pid_t = 0
         AXUIElementGetPid(janela, &pid)
         return "\(pid):\(CFHash(janela))"
     }
 
-    fileprivate static var alturaDaPrincipal: CGFloat { NSScreen.screens.first?.frame.height ?? 0 }
+    static var alturaDaPrincipal: CGFloat { NSScreen.screens.first?.frame.height ?? 0 }
 
     /// O quadro da janela em coordenadas do AppKit.
-    fileprivate static func quadro(de janela: AXUIElement) -> CGRect? {
+    static func quadro(de janela: AXUIElement) -> CGRect? {
         var p: CFTypeRef?, t: CFTypeRef?
         guard AXUIElementCopyAttributeValue(janela, kAXPositionAttribute as CFString, &p) == .success,
               AXUIElementCopyAttributeValue(janela, kAXSizeAttribute as CFString, &t) == .success,
@@ -95,7 +95,7 @@ enum JanelasBackend {
     /// Aplica tamanho, posição e tamanho de novo. A segunda vez não é
     /// descuido: ao mudar de tela, alguns apps recusam o tamanho que não
     /// cabia na tela de ANTES; repetido depois de mover, ele entra.
-    fileprivate static func definir(_ janela: AXUIElement, _ r: CGRect) {
+    static func definir(_ janela: AXUIElement, _ r: CGRect) {
         let ax = Encaixe.paraAcessibilidade(r, alturaDaPrincipal: alturaDaPrincipal)
         var ponto = ax.origin, tamanho = ax.size
         guard let p = AXValueCreate(.cgPoint, &ponto), let t = AXValueCreate(.cgSize, &tamanho) else { return }

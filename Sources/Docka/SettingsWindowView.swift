@@ -10,14 +10,14 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, recursos, alternador, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
+    case geral, recursos, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// A barra lateral em grupos com título — com mais de vinte seções, um
     /// vão entre blocos já não dizia onde procurar cada coisa.
     static let grupos: [(titulo: String, itens: [Secao])] = [
         ("Essenciais", [.geral, .recursos, .energia, .monitor]),
-        ("Controles de janela", [.mouse, .alternador, .janelas]),
+        ("Controles de janela", [.mouse, .alternador, .janelas, .encerrar, .dock]),
         ("Arquivos", [.clipboard, .prateleira, .captura]),
         ("Bordas", [.bandeja, .apps, .aparencia, .orbita, .notas, .brilho, .volume]),
         ("Utilidades", [.acoes, .atalho]),
@@ -29,6 +29,8 @@ enum Secao: String, CaseIterable, Identifiable {
         case .geral:     return "Geral"
         case .recursos:  return "Recursos"
         case .alternador: return "Alternador"
+        case .encerrar:  return "Ao fechar"
+        case .dock:      return "Dock"
         case .apps:      return "Apps"
         case .aparencia: return "Aparência"
         case .bandeja:   return "Bandeja"
@@ -70,6 +72,8 @@ enum Secao: String, CaseIterable, Identifiable {
         case .monitor:    return "chart.xyaxis.line"
         case .mouse:      return "computermouse"
         case .alternador: return "rectangle.on.rectangle"
+        case .encerrar:   return "xmark.square"
+        case .dock:       return "menubar.dock.rectangle"
         case .janelas:    return "rectangle.split.2x1"
         case .clipboard:  return "doc.on.clipboard"
         case .prateleira: return "tray.full"
@@ -93,6 +97,8 @@ enum Secao: String, CaseIterable, Identifiable {
         case .geral:     return .gray
         case .recursos:  return .blue
         case .alternador: return .blue
+        case .encerrar:  return .blue
+        case .dock:      return .blue
         case .apps:      return .blue
         case .aparencia: return .indigo
         case .bandeja:   return .teal
@@ -197,6 +203,8 @@ struct SettingsWindowView: View {
         case .geral:     GeralView()
         case .recursos:  RecursosView()
         case .alternador: AlternadorSettingsView()
+        case .encerrar:  EncerrarSettingsView()
+        case .dock:      DockSettingsView()
         case .apps:      AppsView()
         case .aparencia: AparenciaView()
         case .bandeja:   BandejaView()
@@ -270,6 +278,10 @@ extension DockaStore {
             RecursoComPermissao(nome: "Alternador com janelas", permissoes: [.acessibilidade],
                                 ligado: alternadorControl && alternadorJanelas),
             RecursoComPermissao(nome: "Ajustes do mouse", permissoes: [.acessibilidade], ligado: mouseControl),
+            RecursoComPermissao(nome: "Sair ao fechar", permissoes: [.acessibilidade], ligado: sairAoFecharControl),
+            RecursoComPermissao(nome: "Proteção do ⌘Q e ⌘W", permissoes: [.acessibilidade], ligado: protecaoQ || protecaoW),
+            RecursoComPermissao(nome: "Botão verde maximiza", permissoes: [.acessibilidade], ligado: botaoVerdeMaximiza),
+            RecursoComPermissao(nome: "Cliques no Dock", permissoes: [.acessibilidade], ligado: cliquesNoDock),
             RecursoComPermissao(nome: "Gatilhos de snippets", permissoes: [.monitoramentoDeEntrada, .acessibilidade],
                                 ligado: gatilhosControl),
             RecursoComPermissao(nome: "Texto da tela e captura", permissoes: [.gravacaoDeTela], ligado: capturaControl),
@@ -360,6 +372,11 @@ private struct ListaDeRecursos: View {
             ("arrow.up.left.and.arrow.down.right", "Arrastar até a borda", "Solte a janela na borda para encaixar", $store.janelasArrastar, [.acessibilidade]),
             ("rectangle.on.rectangle", "Alternador", "Apps na ordem de uso, num atalho próprio", $store.alternadorControl, []),
             ("computermouse", "Ajustes do mouse", "Inverter, rolagem linear ou suave, botões laterais", $store.mouseControl, [.acessibilidade]),
+            ("plus.rectangle", "Botão verde maximiza", "Preenche a tela sem criar outro Espaço", $store.botaoVerdeMaximiza, [.acessibilidade]),
+            ("xmark.square", "Sair ao fechar", "Encerra os apps escolhidos ao fechar a última janela", $store.sairAoFecharControl, [.acessibilidade]),
+            ("command", "Proteger o ⌘Q", "Segurar, apertar duas vezes ou usar ⌥ para encerrar", $store.protecaoQ, [.acessibilidade]),
+            ("command", "Proteger o ⌘W", "O mesmo para fechar janelas", $store.protecaoW, [.acessibilidade]),
+            ("menubar.dock.rectangle", "Cliques no Dock", "Clicar no app ativo minimiza, oculta ou alterna", $store.cliquesNoDock, [.acessibilidade]),
         ])
         grupo("Arquivos", [
             ("doc.on.clipboard", "Histórico", "O que você copia, com busca", $store.historicoControl, []),
@@ -1679,6 +1696,12 @@ private struct JanelasSettingsView: View {
                 } footer: {
                     Text("A borda de baixo sozinha não encaixa — é onde mora o Dock, e soltar ali por acidente é comum.")
                 }
+                Section {
+                    Toggle(isOn: $store.botaoVerdeMaximiza) {
+                        Text("O botão verde maximiza")
+                        Text("Preenche a tela sem criar outro Espaço; clicar de novo volta ao tamanho de antes. Com ⌥, o botão faz o de sempre.")
+                    }
+                }
             }
 
             if store.janelasControl {
@@ -1896,6 +1919,118 @@ private struct SecaoDeAppsIgnorados: View {
                 store.mouseIgnorados.append(id)
             }
         }
+    }
+}
+
+// MARK: - Ao fechar
+
+/// Uma lista de apps escolhidos, com adicionar e tirar.
+private struct ListaDeApps: View {
+    @Binding var ids: [String]
+    let prompt: String
+    var excluir: Set<String> = []
+
+    var body: some View {
+        ForEach(ids, id: \.self) { id in
+            HStack {
+                if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) {
+                    Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().frame(width: 20, height: 20)
+                    Text(FileManager.default.displayName(atPath: url.path))
+                } else {
+                    Text(id)
+                }
+                Spacer()
+                Button { ids.removeAll { $0 == id } } label: {
+                    Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        Button("Adicionar app…") {
+            let p = NSOpenPanel()
+            p.allowedContentTypes = [.application]
+            p.directoryURL = URL(fileURLWithPath: "/Applications")
+            p.allowsMultipleSelection = true
+            p.prompt = prompt
+            guard p.runModal() == .OK else { return }
+            for url in p.urls {
+                if let id = Bundle(url: url)?.bundleIdentifier, !ids.contains(id), !excluir.contains(id) { ids.append(id) }
+            }
+        }
+    }
+}
+
+private struct EncerrarSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.sairAoFecharControl) {
+                    Text("Sair ao fechar a última janela")
+                    Text("Os apps da lista são encerrados quando a última janela deles fecha. Um app com trabalho não salvo pergunta antes, como sempre.")
+                }
+                if store.sairAoFecharControl {
+                    ListaDeApps(ids: $store.sairAoFecharApps, prompt: "Escolher", excluir: SairAoFechar.nuncaEncerrar)
+                }
+            } header: {
+                Text("Sair ao fechar")
+            } footer: {
+                Text("O Finder e o Dock nunca entram. Pede Acessibilidade, para contar as janelas de cada app.")
+            }
+
+            Section {
+                Toggle("Proteger o ⌘Q (encerrar)", isOn: $store.protecaoQ)
+                Toggle("Proteger o ⌘W (fechar janela)", isOn: $store.protecaoW)
+                if store.protecaoQ || store.protecaoW {
+                    Picker("Para confirmar", selection: $store.protecaoModo) {
+                        ForEach(ModoDeProtecao.allCases) { Text($0.titulo).tag($0.rawValue) }
+                    }
+                }
+            } header: {
+                Text("Proteção contra ⌘Q e ⌘W sem querer")
+            } footer: {
+                Text("Segurar: mantenha o atalho apertado até a barra encher. Duas vezes: aperte de novo em até 1 s. Com ⌥: use ⌥⌘Q. Pede Acessibilidade para interceptar só esses dois atalhos — as outras teclas passam direto, sem serem guardadas.")
+            }
+
+            if store.protecaoQ || store.protecaoW {
+                Section {
+                    ListaDeApps(ids: $store.protecaoApps, prompt: "Proteger")
+                } header: {
+                    Text("Só nestes apps")
+                } footer: {
+                    Text(store.protecaoApps.isEmpty ? "Lista vazia: a proteção vale em todos os apps." : "A proteção vale só nos apps da lista.")
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Dock
+
+private struct DockSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.cliquesNoDock) {
+                    Text("Clicar no ícone do app ativo")
+                    Text("Com o app já na frente e janela à vista, clicar no ícone dele no Dock faz a ação abaixo. Nos outros casos, o Dock faz o de sempre.")
+                }
+                if store.cliquesNoDock {
+                    Picker("Ação", selection: $store.acaoNoCliqueDoDock) {
+                        ForEach(AcaoNoCliqueDoDock.allCases) { Text($0.titulo).tag($0.rawValue) }
+                    }
+                }
+            } header: {
+                Text("Cliques no Dock")
+            } footer: {
+                Text("Vale para o Dock da Apple, não para as bandejas do Docka. Pede Acessibilidade, para saber qual ícone foi clicado.")
+            }
+        }
+        .formStyle(.grouped)
     }
 }
 
@@ -2527,6 +2662,8 @@ enum AjustesAutoteste {
             desenhar(SettingsWindowView(), "ajustes-janela", NSSize(width: 820, height: 760)),
             desenhar(RecursosView(aba: .permissoes).frame(width: 600, height: 760), "ajustes-permissoes", NSSize(width: 600, height: 760)),
             desenhar(RecursosView(aba: .recursos).frame(width: 600, height: 760), "ajustes-recursos", NSSize(width: 600, height: 760)),
+            desenhar(EncerrarSettingsView().frame(width: 600, height: 560), "ajustes-encerrar", NSSize(width: 600, height: 560)),
+            desenhar(DockSettingsView().frame(width: 600, height: 300), "ajustes-dock", NSSize(width: 600, height: 300)),
         ].joined(separator: "\n")
     }
 }

@@ -438,7 +438,9 @@ private struct AbaControles: View {
                 LinhaComInterruptor(simbolo: "speaker.wave.2", titulo: "Régua de volume",
                                     descricao: "Volume da saída numa lateral", ligado: $store.volumeControl)
             }
-            grupo("janelas", "Janelas", contagem: [store.janelasControl, store.janelasArrastar, store.alternadorControl]) {
+            grupo("janelas", "Janelas", contagem: [store.janelasControl, store.janelasArrastar, store.alternadorControl,
+                                                   store.botaoVerdeMaximiza, store.sairAoFecharControl,
+                                                   store.protecaoQ, store.cliquesNoDock]) {
                 LinhaComInterruptor(simbolo: "rectangle.split.2x1", titulo: "Encaixar janelas",
                                     descricao: "Metades, quartos e terços por atalho", ligado: $store.janelasControl,
                                     aviso: Colagem.permitido ? nil : "Falta a Acessibilidade")
@@ -448,6 +450,18 @@ private struct AbaControles: View {
                 Separador()
                 LinhaComInterruptor(simbolo: "square.stack", titulo: "Alternador de apps",
                                     descricao: "Apps na ordem de uso, num atalho próprio", ligado: $store.alternadorControl)
+                Separador()
+                LinhaComInterruptor(simbolo: "plus.rectangle", titulo: "Botão verde maximiza",
+                                    descricao: "Preenche a tela sem criar outro Espaço", ligado: $store.botaoVerdeMaximiza)
+                Separador()
+                LinhaComInterruptor(simbolo: "xmark.square", titulo: "Sair ao fechar",
+                                    descricao: "Encerra os apps escolhidos ao fechar a última janela", ligado: $store.sairAoFecharControl)
+                Separador()
+                LinhaComInterruptor(simbolo: "command", titulo: "Proteger o ⌘Q",
+                                    descricao: "Segurar, duas vezes ou com ⌥ para encerrar", ligado: $store.protecaoQ)
+                Separador()
+                LinhaComInterruptor(simbolo: "menubar.dock.rectangle", titulo: "Cliques no Dock",
+                                    descricao: "Clicar no app ativo minimiza, oculta ou alterna", ligado: $store.cliquesNoDock)
             }
             grupo("mouse", "Mouse e teclado", contagem: [store.mouseControl, store.gatilhosControl]) {
                 LinhaComInterruptor(simbolo: "computermouse", titulo: "Ajustes do mouse",

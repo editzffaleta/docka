@@ -74,6 +74,9 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   | Alternador — prévias | Gravação de Tela | Capturar miniaturas das janelas só enquanto o alternador está aberto; ficam na memória e somem ao fechar |
   | Captura | Gravação de Tela | Capturar a área que você seleciona (pelo seletor do próprio macOS) para copiar o texto, ler um QR ou salvar a imagem. O reconhecimento roda no Mac, pelo Vision; nada é enviado |
   | Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse (nunca o teclado) para inverter, deixar linear, suavizar e voltar/avançar |
+  | Sair ao fechar | Acessibilidade | Contar as janelas dos apps escolhidos e pedir o encerramento quando chegam a zero |
+  | Proteção do ⌘Q e ⌘W | Acessibilidade | Interceptar o teclado, agindo só sobre ⌘Q e ⌘W; as outras teclas passam sem serem guardadas |
+  | Botão verde e cliques no Dock | Acessibilidade | Interceptar cliques e perguntar o que está sob o cursor; só o botão verde e ícones de app no Dock são assumidos |
   | Encaixar janelas | Acessibilidade | Ler e mudar posição e tamanho da janela da frente quando você usa um atalho ou o menu Janelas |
 
 - ❌ Não captura teclado (os atalhos usam `RegisterEventHotKey`, que entrega apenas aquele atalho) — **exceto** com o módulo "Expandir gatilhos" ligado, que escuta as teclas como descrito na tabela acima

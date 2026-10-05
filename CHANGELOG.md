@@ -6,6 +6,21 @@ todo o resto por aqui.
 
 ## [Não lançado]
 
+### Novo
+
+- **Sair ao fechar**: os apps escolhidos são encerrados quando a última
+  janela deles fecha (só na passagem para zero janelas — um app recém-aberto
+  não é encerrado). O Finder e o Dock nunca entram.
+- **Proteção do ⌘Q e ⌘W**: segurar até a barra encher, apertar duas vezes
+  ou usar ⌥ para confirmar, em todos os apps ou só nos escolhidos. O tap
+  intercepta só esses dois atalhos.
+- **Botão verde maximiza** na área útil, sem criar outro Espaço; clicar de
+  novo volta ao tamanho de antes, e com ⌥ o botão faz o de sempre.
+- **Cliques no Dock**: com o app já na frente e janela à vista, clicar no
+  ícone dele minimiza as janelas, oculta o app ou passa para a próxima
+  janela. Nos outros casos o Dock faz o de sempre.
+- Os quatro pedem Acessibilidade e aparecem na lista de Permissões.
+
 ### Mudou
 
 - **O ícone da barra de menus abre um painel**, e não mais um menu: abas

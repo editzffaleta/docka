@@ -60,6 +60,21 @@ identidade visual do Vorssaint.
 | ✅ Conta-gotas, texto da tela (OCR + QR), captura de área | conta-gotas sem permissão; o resto com Gravação de Tela |
 | ✅ Editor de anotação | seta, retângulo, caneta, marca-texto, texto, borrão e recorte; exporta em resolução Retina |
 
+## Fase 5 — Janelas e o Dock da Apple (pede Acessibilidade)
+
+Itens da lista do Vorssaint que tinham ficado de fora deste roteiro sem
+registro — acrescentados aqui.
+
+| Recurso | Permissão | Status |
+|---|---|---|
+| Sair ao fechar a última janela (por app) | Acessibilidade | ✅ |
+| Proteção do ⌘Q e ⌘W (segurar, toque duplo ou tecla extra) | Acessibilidade | ✅ |
+| Botão verde maximiza sem criar outro Espaço | Acessibilidade | ✅ |
+| Cliques no Dock: minimizar, ocultar ou alternar janelas | Acessibilidade | ✅ |
+| Prévia do Dock: janelas do app ao passar o mouse no ícone | Acessibilidade + Gravação de Tela | ⏳ |
+| Alternador: busca e filtros | — | ⏳ |
+| Arrastar janelas segurando uma tecla, de qualquer ponto | Acessibilidade | ⏳ |
+
 ## Fora do escopo
 
 Coisas do Vorssaint que não combinam com um app de borda leve e sem
