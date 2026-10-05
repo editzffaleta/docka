@@ -59,7 +59,7 @@ public enum Ilha {
         /// Já feita nesta versão do Docka.
         public var disponivel: Bool {
             switch self {
-            case .timer, .controles, .sistema, .arquivos, .rascunho, .capturas, .downloads, .musica, .calendario, .mixer: return true
+            case .timer, .controles, .sistema, .arquivos, .rascunho, .capturas, .downloads, .musica, .calendario, .mixer, .notificacoes, .camera: return true
             default: return false
             }
         }

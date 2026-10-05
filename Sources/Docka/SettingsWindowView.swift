@@ -302,6 +302,8 @@ extension DockaStore {
             RecursoComPermissao(nome: "Prévia do Dock", permissoes: [.acessibilidade], ligado: previaDoDock),
             RecursoComPermissao(nome: "Miniaturas da prévia do Dock", permissoes: [.gravacaoDeTela],
                                 ligado: previaDoDock && previaDoDockMiniaturas),
+            RecursoComPermissao(nome: "Notificações na ilha", permissoes: [.acessibilidade],
+                                ligado: ilhaControl && ilhaNotificacoes),
             RecursoComPermissao(nome: "Calendário na ilha", permissoes: [.calendarios],
                                 ligado: ilhaControl && !ilhaOcultas.contains(Ilha.Secao.calendario.rawValue)),
             RecursoComPermissao(nome: "Prévias do alternador", permissoes: [.gravacaoDeTela],

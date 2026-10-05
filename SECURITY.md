@@ -77,6 +77,8 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   | Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse (nunca o teclado) para inverter, deixar linear, suavizar e voltar/avançar |
   | Sair ao fechar | Acessibilidade | Contar as janelas dos apps escolhidos e pedir o encerramento quando chegam a zero |
   | Proteção do ⌘Q e ⌘W | Acessibilidade | Interceptar o teclado, agindo só sobre ⌘Q e ⌘W; as outras teclas passam sem serem guardadas |
+  | Ilha — notificações | Acessibilidade | Ler, uma vez por segundo, os avisos que estão na tela (os grupos `AXNotificationCenterBanner` da Central de Notificações): app, título, subtítulo e texto. Só com a opção ligada, só na memória (até 30), apagados ao travar a tela |
+  | Ilha — espelho da câmera | Câmera | Mostrar a imagem ao vivo; a captura só roda com a seção à vista ou o espelho aberto, e nenhum quadro é salvo |
   | Ilha — calendário | Calendários | Ler os compromissos (título, hora, local, notas para achar o link da reunião); nunca escreve nem envia |
   | Ilha — mixer por app | Gravação de áudio do sistema | Só para os apps cujo volume você mudou: o som deles passa por um toque de processo do Core Audio e volta à saída com outro ganho, sem ser gravado; com o controle em 100% ou o Docka fechado, o macOS desfaz o toque |
   | Ilha — equalizador ao vivo | Gravação de Tela | Medir o áudio que o Mac toca, em pedaços de 21 ms que são medidos e descartados — só com a opção ligada e a música tocando |

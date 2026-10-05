@@ -47,6 +47,14 @@ todo o resto por aqui.
   só passa pelo Docka quando você mexe no volume dele; de volta a 100%, ou
   com o Docka fechado, o som volta direto. Pede a permissão de áudio do
   sistema (macOS 14.2 ou mais novo).
+- **Notificações na ilha** (opcional): os avisos que aparecem na tela ficam
+  guardados para rever — título, subtítulo, texto e hora, com o ícone do
+  app. Só na memória: tudo some ao travar a tela, ao limpar ou ao desligar.
+  Pede Acessibilidade.
+- **Espelho da câmera na ilha**: a câmera ao vivo para conferir antes de uma
+  chamada, com a escolha da câmera, o modo "como os outros veem" e um
+  espelho flutuante que dá para arrastar pela tela. A câmera só liga com a
+  seção à vista ou o espelho aberto. Pede acesso à Câmera.
 
 ## [1.4.0] — 2026-10-05
 

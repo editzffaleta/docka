@@ -40,6 +40,8 @@ final class IlhaController {
         case .musica:      return DockaStore.shared.ilhaLetra ? 150 : 116
         case .calendario:  return 200
         case .mixer:       return 170
+        case .notificacoes: return 196
+        case .camera:      return 184
         default:           return 124
         }
     }
@@ -534,6 +536,8 @@ struct VistaDaIlha: View {
         case .musica:    TocandoAgoraView()
         case .calendario: CalendarioDaIlhaView()
         case .mixer:     MixerDaIlhaView()
+        case .notificacoes: NotificacoesDaIlhaView()
+        case .camera:    CameraDaIlhaView()
         default:         Text("Em breve").foregroundStyle(.secondary)
         }
     }

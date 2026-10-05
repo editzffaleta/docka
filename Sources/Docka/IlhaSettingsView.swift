@@ -60,6 +60,15 @@ struct IlhaSettingsView: View {
                     Text("A ilha mostra o que toca em qualquer app ou aba do navegador que anuncie a música ao sistema. Para isso usa um caminho interno do macOS: se uma atualização fechá-lo, a seção avisa.")
                 }
 
+                Section {
+                    Toggle(isOn: $store.ilhaNotificacoes) {
+                        Text("Notificações na ilha")
+                        Text("Guarda os avisos que aparecem na tela para você rever na ilha. Só na memória: tudo some ao travar a tela ou desligar. Pede Acessibilidade.")
+                    }
+                } header: {
+                    Text("Notificações")
+                }
+
                 Section("Botões dos lados") {
                     lado("Esquerda", $store.ilhaBotoesEsquerda)
                     lado("Direita", $store.ilhaBotoesDireita)

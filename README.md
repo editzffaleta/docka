@@ -150,7 +150,7 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Arrastar até a borda** | Leve a janela até a borda: laterais dão metades, cantos dão quartos, o topo maximiza — com prévia de onde ela vai parar |
 | **Botão verde maximiza** *(Acessibilidade)* | Preenche a tela sem criar outro Espaço; de novo, volta ao tamanho de antes; com ⌥, o de sempre |
 | **Sair ao fechar** *(Acessibilidade)* | Os apps escolhidos encerram quando a última janela fecha |
-| **Ilha Dinâmica** *(em construção)* | Uma ilha preta em volta do recorte da câmera (ou simulada): cresce com o cursor, abre numa grade de seções e mostra nas asas o que está correndo. Já com Timer (temporizador, Pomodoro e cronômetro), Controles, Sistema, Arquivos (solte arquivos na ilha), Rascunho, Capturas recentes, Downloads com progresso Tocando agora (qualquer app ou aba do navegador, com capa, controles, letra sincronizada e equalizador), Calendário (mês, agenda e "Entrar" nas reuniões) e Mixer (volume de cada app) |
+| **Ilha Dinâmica** *(em construção)* | Uma ilha preta em volta do recorte da câmera (ou simulada): cresce com o cursor, abre numa grade de seções e mostra nas asas o que está correndo. Já com Timer (temporizador, Pomodoro e cronômetro), Controles, Sistema, Arquivos (solte arquivos na ilha), Rascunho, Capturas recentes, Downloads com progresso Tocando agora (qualquer app ou aba do navegador, com capa, controles, letra sincronizada e equalizador), Calendário (mês, agenda e "Entrar" nas reuniões), Mixer (volume de cada app), Notificações recentes e Espelho da câmera |
 | **Prévia do Dock** *(Acessibilidade; miniaturas com Gravação de Tela)* | Pare o cursor num ícone do Dock para ver as janelas do app; clique para trazer uma (minimizada volta do Dock), × para fechar |
 | **Arrastar segurando teclas** *(Acessibilidade)* | Com ⌃⌥ apertado, arraste de qualquer ponto para mover a janela; com o botão direito, redimensione pelo canto mais perto |
 | **Proteção do ⌘Q e ⌘W** *(Acessibilidade)* | Segurar, apertar duas vezes ou usar ⌥ para confirmar — só esses dois atalhos são interceptados |
@@ -343,6 +343,8 @@ sem ela continuam funcionando no modo sem permissão.
 | Alternador — prévias | Gravação de Tela | Miniaturas das janelas enquanto o alternador está aberto; nada é gravado | Ícones no lugar das miniaturas |
 | Captura | Gravação de Tela | Capturar a área que você seleciona, para OCR, QR ou imagem — reconhecimento no próprio Mac | Só o conta-gotas funciona |
 | Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse — nunca o teclado | O mouse segue como o sistema manda |
+| Ilha — notificações | Acessibilidade | Ler os avisos que aparecem na tela (app, título e texto), só com a opção ligada; ficam na memória e somem ao travar a tela | A seção não guarda nada |
+| Ilha — espelho da câmera | Câmera | Mostrar a câmera ao vivo na ilha ou no espelho flutuante; nada é gravado | A seção pede o acesso |
 | Ilha — calendário | Calendários | Ler os compromissos para a agenda e o aviso do próximo; só leitura | A seção pede o acesso e não mostra nada |
 | Ilha — mixer por app | Gravação de áudio do sistema | Passar o som do app escolhido pelo Docka para mudar o volume dele; nada é gravado | Só o volume geral e a saída de som |
 | Ilha — equalizador ao vivo | Gravação de Tela | Medir o som que o Mac toca para as barras; nada é gravado, e o macOS mostra o aviso de gravação enquanto mede | As barras só animam |

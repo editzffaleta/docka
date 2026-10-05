@@ -64,6 +64,7 @@ cat > "$APP/Contents/Info.plist" << PLIST
     <key>NSHumanReadableCopyright</key><string>© 2026 Bruno Zafriel — MIT</string>
     <key>NSCalendarsFullAccessUsageDescription</key><string>A Ilha Dinâmica mostra os seus compromissos e avisa do próximo. O Docka só lê, e nada sai do Mac.</string>
     <key>NSCalendarsUsageDescription</key><string>A Ilha Dinâmica mostra os seus compromissos e avisa do próximo. O Docka só lê, e nada sai do Mac.</string>
+    <key>NSCameraUsageDescription</key><string>O espelho da Ilha Dinâmica mostra a sua câmera ao vivo para conferir antes de uma chamada. Nada é gravado.</string>
     <key>NSAudioCaptureUsageDescription</key><string>O mixer da Ilha Dinâmica ajusta o volume de cada app passando o som dele pelo Docka. Nada é gravado.</string>
 </dict>
 </plist>
