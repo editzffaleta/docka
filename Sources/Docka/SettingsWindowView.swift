@@ -10,24 +10,34 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
+    case geral, recursos, alternador, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
-    /// As Configurações agrupam a barra lateral em blocos separados por um vão.
-    static let grupos: [[Secao]] = [[.geral, .apps], [.aparencia, .bandeja, .orbita, .prateleira, .notas, .monitor, .clipboard, .janelas, .mouse, .captura, .brilho, .volume, .energia, .acoes, .atalho], [.sobre]]
+    /// A barra lateral em grupos com título — com mais de vinte seções, um
+    /// vão entre blocos já não dizia onde procurar cada coisa.
+    static let grupos: [(titulo: String, itens: [Secao])] = [
+        ("Essenciais", [.geral, .recursos, .energia, .monitor]),
+        ("Controles de janela", [.mouse, .alternador, .janelas]),
+        ("Arquivos", [.clipboard, .prateleira, .captura]),
+        ("Bordas", [.bandeja, .apps, .aparencia, .orbita, .notas, .brilho, .volume]),
+        ("Utilidades", [.acoes, .atalho]),
+        ("", [.sobre]),
+    ]
 
     var titulo: String {
         switch self {
         case .geral:     return "Geral"
+        case .recursos:  return "Recursos"
+        case .alternador: return "Alternador"
         case .apps:      return "Apps"
         case .aparencia: return "Aparência"
         case .bandeja:   return "Bandeja"
         case .orbita:    return "Órbita"
         case .prateleira: return "Prateleira"
         case .notas:     return "Bloco de notas"
-        case .monitor:   return "Monitor do sistema"
+        case .monitor:   return "Monitor"
         case .clipboard: return "Área de transferência"
-        case .janelas:   return "Janelas"
+        case .janelas:   return "Encaixe de janelas"
         case .mouse:     return "Mouse"
         case .captura:   return "Captura"
         case .brilho:    return "Brilho"
@@ -39,26 +49,41 @@ enum Secao: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Nome na barra lateral: igual ao título, menos onde o título não cabe
+    /// na coluna. A página continua com o nome completo.
+    var rotulo: String {
+        switch self {
+        case .notas:     return "Notas"
+        case .clipboard: return "Copiar e colar"
+        case .janelas:   return "Janelas"
+        default:         return titulo
+        }
+    }
+
+    /// Ícones de linha (SF Symbols): na barra lateral o macOS os pinta com a
+    /// cor de destaque e de branco na seção selecionada.
     var simbolo: String {
         switch self {
-        case .geral:     return "gearshape.fill"
-        case .apps:      return "square.grid.2x2.fill"
-        case .aparencia: return "circle.lefthalf.filled"
-        case .bandeja:   return "dock.rectangle"
-        case .orbita:    return "circle.circle.fill"
-        case .prateleira: return "tray.and.arrow.down.fill"
-        case .notas:     return "note.text"
-        case .monitor:   return "gauge.with.dots.needle.67percent"
-        case .clipboard: return "doc.on.clipboard.fill"
-        case .janelas:   return "rectangle.split.2x1.fill"
-        case .mouse:     return "computermouse.fill"
-        case .captura:   return "camera.viewfinder"
-        case .brilho:    return "sun.max.fill"
-        case .volume:    return "speaker.wave.2.fill"
-        case .energia:   return "cup.and.saucer.fill"
-        case .acoes:     return "bolt.fill"
-        case .atalho:    return "keyboard.fill"
-        case .sobre:     return "info"
+        case .geral:      return "gearshape"
+        case .recursos:   return "square.grid.2x2"
+        case .energia:    return "bolt"
+        case .monitor:    return "chart.xyaxis.line"
+        case .mouse:      return "computermouse"
+        case .alternador: return "rectangle.on.rectangle"
+        case .janelas:    return "rectangle.split.2x1"
+        case .clipboard:  return "doc.on.clipboard"
+        case .prateleira: return "tray.full"
+        case .captura:    return "camera.viewfinder"
+        case .bandeja:    return "dock.rectangle"
+        case .apps:       return "app"
+        case .aparencia:  return "circle.lefthalf.filled"
+        case .orbita:     return "circle.circle"
+        case .notas:      return "note.text"
+        case .brilho:     return "sun.max"
+        case .volume:     return "speaker.wave.2"
+        case .acoes:      return "rays"
+        case .atalho:     return "keyboard"
+        case .sobre:      return "info.circle"
         }
     }
 
@@ -66,6 +91,8 @@ enum Secao: String, CaseIterable, Identifiable {
     var cor: Color {
         switch self {
         case .geral:     return .gray
+        case .recursos:  return .blue
+        case .alternador: return .blue
         case .apps:      return .blue
         case .aparencia: return .indigo
         case .bandeja:   return .teal
@@ -91,13 +118,15 @@ enum Secao: String, CaseIterable, Identifiable {
 /// barra lateral são círculos, não quadradinhos arredondados.
 struct IconeSecao: View {
     let secao: Secao
+    /// `.increased` na linha selecionada da barra lateral (fundo azul).
+    @Environment(\.backgroundProminence) private var proeminencia
 
+    // azul como a cor de destaque, e branco na seção selecionada — o mesmo
+    // que os Ajustes do Sistema fazem, mas sem depender da janela estar ativa
     var body: some View {
         Image(systemName: secao.simbolo)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(.white)
-            .frame(width: 22, height: 22)
-            .background(Circle().fill(secao.cor.gradient))
+            .foregroundStyle(proeminencia == .increased ? Color.white : Color.accentColor)
+            .frame(width: 20)
     }
 }
 
@@ -105,23 +134,20 @@ struct SettingsWindowView: View {
     @EnvironmentObject var store: DockaStore
     @State private var secao: Secao = .geral
     @State private var busca = ""
-    /// Histórico de navegação, para os botões voltar/avançar funcionarem de fato.
-    @State private var anteriores: [Secao] = []
-    @State private var posteriores: [Secao] = []
 
     var body: some View {
         NavigationSplitView {
             barraLateral
                 // largura fixa: nas Configurações a barra lateral não é
                 // redimensionável nem recolhível
-                .navigationSplitViewColumnWidth(215)
+                .navigationSplitViewColumnWidth(min: 240, ideal: 240, max: 240)
                 // fora o botão de recolher — ele desalinha a barra de título e o
                 // painel da Apple não tem esse controle
                 .toolbar(removing: .sidebarToggle)
         } detail: {
             conteudo
-                .navigationTitle(secao.titulo)
-                .toolbar { navegacao }
+                // título fixo na barra da janela, sem setas de navegação
+                .navigationTitle("Ajustes do Docka")
         }
         .navigationSplitViewStyle(.balanced)
         .onAppear { store.refreshLaunchAtLogin() }
@@ -129,7 +155,7 @@ struct SettingsWindowView: View {
 
     private var resultados: [Secao] {
         busca.isEmpty ? [] : Secao.allCases.filter {
-            $0.titulo.localizedCaseInsensitiveContains(busca)
+            $0.titulo.localizedCaseInsensitiveContains(busca) || $0.rotulo.localizedCaseInsensitiveContains(busca)
         }
     }
 
@@ -138,62 +164,39 @@ struct SettingsWindowView: View {
         List(selection: selecao) {
             if busca.isEmpty {
                 ForEach(Secao.grupos.indices, id: \.self) { i in
-                    Section { linhas(Secao.grupos[i]) }
+                    let g = Secao.grupos[i]
+                    if g.titulo.isEmpty {
+                        Section { linhas(g.itens) }
+                    } else {
+                        Section(g.titulo) { linhas(g.itens) }
+                    }
                 }
             } else {
                 Section { linhas(resultados) }
             }
         }
         .listStyle(.sidebar)
-        .searchable(text: $busca, placement: .sidebar, prompt: "Buscar")
+        .searchable(text: $busca, placement: .sidebar, prompt: "Buscar ajustes")
     }
 
     private func linhas(_ itens: [Secao]) -> some View {
         ForEach(itens) { s in
             NavigationLink(value: s) {
-                Label { Text(s.titulo) } icon: { IconeSecao(secao: s) }
+                Label { Text(s.rotulo) } icon: { IconeSecao(secao: s) }
             }
         }
     }
 
-    /// Grava o histórico a cada troca de seção pela barra lateral.
     private var selecao: Binding<Secao?> {
-        Binding(get: { secao }, set: { novo in
-            guard let novo, novo != secao else { return }
-            anteriores.append(secao)
-            posteriores.removeAll()
-            secao = novo
-        })
-    }
-
-    @ToolbarContentBuilder
-    private var navegacao: some ToolbarContent {
-        ToolbarItemGroup(placement: .navigation) {
-            Button { voltar() } label: { Image(systemName: "chevron.backward") }
-                .disabled(anteriores.isEmpty)
-                .help("Voltar")
-            Button { avancar() } label: { Image(systemName: "chevron.forward") }
-                .disabled(posteriores.isEmpty)
-                .help("Avançar")
-        }
-    }
-
-    private func voltar() {
-        guard let destino = anteriores.popLast() else { return }
-        posteriores.append(secao)
-        secao = destino
-    }
-
-    private func avancar() {
-        guard let destino = posteriores.popLast() else { return }
-        anteriores.append(secao)
-        secao = destino
+        Binding(get: { secao }, set: { if let novo = $0 { secao = novo } })
     }
 
     @ViewBuilder
     private var conteudo: some View {
         switch secao {
         case .geral:     GeralView()
+        case .recursos:  RecursosView()
+        case .alternador: AlternadorSettingsView()
         case .apps:      AppsView()
         case .aparencia: AparenciaView()
         case .bandeja:   BandejaView()
@@ -250,6 +253,244 @@ private struct GeralView: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+// MARK: - Recursos e permissões
+
+extension DockaStore {
+    /// Cada recurso que pede permissão, e se está ligado agora — a base do
+    /// "Usada por" e do aviso de permissão sobrando ou faltando.
+    var recursosComPermissao: [RecursoComPermissao] {
+        [
+            RecursoComPermissao(nome: "Colar sozinho", permissoes: [.acessibilidade], ligado: colarSozinho),
+            RecursoComPermissao(nome: "Encaixar janelas", permissoes: [.acessibilidade], ligado: janelasControl),
+            RecursoComPermissao(nome: "Arrastar até a borda", permissoes: [.acessibilidade],
+                                ligado: janelasControl && janelasArrastar),
+            RecursoComPermissao(nome: "Alternador com janelas", permissoes: [.acessibilidade],
+                                ligado: alternadorControl && alternadorJanelas),
+            RecursoComPermissao(nome: "Ajustes do mouse", permissoes: [.acessibilidade], ligado: mouseControl),
+            RecursoComPermissao(nome: "Gatilhos de snippets", permissoes: [.monitoramentoDeEntrada, .acessibilidade],
+                                ligado: gatilhosControl),
+            RecursoComPermissao(nome: "Texto da tela e captura", permissoes: [.gravacaoDeTela], ligado: capturaControl),
+            RecursoComPermissao(nome: "Prévias do alternador", permissoes: [.gravacaoDeTela],
+                                ligado: alternadorControl && alternadorPrevias),
+        ]
+    }
+}
+
+enum EstadoDaPermissao {
+    static func concedida(_ p: Permissao) -> Bool {
+        switch p {
+        case .acessibilidade:         return Colagem.permitido
+        case .gravacaoDeTela:         return CapturaController.permitido
+        case .monitoramentoDeEntrada: return GatilhosController.podeEscutar
+        }
+    }
+}
+
+private struct RecursosView: View {
+    enum Aba: String, CaseIterable { case recursos = "Recursos", permissoes = "Permissões" }
+    @State private var aba: Aba
+
+    init(aba: Aba = .recursos) { _aba = State(initialValue: aba) }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                CartaoDeAjuste {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Picker("", selection: $aba) {
+                            ForEach(Aba.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .fixedSize()
+                        Divider()
+                        Text(aba == .recursos
+                             ? "Ligue e desligue cada recurso. Os detalhes ficam na seção de cada um."
+                             : "O que cada permissão faz e quais recursos a usam.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(12)
+                }
+                switch aba {
+                case .recursos:   ListaDeRecursos()
+                case .permissoes: ListaDePermissoes()
+                }
+            }
+            .frame(maxWidth: 760, alignment: .leading)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+/// O cartão dos ajustes: fundo um tom acima da janela, cantos arredondados.
+private struct CartaoDeAjuste<Conteudo: View>: View {
+    @ViewBuilder let conteudo: () -> Conteudo
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0, content: conteudo)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color.primary.opacity(0.045)))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06)))
+    }
+}
+
+/// Um interruptor por recurso, com a permissão que ele pede ao lado.
+private struct ListaDeRecursos: View {
+    @EnvironmentObject var store: DockaStore
+
+    var body: some View {
+        grupo("Bordas", [
+            ("circle.circle", "Órbita", "Anel de apps em volta do cursor", $store.orbitaControl, []),
+            ("tray.full", "Prateleira", "Estacione o que você arrasta numa lateral", $store.prateleiraControl, []),
+            ("note.text", "Bloco de notas", "Notas em abas numa lateral", $store.notasControl, []),
+            ("chart.xyaxis.line", "Painel do sistema", "CPU, memória e rede numa borda", $store.monitorControl, []),
+            ("sun.max", "Régua de brilho", "Brilho de qualquer tela numa lateral", $store.brightnessControl, []),
+            ("speaker.wave.2", "Régua de volume", "Volume da saída numa lateral", $store.volumeControl, []),
+        ])
+        grupo("Controles de janela", [
+            ("rectangle.split.2x1", "Encaixe de janelas", "Metades, quartos e terços por atalho", $store.janelasControl, [.acessibilidade]),
+            ("arrow.up.left.and.arrow.down.right", "Arrastar até a borda", "Solte a janela na borda para encaixar", $store.janelasArrastar, [.acessibilidade]),
+            ("rectangle.on.rectangle", "Alternador", "Apps na ordem de uso, num atalho próprio", $store.alternadorControl, []),
+            ("computermouse", "Ajustes do mouse", "Inverter, rolagem linear ou suave, botões laterais", $store.mouseControl, [.acessibilidade]),
+        ])
+        grupo("Arquivos", [
+            ("doc.on.clipboard", "Histórico", "O que você copia, com busca", $store.historicoControl, []),
+            ("doc.on.doc", "Colar sozinho", "Escolher no histórico ou num snippet já cola", $store.colarSozinho, [.acessibilidade]),
+            ("text.cursor", "Gatilhos de snippets", "Digitar ;gatilho vira o texto", $store.gatilhosControl, [.monitoramentoDeEntrada, .acessibilidade]),
+            ("link", "Limpar links ao copiar", "Tira utm_, fbclid e outros rastreadores", $store.limparLinksAoCopiar, []),
+            ("camera.viewfinder", "Captura", "Conta-gotas, texto da tela e captura com anotação", $store.capturaControl, [.gravacaoDeTela]),
+        ])
+        grupo("Sistema", [
+            ("exclamationmark.triangle", "Alertas", "CPU, memória, disco, bateria e temperatura", $store.alertas, []),
+        ])
+    }
+
+    private func grupo(_ titulo: String,
+                       _ linhas: [(String, String, String, Binding<Bool>, [Permissao])]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(titulo.uppercased())
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 4)
+            CartaoDeAjuste {
+                ForEach(linhas.indices, id: \.self) { i in
+                    if i > 0 { Divider().padding(.leading, 44) }
+                    let l = linhas[i]
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: l.0)
+                            .font(.system(size: 15))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 20)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 6) {
+                                Text(l.1).font(.system(size: 13, weight: .semibold))
+                                ForEach(l.4) { p in
+                                    Text(p.titulo)
+                                        .font(.system(size: 9, weight: .semibold))
+                                        .padding(.horizontal, 5).padding(.vertical, 1)
+                                        .background(Capsule().fill(Color.orange.opacity(0.18)))
+                                        .foregroundStyle(.orange)
+                                }
+                            }
+                            Text(l.2).font(.system(size: 11)).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Toggle("", isOn: l.3).toggleStyle(.switch).labelsHidden()
+                    }
+                    .padding(12)
+                }
+            }
+        }
+    }
+}
+
+/// Cada permissão: estado, para que serve, quem usa, e o que fazer.
+private struct ListaDePermissoes: View {
+    @EnvironmentObject var store: DockaStore
+    @State private var concedidas = Self.ler()
+    private let relogio = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
+
+    private static func ler() -> [Permissao: Bool] {
+        Dictionary(uniqueKeysWithValues: Permissao.allCases.map { ($0, EstadoDaPermissao.concedida($0)) })
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            CartaoDeAjuste {
+                ForEach(Array(Permissao.allCases.enumerated()), id: \.element) { i, p in
+                    if i > 0 { Divider() }
+                    linha(p, concedida: concedidas[p] ?? false)
+                }
+            }
+            Text("O núcleo do Docka não pede nenhuma. Revogar uma permissão nos Ajustes do Sistema só desliga o que depende dela — o resto continua funcionando. Assinado ad-hoc, o Docka pode precisar delas de novo depois de uma atualização.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 4)
+        }
+        // as permissões mudam nos Ajustes do Sistema, fora do Docka
+        .onReceive(relogio) { _ in concedidas = Self.ler() }
+    }
+
+    @ViewBuilder
+    private func linha(_ p: Permissao, concedida: Bool) -> some View {
+        let recursos = store.recursosComPermissao
+        let usam = Permissoes.usadaPor(p, em: recursos)
+        let situacao = Permissoes.situacao(p, concedida: concedida, recursos: recursos)
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: p.simbolo)
+                .font(.system(size: 16))
+                .foregroundStyle(.secondary)
+                .frame(width: 22)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(p.titulo).font(.system(size: 13, weight: .semibold))
+                    Circle().fill(concedida ? Color.green : Color.secondary.opacity(0.5)).frame(width: 6, height: 6)
+                    Text(concedida ? "Concedida" : "Não concedida")
+                        .font(.system(size: 10)).foregroundStyle(.secondary)
+                }
+                Text(p.descricao).font(.system(size: 11))
+                Text(usam.isEmpty
+                     ? "Nada ligado usa agora. Pode ser usada por: \(Permissoes.lista(Permissoes.podeSerUsadaPor(p, em: recursos)))."
+                     : "Usada por: \(Permissoes.lista(usam)).")
+                    .font(.system(size: 10)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                switch situacao {
+                case .concedidaSemUso:
+                    aviso("Você concedeu esta permissão, mas nada ligado precisa dela. Se quiser, revogue nos Ajustes do Sistema.",
+                          cor: .secondary)
+                case .falta:
+                    aviso("\(Permissoes.lista(usam)) \(usam.count == 1 ? "está ligado e precisa" : "estão ligados e precisam") desta permissão para funcionar.",
+                          cor: .orange)
+                case .emUso, .desnecessaria:
+                    EmptyView()
+                }
+                Button("Abrir Ajustes do Sistema") {
+                    if let url = URL(string: p.enderecoDosAjustes) { NSWorkspace.shared.open(url) }
+                }
+                .controlSize(.small)
+                .padding(.top, 2)
+            }
+        }
+        .padding(12)
+    }
+
+    private func aviso(_ texto: String, cor: Color) -> some View {
+        Text(texto)
+            .font(.system(size: 11))
+            .foregroundStyle(cor == .orange ? Color.orange : Color.primary)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 6).fill(cor.opacity(0.12)))
     }
 }
 
@@ -1440,8 +1681,6 @@ private struct JanelasSettingsView: View {
                 }
             }
 
-            SecaoDoAlternador()
-
             if store.janelasControl {
                 ForEach(LayoutDeJanela.grupos.indices, id: \.self) { g in
                     Section(g == 0 ? "Atalhos" : "") {
@@ -1657,6 +1896,12 @@ private struct SecaoDeAppsIgnorados: View {
                 store.mouseIgnorados.append(id)
             }
         }
+    }
+}
+
+private struct AlternadorSettingsView: View {
+    var body: some View {
+        Form { SecaoDoAlternador() }.formStyle(.grouped)
     }
 }
 
@@ -2252,5 +2497,36 @@ private struct SobreView: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+// MARK: - Autoteste visual
+
+/// Desenha a janela de ajustes e a aba de permissões fora da tela, em PNG —
+/// confere o visual sem abrir nada na tela de ninguém.
+enum AjustesAutoteste {
+    static func rodar(pasta: String) -> String {
+        func desenhar<V: View>(_ v: V, _ nome: String, _ tamanho: NSSize) -> String {
+            // fundo da janela atrás: a página de Recursos não tem fundo próprio
+            let hv = NSHostingView(rootView: v.environmentObject(DockaStore.shared)
+                .background(Color(nsColor: .windowBackgroundColor)))
+            let janela = NSWindow(contentRect: NSRect(x: -6000, y: -6000, width: tamanho.width, height: tamanho.height),
+                                  styleMask: [.titled], backing: .buffered, defer: false)
+            janela.contentView = hv
+            for _ in 0..<8 {
+                hv.layoutSubtreeIfNeeded()
+                RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+            }
+            guard let rep = hv.bitmapImageRepForCachingDisplay(in: hv.bounds) else { return "FALHOU — \(nome)" }
+            hv.cacheDisplay(in: hv.bounds, to: rep)
+            try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "\(pasta)/\(nome).png"))
+            janela.contentView = nil
+            return "OK — \(nome).png"
+        }
+        return [
+            desenhar(SettingsWindowView(), "ajustes-janela", NSSize(width: 820, height: 760)),
+            desenhar(RecursosView(aba: .permissoes).frame(width: 600, height: 760), "ajustes-permissoes", NSSize(width: 600, height: 760)),
+            desenhar(RecursosView(aba: .recursos).frame(width: 600, height: 760), "ajustes-recursos", NSSize(width: 600, height: 760)),
+        ].joined(separator: "\n")
     }
 }

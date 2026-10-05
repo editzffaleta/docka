@@ -36,7 +36,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 620),
                          styleMask: [.titled, .closable, .miniaturizable, .resizable],
                          backing: .buffered, defer: false)
-        w.title = "Docka"
+        w.title = "Ajustes do Docka"
         w.minSize = NSSize(width: 720, height: 540)
         w.contentView = NSHostingView(rootView: root)
         w.delegate = self
@@ -198,6 +198,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if CommandLine.arguments.contains("--painel-selftest") {
             let pasta = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"] ?? "/tmp"
             print("painel:\n\(PainelDaBarra.autoteste(pasta: pasta))")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
+        if CommandLine.arguments.contains("--ajustes-selftest") {
+            let pasta = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"] ?? "/tmp"
+            print("ajustes:\n\(AjustesAutoteste.rodar(pasta: pasta))")
             fflush(stdout)
             NSApp.terminate(nil)
             return

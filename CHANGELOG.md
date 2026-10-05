@@ -15,6 +15,16 @@ todo o resto por aqui.
   e rede ao vivo (medindo só com a aba aberta); Controles liga e desliga
   cada recurso, agrupado por área, com quantos estão ligados; Utilidades
   executa as ações com o atalho gravado ao lado.
+- **Ajustes reorganizados**: a barra lateral ganha grupos com título
+  (Essenciais, Controles de janela, Arquivos, Bordas, Utilidades), ícones
+  de linha na cor de destaque, título fixo na janela, o Alternador numa
+  seção própria e uma
+  seção nova, **Recursos**, com duas abas: **Recursos** (um interruptor por
+  recurso, com a permissão que cada um pede) e **Permissões** (cada
+  permissão com o estado, para que serve, quais recursos ligados a usam e
+  um atalho para os Ajustes do Sistema — e um aviso quando ela foi
+  concedida mas nada ligado precisa dela, ou quando algo ligado precisa e
+  ela falta).
 
 ## [1.3.0] — 2026-10-04
 
