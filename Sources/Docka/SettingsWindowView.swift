@@ -1854,6 +1854,34 @@ private struct CapturaSettingsView: View {
                     }
                     linha(.capturaArea, "Atalho")
                 }
+                Section {
+                    Toggle(isOn: $store.gravacaoSomDoSistema) {
+                        Text("Gravar o som do Mac")
+                        Text("O que os apps tocam, numa faixa própria; o som do Docka fica de fora.")
+                    }
+                    Toggle(isOn: $store.gravacaoMicrofone) {
+                        Text("Gravar o microfone")
+                        Text("Numa faixa separada do som do Mac. O macOS pede o acesso ao microfone na primeira vez.")
+                    }
+                    Toggle("Mostrar os cliques", isOn: $store.gravacaoCliques)
+                    Picker("Quadros por segundo", selection: $store.gravacaoQuadros) {
+                        Text("30").tag(30)
+                        Text("60").tag(60)
+                    }
+                    Picker("Ao terminar", selection: $store.gravacaoDepois) {
+                        Text("Mostrar no Finder").tag("finder")
+                        Text("Abrir o vídeo").tag("abrir")
+                        Text("Só avisar").tag("nada")
+                    }
+                    linha(.gravarTela, "Atalho (de novo para parar)")
+                    LabeledContent("Testar") {
+                        Button("Gravar agora…") { GravacaoController.shared.escolherArea() }
+                    }
+                } header: {
+                    Text("Gravação de tela")
+                } footer: {
+                    Text("Arraste para gravar uma área ou clique para gravar a tela inteira; um controle pequeno no topo mostra o tempo e para. O vídeo (.mov, HEVC) vai para a pasta das capturas do macOS. As janelas do Docka não aparecem na gravação. Pede o macOS 15 ou mais novo.")
+                }
             }
         }
         .formStyle(.grouped)
@@ -3086,6 +3114,17 @@ private struct AtalhoView: View {
             }
 
             Section {
+                if store.capturaControl {
+                    linha(.gravarTela, titulo: "Gravar a tela",
+                          detalhe: "Escolhe a área e grava; de novo, para")
+                }
+                linha(.midia, titulo: "Ferramentas de mídia",
+                      detalhe: "Comprimir e converter vídeo e imagem, GIF, texto")
+            } header: {
+                Text("Mídia")
+            }
+
+            Section {
                 ForEach(AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)) { a in
                     linha(.rapida(a), titulo: a.titulo, detalhe: a.descricao)
                 }
@@ -3185,6 +3224,13 @@ enum AjustesAutoteste {
             InstaladorPanel.desenhar(pasta: pasta),
             desenhar(PaineisSettingsView().frame(width: 600, height: 1500), "ajustes-paineis", NSSize(width: 600, height: 1500)),
             desenhar(SomSettingsView().frame(width: 600, height: 760), "ajustes-som", NSSize(width: 600, height: 760)),
+            desenhar(CapturaSettingsView().frame(width: 600, height: 1100), "ajustes-captura", NSSize(width: 600, height: 1100)),
+            {
+                let m = MidiaModelo()
+                m.itens = [.init(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Sonoma.heic")),
+                           .init(url: URL(fileURLWithPath: "/tmp/viagem.mov"))]
+                return desenhar(MidiaView().environmentObject(m).frame(width: 560, height: 640), "midia", NSSize(width: 560, height: 640))
+            }(),
             BarraDeComandoController.desenhar(pasta: pasta, busca: "15% de 80", arquivo: "barra-conta.png"),
             BarraDeComandoController.desenhar(pasta: pasta, busca: "10 km em mi", arquivo: "barra-conversao.png"),
             BarraDeComandoController.desenhar(pasta: pasta, busca: "term", arquivo: "barra-busca.png"),

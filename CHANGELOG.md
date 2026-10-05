@@ -47,6 +47,14 @@ todo o resto por aqui.
   - **Modo de limpeza**: o teclado para de responder por um tempo, com as
     telas pretas ou um aviso pequeno; termina sozinho ou segurando o botão.
     Pede Acessibilidade.
+- **Gravação de tela** (na página Captura): uma área ou a tela inteira,
+  com o som do Mac e o microfone em faixas separadas, os cliques à mostra e
+  um controle pequeno com o tempo e o parar. As janelas do Docka não
+  aparecem no vídeo. Pede o macOS 15.
+- **Ferramentas de mídia**: solte vídeos e imagens numa janela para
+  comprimir (nunca entrega um arquivo maior), fazer GIF ou tirar o áudio do
+  vídeo; converter, redimensionar e pôr marca d'água em imagens em lote, ou
+  tirar o texto delas. Tudo no Mac, e o original nunca é sobrescrito.
 - **Som** (página nova):
   - **Saída de cada app**: a música nos alto-falantes e a chamada no fone.
     Também no mixer da ilha, num menu em cada app. Pede a permissão de

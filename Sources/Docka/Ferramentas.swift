@@ -14,7 +14,8 @@ enum Ferramentas {
         var lista: [AcaoDeAtalho] = [.barraDeComando, .painelRapido, .limpeza]
         if s.historicoControl { lista.append(.historico) }
         lista += [.snippets, .textoPuro]
-        if s.capturaControl { lista += [.capturaArea, .contaGotas, .textoDaTela] }
+        if s.capturaControl { lista += [.capturaArea, .gravarTela, .contaGotas, .textoDaTela] }
+        lista.append(.midia)
         if s.notasControl { lista.append(.blocoDeNotas) }
         if s.prateleiraControl { lista.append(.prateleira) }
         if s.monitorControl { lista.append(.monitor) }
@@ -62,6 +63,8 @@ enum Ferramentas {
         case .bandeja:        return "dock.rectangle"
         case .proximaSaida:   return "hifispeaker.and.homepod"
         case .mudoMicrofones: return "mic.slash"
+        case .gravarTela:     return "record.circle"
+        case .midia:          return "photo.on.rectangle.angled"
         }
     }
 
@@ -70,6 +73,7 @@ enum Ferramentas {
         switch a {
         case .acordado:      return AcordadoSessao.shared.ativo
         case .mudoMicrofones: return SomController.shared.microfonesMudos
+        case .gravarTela:     return GravacaoController.shared.gravando
         case .rapida(let r): return AcoesRapidasBackend.ligada(r)
         default:             return nil
         }

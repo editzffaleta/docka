@@ -67,6 +67,7 @@ cat > "$APP/Contents/Info.plist" << PLIST
     <key>NSBluetoothAlwaysUsageDescription</key><string>O Docka desliga o Bluetooth quando o Mac dorme e religa ao acordar, se você ligar essa opção.</string>
     <key>NSCameraUsageDescription</key><string>O espelho da Ilha Dinâmica mostra a sua câmera ao vivo para conferir antes de uma chamada. Nada é gravado.</string>
     <key>NSAppleEventsUsageDescription</key><string>Para esvaziar o Lixo, o Docka pede ao Finder — só quando você escolhe Esvaziar o Lixo e confirma.</string>
+    <key>NSMicrophoneUsageDescription</key><string>A gravação de tela grava o microfone numa faixa própria, só se você ligar essa opção. Nada sai do Mac.</string>
     <key>NSAudioCaptureUsageDescription</key><string>O mixer da Ilha Dinâmica ajusta o volume de cada app passando o som dele pelo Docka. Nada é gravado.</string>
 </dict>
 </plist>

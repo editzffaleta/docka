@@ -58,6 +58,10 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case proximaSaida
     /// Silencia todos os microfones; de novo, religa.
     case mudoMicrofones
+    /// Escolhe a área e grava a tela; de novo, para.
+    case gravarTela
+    /// Abre as ferramentas de mídia.
+    case midia
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -88,6 +92,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .limpeza:           return "limpeza"
         case .proximaSaida:      return "proximaSaida"
         case .mudoMicrofones:    return "mudoMicrofones"
+        case .gravarTela:        return "gravarTela"
+        case .midia:             return "midia"
         }
     }
 
@@ -114,6 +120,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "limpeza": self = .limpeza
         case "proximaSaida": self = .proximaSaida
         case "mudoMicrofones": self = .mudoMicrofones
+        case "gravarTela": self = .gravarTela
+        case "midia": self = .midia
         default:
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {

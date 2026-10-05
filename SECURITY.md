@@ -111,6 +111,10 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   `hdiutil info` para saber de que imagem veio o volume, copia o app para
   /Applications só depois do seu clique, e o que é substituído ou apagado vai
   para o Lixo — nada é apagado de vez
+- ℹ️ Mídia: a gravação de tela usa o ScreenCaptureKit só entre o início e o
+  parar que você escolhe, grava num arquivo local e deixa as janelas do Docka fora
+  da imagem; as ferramentas de mídia convertem com AVFoundation, ImageIO e Vision
+  no próprio Mac, gravam ao lado do original e nunca o sobrescrevem
 - ℹ️ Som: a saída de cada app usa o mesmo toque de processo do mixer (o som passa
   pelo Docka até a saída escolhida, só enquanto o app toca, e nada é gravado); o
   microfone preferido, o nível, o mudo e a troca de saída são propriedades de

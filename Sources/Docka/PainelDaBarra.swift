@@ -553,6 +553,16 @@ private struct AbaUtilidades: View {
                         descricao: "As suas ferramentas favoritas numa paleta", atalho: .painelRapido) {
                 PainelRapidoController.shared.abrir()
             }
+            if store.capturaControl {
+                LinhaDeAcao(simbolo: "record.circle", titulo: "Gravar a tela",
+                            descricao: "Uma área ou a tela inteira, com som", atalho: .gravarTela) {
+                    GravacaoController.shared.escolherArea()
+                }
+            }
+            LinhaDeAcao(simbolo: "photo.on.rectangle.angled", titulo: "Ferramentas de mídia",
+                        descricao: "Comprimir, converter, GIF e texto", atalho: .midia) {
+                MidiaController.shared.abrir()
+            }
             LinhaDeAcao(simbolo: "keyboard.badge.ellipsis", titulo: "Modo de limpeza",
                         descricao: "Trava o teclado para passar um pano", atalho: .limpeza) {
                 ModoDeLimpezaController.shared.comecar()

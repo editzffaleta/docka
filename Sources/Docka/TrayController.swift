@@ -408,6 +408,8 @@ final class TrayManager {
         case .limpeza:         ModoDeLimpezaController.shared.alternar()
         case .proximaSaida:    SomController.shared.proximaSaida()
         case .mudoMicrofones:  SomController.shared.alternarMudo()
+        case .gravarTela:      if store.capturaControl || GravacaoController.shared.gravando { GravacaoController.shared.alternar() }
+        case .midia:           MidiaController.shared.abrir()
         }
     }
 

@@ -236,6 +236,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--midia-selftest") {
+            let pasta = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"] ?? "/tmp"
+            Task { @MainActor in
+                print("midia:\n\(await ProcessadorDeMidia.autoteste(pasta: pasta))")
+                fflush(stdout)
+                NSApp.terminate(nil)
+            }
+            return
+        }
+
         if CommandLine.arguments.contains("--som-selftest") {
             print("som:\n\(SomController.autoteste())")
             fflush(stdout)

@@ -205,6 +205,11 @@ final class DockaStore: ObservableObject {
         static let dmgParaOLixo = "docka.dmgTrashAfter"
         static let barraArquivos = "docka.commandBarFiles"
         static let saidaPorApp = "docka.outputPerApp"
+        static let gravacaoSomDoSistema = "docka.recordSystemAudio"
+        static let gravacaoMicrofone = "docka.recordMicrophone"
+        static let gravacaoCliques = "docka.recordClicks"
+        static let gravacaoQuadros = "docka.recordFPS"
+        static let gravacaoDepois = "docka.recordAfter"
         static let entradaPreferida = "docka.preferredInput"
         static let baixarAoTirarFone = "docka.lowerOnHeadphonesOut"
         static let volumeSemFone = "docka.volumeWithoutHeadphones"
@@ -597,6 +602,13 @@ final class DockaStore: ObservableObject {
     @Published var instaladorDeDmg: Bool { didSet { defaults.set(instaladorDeDmg, forKey: Key.instaladorDeDmg) } }
     @Published var dmgParaOLixo: Bool { didSet { defaults.set(dmgParaOLixo, forKey: Key.dmgParaOLixo) } }
 
+    /// Gravação de tela: o que entra no vídeo e o que fazer no fim.
+    @Published var gravacaoSomDoSistema: Bool { didSet { defaults.set(gravacaoSomDoSistema, forKey: Key.gravacaoSomDoSistema) } }
+    @Published var gravacaoMicrofone: Bool { didSet { defaults.set(gravacaoMicrofone, forKey: Key.gravacaoMicrofone) } }
+    @Published var gravacaoCliques: Bool { didSet { defaults.set(gravacaoCliques, forKey: Key.gravacaoCliques) } }
+    @Published var gravacaoQuadros: Int { didSet { defaults.set(gravacaoQuadros, forKey: Key.gravacaoQuadros) } }
+    @Published var gravacaoDepois: String { didSet { defaults.set(gravacaoDepois, forKey: Key.gravacaoDepois) } }
+
     /// A saída de som de cada app (bundle → UID do dispositivo).
     @Published var saidaPorApp: [String: String] {
         didSet { defaults.set(saidaPorApp, forKey: Key.saidaPorApp); MixerModelo.shared.sincronizarRegras() }
@@ -954,6 +966,8 @@ final class DockaStore: ObservableObject {
         case .limpeza: return "Modo de limpeza"
         case .proximaSaida: return "Próxima saída de som"
         case .mudoMicrofones: return "Silenciar os microfones"
+        case .gravarTela: return "Gravar a tela"
+        case .midia: return "Ferramentas de mídia"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -1131,6 +1145,11 @@ final class DockaStore: ObservableObject {
             Key.dmgParaOLixo: false,
             Key.barraArquivos: true,
             Key.baixarAoTirarFone: false,
+            Key.gravacaoSomDoSistema: true,
+            Key.gravacaoMicrofone: false,
+            Key.gravacaoCliques: true,
+            Key.gravacaoQuadros: 30,
+            Key.gravacaoDepois: "finder",
             Key.volumeSemFone: 0.25,
             Key.barraMenus: true,
             Key.limpezaDuracao: 60.0,
@@ -1291,6 +1310,11 @@ final class DockaStore: ObservableObject {
         dmgParaOLixo = defaults.bool(forKey: Key.dmgParaOLixo)
         barraArquivos = defaults.bool(forKey: Key.barraArquivos)
         saidaPorApp = defaults.dictionary(forKey: Key.saidaPorApp) as? [String: String] ?? [:]
+        gravacaoSomDoSistema = defaults.bool(forKey: Key.gravacaoSomDoSistema)
+        gravacaoMicrofone = defaults.bool(forKey: Key.gravacaoMicrofone)
+        gravacaoCliques = defaults.bool(forKey: Key.gravacaoCliques)
+        gravacaoQuadros = defaults.integer(forKey: Key.gravacaoQuadros)
+        gravacaoDepois = defaults.string(forKey: Key.gravacaoDepois) ?? "finder"
         entradaPreferida = defaults.string(forKey: Key.entradaPreferida) ?? ""
         baixarAoTirarFone = defaults.bool(forKey: Key.baixarAoTirarFone)
         volumeSemFone = defaults.double(forKey: Key.volumeSemFone)
