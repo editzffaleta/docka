@@ -77,6 +77,7 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   | Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse (nunca o teclado) para inverter, deixar linear, suavizar e voltar/avançar |
   | Sair ao fechar | Acessibilidade | Contar as janelas dos apps escolhidos e pedir o encerramento quando chegam a zero |
   | Proteção do ⌘Q e ⌘W | Acessibilidade | Interceptar o teclado, agindo só sobre ⌘Q e ⌘W; as outras teclas passam sem serem guardadas |
+  | Ilha — equalizador ao vivo | Gravação de Tela | Medir o áudio que o Mac toca, em pedaços de 21 ms que são medidos e descartados — só com a opção ligada e a música tocando |
   | Ilha — capturas e downloads | Acesso à pasta | Listar nome, data e miniatura dos arquivos recentes da pasta de capturas e de Downloads, só com a seção aberta; o progresso dos downloads vem do que os navegadores anunciam, sem ler os arquivos |
   | Prévia do Dock | Acessibilidade | Perguntar qual ícone do Dock está sob o cursor (só perto da borda da tela) e listar, trazer ou fechar as janelas do app |
   | Prévia do Dock — miniaturas | Gravação de Tela | Capturar as janelas do app só enquanto a prévia está aberta; ficam na memória e somem ao fechar |
@@ -85,7 +86,9 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   | Encaixar janelas | Acessibilidade | Ler e mudar posição e tamanho da janela da frente quando você usa um atalho ou o menu Janelas |
 
 - ❌ Não captura teclado (os atalhos usam `RegisterEventHotKey`, que entrega apenas aquele atalho) — **exceto** com o módulo "Expandir gatilhos" ligado, que escuta as teclas como descrito na tabela acima
-- ⚠️ Acessa a rede em UM caso só: ao adicionar um site à órbita, busca o ícone
+- ⚠️ Acessa a rede em DOIS casos, ambos por ação sua. Primeiro, a letra sincronizada da
+  ilha (opcional, desligada por padrão): manda título, artista, álbum e duração
+  da música ao lrclib.net, uma base aberta. Segundo: ao adicionar um site à órbita, busca o ícone
   (apple-touch-icon/favicon) **no próprio site digitado** — nunca em resolvedor de
   terceiros, que receberia sua lista de sites. Sessão efêmera (sem cookies),
   resposta limitada a 1 MB, resultado em cache local; sem rede, o anel usa um
@@ -93,6 +96,11 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   ou atualização automática
 - ❌ Não lê conteúdo de arquivos do usuário (arrastar-e-soltar apenas repassa URLs ao app de destino via `NSWorkspace`)
 - ❌ Não roda com privilégios elevados nem instala helpers/daemons
+- ⚠️ A música da ilha roda o `/usr/bin/perl` do sistema, que carrega a
+  `libDockaTocando.dylib` (código do próprio Docka, em `Sources/DockaTocando`) para
+  ler o "tocando agora" — desde o macOS 15.4 esse serviço só responde a processos da
+  Apple, e o perl do sistema é um. O processo só lê o que toca e envia tocar, pausar,
+  anterior, próxima e posição; sai sozinho quando o Docka fecha a entrada dele
 
 ### Áreas de interesse para pesquisadores
 - Manuseio de URLs no arrastar-e-soltar (`.dropDestination`) — injeção de caminhos maliciosos
@@ -100,6 +108,7 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
 - O painel `NSPanel` em `level: .mainMenu` — sobreposição/spoofing de interface de outros apps
 - O histórico da área de transferência — vazamento de conteúdo sigiloso que não use as marcas de nspasteboard.org
 - O ⌘V sintético do "Colar sozinho" — colar no app errado se o foco mudar no intervalo de ~0,1 s
+- O perl da música da ilha — o caminho da biblioteca vem do próprio pacote do app; trocar a dylib nos Recursos executaria código com a identidade do perl
 
 ## Verificação de integridade das releases
 

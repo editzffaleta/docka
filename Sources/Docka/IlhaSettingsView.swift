@@ -45,6 +45,21 @@ struct IlhaSettingsView: View {
                     Text("A ordem aqui é a da grade. As marcadas \"em breve\" chegam nas próximas versões.")
                 }
 
+                Section {
+                    Toggle(isOn: $store.ilhaLetra) {
+                        Text("Letra sincronizada")
+                        Text("Mostra o verso que está tocando. A letra vem do lrclib.net, uma base aberta: vão o título, o artista, o álbum e a duração da música.")
+                    }
+                    Toggle(isOn: $store.ilhaEqualizadorAoVivo) {
+                        Text("Equalizador ao vivo")
+                        Text("As barras medem o som de verdade. Pede Gravação de Tela, e o macOS mostra o aviso de gravação na barra de menus enquanto a música toca. Desligado, as barras só animam.")
+                    }
+                } header: {
+                    Text("Música")
+                } footer: {
+                    Text("A ilha mostra o que toca em qualquer app ou aba do navegador que anuncie a música ao sistema. Para isso usa um caminho interno do macOS: se uma atualização fechá-lo, a seção avisa.")
+                }
+
                 Section("Botões dos lados") {
                     lado("Esquerda", $store.ilhaBotoesEsquerda)
                     lado("Direita", $store.ilhaBotoesDireita)

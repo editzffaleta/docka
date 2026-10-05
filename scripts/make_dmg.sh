@@ -29,6 +29,8 @@ rm -rf dist
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp .build/release/Docka "$APP/Contents/MacOS/"
 cp -R .build/release/Docka_Docka.bundle "$APP/Contents/Resources/"
+# o "tocando agora" da ilha: carregada pelo perl do sistema (ver DockaTocando.h)
+cp .build/release/libDockaTocando.dylib "$APP/Contents/Resources/"
 
 echo "▸ gerando AppIcon.icns a partir da logo…"
 ICONSET="dist/AppIcon.iconset"
@@ -66,10 +68,14 @@ PLIST
 
 if [[ -n "$SIGN_ID" ]]; then
     echo "▸ assinando com Developer ID…"
+    # a biblioteca mora nos Recursos, onde o --deep não entra: a notarização
+    # exige que todo binário venha assinado
+    codesign --force --options runtime --timestamp -s "$SIGN_ID" "$APP/Contents/Resources/libDockaTocando.dylib"
     codesign --force --deep --options runtime --timestamp \
         -s "$SIGN_ID" "$APP"
 else
     echo "▸ assinando (ad-hoc — usuários precisarão de clique-direito → Abrir)…"
+    codesign --force -s - "$APP/Contents/Resources/libDockaTocando.dylib"
     codesign --force --deep -s - "$APP" 2>/dev/null
 fi
 

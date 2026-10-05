@@ -196,6 +196,8 @@ final class DockaStore: ObservableObject {
         static let ilhaOcultas = "docka.islandHidden"
         static let ilhaBotoesEsquerda = "docka.islandLeftButtons"
         static let ilhaBotoesDireita = "docka.islandRightButtons"
+        static let ilhaLetra = "docka.islandLyrics"
+        static let ilhaEqualizadorAoVivo = "docka.islandLiveEqualizer"
         static let previaDoDock = "docka.dockPreview"
         static let previaDoDockMiniaturas = "docka.dockPreviewThumbnails"
         static let previaDoDockAtraso = "docka.dockPreviewDelay"
@@ -526,6 +528,15 @@ final class DockaStore: ObservableObject {
     @Published var ilhaAbrirAoPairar: Double { didSet { defaults.set(ilhaAbrirAoPairar, forKey: Key.ilhaAbrirAoPairar) } }
     @Published var ilhaCombinar: Bool { didSet { defaults.set(ilhaCombinar, forKey: Key.ilhaCombinar) } }
     @Published var ilhaSomDoTimer: Bool { didSet { defaults.set(ilhaSomDoTimer, forKey: Key.ilhaSomDoTimer) } }
+    /// Letra sincronizada da música, buscada no lrclib.net.
+    @Published var ilhaLetra: Bool { didSet { defaults.set(ilhaLetra, forKey: Key.ilhaLetra) } }
+    /// Equalizador medindo o áudio de verdade — pede Gravação de Tela.
+    @Published var ilhaEqualizadorAoVivo: Bool {
+        didSet {
+            defaults.set(ilhaEqualizadorAoVivo, forKey: Key.ilhaEqualizadorAoVivo)
+            if ilhaEqualizadorAoVivo && !CapturaController.permitido { CapturaController.pedirPermissao() }
+        }
+    }
     /// A ordem das seções na grade (as que faltarem vão para o fim).
     @Published var ilhaOrdem: [String] { didSet { defaults.set(ilhaOrdem, forKey: Key.ilhaOrdem) } }
     @Published var ilhaOcultas: [String] { didSet { defaults.set(ilhaOcultas, forKey: Key.ilhaOcultas) } }
@@ -977,6 +988,8 @@ final class DockaStore: ObservableObject {
             Key.ilhaAbrirAoPairar: 0.5,
             Key.ilhaCombinar: true,
             Key.ilhaSomDoTimer: true,
+            Key.ilhaLetra: false,
+            Key.ilhaEqualizadorAoVivo: false,
             Key.previaDoDock: false,
             Key.previaDoDockMiniaturas: true,
             Key.previaDoDockAtraso: 0.5,
@@ -1106,6 +1119,8 @@ final class DockaStore: ObservableObject {
         ilhaCombinar = defaults.bool(forKey: Key.ilhaCombinar)
         ilhaSomDoTimer = defaults.bool(forKey: Key.ilhaSomDoTimer)
         ilhaOrdem = defaults.stringArray(forKey: Key.ilhaOrdem) ?? []
+        ilhaLetra = defaults.bool(forKey: Key.ilhaLetra)
+        ilhaEqualizadorAoVivo = defaults.bool(forKey: Key.ilhaEqualizadorAoVivo)
         ilhaOcultas = defaults.stringArray(forKey: Key.ilhaOcultas) ?? []
         ilhaBotoesEsquerda = defaults.stringArray(forKey: Key.ilhaBotoesEsquerda)
             ?? Ilha.BotaoLateral.esquerdaPadrao.map(\.rawValue)

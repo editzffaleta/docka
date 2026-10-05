@@ -30,6 +30,13 @@ todo o resto por aqui.
     pasta escolhida no Capturar Tela.
   - **Downloads**: os arquivos recentes e os downloads em andamento, com o
     progresso nas asas da ilha fechada.
+- **Música na ilha**: o que toca em qualquer app ou aba do navegador que
+  anuncie a música ao sistema (Spotify, Música, YouTube, SoundCloud…), com
+  capa, artista, barra de progresso que dá para clicar, e tocar, pausar,
+  anterior e próxima. Fechada, a ilha mostra a capa numa asa e um
+  equalizador na outra. Opcionais: **letra sincronizada** (do lrclib.net)
+  e **equalizador ao vivo**, que mede o som de verdade (pede Gravação de
+  Tela).
 
 ## [1.4.0] — 2026-10-05
 

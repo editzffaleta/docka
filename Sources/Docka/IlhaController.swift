@@ -37,6 +37,7 @@ final class IlhaController {
         case .rascunho:    return 200
         case .capturas:    return 144
         case .downloads:   return 168
+        case .musica:      return DockaStore.shared.ilhaLetra ? 150 : 116
         default:           return 124
         }
     }
@@ -69,6 +70,7 @@ final class IlhaController {
                                         saiu: { [weak self] in self?.estado.alvo = false })
         p.aoEsc = { [weak self] in guard let self else { return }; self.aplicar(self.vigia.fechar()) }
         ArquivosDaIlhaModelo.shared.observarDownloads(!store.ilhaOcultas.contains(Ilha.Secao.downloads.rawValue))
+        MusicaModelo.shared.ligar(!store.ilhaOcultas.contains(Ilha.Secao.musica.rawValue))
         p.setFrame(estado.quadroDoPainel, display: true)
         p.orderFrontRegardless()
 
@@ -87,6 +89,7 @@ final class IlhaController {
     private func desligar() {
         relogio?.invalidate(); relogio = nil
         ArquivosDaIlhaModelo.shared.observarDownloads(false)
+        MusicaModelo.shared.ligar(false)
         if panel?.isKeyWindow == true { panel?.resignKey() }
         if let m = monitorDeClique { NSEvent.removeMonitor(m) }
         monitorDeClique = nil
@@ -238,6 +241,7 @@ final class IlhaController {
         var lista: [Ilha.Atividade] = []
         if let a = estado.timer.atividade(em: agora) { lista.append(a) }
         if let a = ArquivosDaIlhaModelo.shared.atividade { lista.append(a) }
+        if let a = MusicaModelo.shared.atividade { lista.append(a) }
         let visiveis = Ilha.visiveis(lista, combinar: store.ilhaCombinar, escolhida: estado.escolhida)
         if visiveis != estado.atividades { estado.atividades = visiveis }
     }
@@ -285,6 +289,7 @@ final class IlhaController {
             switch estado.atividades.first?.tipo {
             case .timer, .pomodoro, .cronometro: estado.secao = .timer
             case .download: estado.secao = .downloads
+            case .musica: estado.secao = .musica
             default: estado.secao = nil
             }
             estado.volumeAberto = false
@@ -517,6 +522,7 @@ struct VistaDaIlha: View {
         case .rascunho:  RascunhoDaIlha()
         case .capturas:  CapturasDaIlha(agora: Date())
         case .downloads: DownloadsDaIlha(agora: Date())
+        case .musica:    TocandoAgoraView()
         default:         Text("Em breve").foregroundStyle(.secondary)
         }
     }
@@ -576,7 +582,16 @@ private struct AsasDaIlha: View {
     /// cada uma numa asa, com ícone e valor.
     @ViewBuilder
     private func asa(esquerda: Bool) -> some View {
-        if atividades.count >= 2 {
+        if atividades.count >= 2, atividades[esquerda ? 0 : 1].tipo == .musica {
+            HStack(spacing: 6) {
+                AsaDaMusica(esquerda: true, compacta: true)
+                AsaDaMusica(esquerda: false, compacta: true)
+            }
+        } else if let a = atividades.first, atividades.count == 1, a.tipo == .musica {
+            AsaDaMusica(esquerda: esquerda)
+                .frame(maxWidth: .infinity, alignment: esquerda ? .leading : .trailing)
+                .padding(esquerda ? .leading : .trailing, 12)
+        } else if atividades.count >= 2 {
             let a = atividades[esquerda ? 0 : 1]
             HStack(spacing: 4) {
                 Image(systemName: a.simbolo).foregroundStyle(cor(a))
