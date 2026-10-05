@@ -209,10 +209,12 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
   <img src="assets/gerenciador.png" width="780" alt="Gerenciador do Docka — a seção da Órbita, com o editor visual do anel" />
 </p>
 
-No formato dos **Ajustes do Sistema**: barra lateral com busca e navegação com
-histórico, e uma seção por assunto — **Geral**, **Apps**, **Aparência** (Tom e
-material do painel com prévia simulada), **Bandeja**, **Órbita** (com o editor
-visual do anel), **Prateleira**, **Bloco de notas**, **Monitor do sistema**, **Área de transferência**, **Janelas**, **Mouse**, **Captura**, **Brilho**, **Volume**, **Energia**, **Ações rápidas**, **Atalhos** e **Sobre**.
+No formato dos **Ajustes do Sistema**: barra lateral com busca e
+grupos com título — **Essenciais**, **Controles de janela**, **Arquivos**,
+**Bordas** e **Utilidades** — e ícones de linha na cor de destaque. A seção **Recursos** reúne um interruptor
+por recurso e, na aba **Permissões**, mostra cada permissão do macOS com o
+estado, para que serve, quais recursos ligados a usam e um aviso quando ela foi
+concedida sem necessidade (ou falta para algo ligado).
 
 ## Arquitetura
 
