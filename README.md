@@ -207,6 +207,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 | **Ajustes do sistema** | Espaços em ordem fixa, impedir o Música de abrir sozinho, Bluetooth desligado no repouso (pede a permissão de Bluetooth) e aceleração do mouse — cada um desfeito ao desligar |
 | **Finder** | ⌘X e ⌘V movem arquivos (Acessibilidade); ao abrir um .dmg com um app, oferece instalar em Aplicativos e ejetar a imagem |
 | **Barra de comando** | Um campo só para apps, janelas, arquivos, o que você copiou, snippets, comandos de menu do app da frente (Acessibilidade) e as ferramentas do Docka — e para contas, conversão de unidades, emoji e scripts salvos |
+| **Manutenção** | Atualizações (feed do desenvolvedor, App Store e Homebrew, só quando você pede), limpeza de caches, registros e restos de apps, downloads dos mensageiros, desinstalador que leva os arquivos do app junto, Homebrew sem Terminal e portas abertas — tudo vai para o Lixo, nada é apagado de vez |
 | **Gravação de tela** | Uma área ou a tela inteira, com o som do Mac e o microfone em faixas separadas e um controle pequeno com o tempo e o parar; as janelas do Docka não aparecem no vídeo (Gravação de Tela, macOS 15) |
 | **Ferramentas de mídia** | Solte vídeos e imagens para comprimir, fazer GIF, tirar o áudio, converter e redimensionar em lote, pôr marca d'água ou tirar o texto — tudo no Mac, sem sobrescrever o original |
 | **Som** | A saída de cada app (música nos alto-falantes, chamada no fone), trocar de saída num atalho, baixar o volume quando o fone sai, microfone preferido, nível do microfone e silenciar todos os microfones num atalho |
@@ -365,6 +366,7 @@ sem ela continuam funcionando no modo sem permissão.
 | Prévia do Dock | Acessibilidade | Saber sobre qual ícone do Dock o cursor está e listar, trazer ou fechar as janelas do app | Nenhuma prévia aparece |
 | Prévia do Dock — miniaturas | Gravação de Tela | Capturar as janelas do app só enquanto a prévia está aberta; nada é gravado | Ícone do app e título no lugar da miniatura |
 | Arrastar segurando teclas | Acessibilidade | Interceptar cliques com as teclas escolhidas apertadas e mover a janela sob o cursor | Arrastar só pela barra de título, como sempre |
+| Manutenção — mensageiros | Acesso Total ao Disco (só para o WhatsApp) | Ler a pasta de mídia que o WhatsApp guarda dentro dos dados dele | A seção avisa que não consegue ler e mostra o resto |
 | Gravação de tela | Gravação de Tela (+ Microfone, se ligado) | Gravar a área escolhida até você parar; o vídeo vai para a pasta das capturas | A gravação não começa |
 | Saída de cada app | Gravação de áudio do sistema | Passar o som do app pelo Docka até a saída escolhida, só enquanto ele toca; nada é gravado | O app toca na saída padrão |
 | Barra de comando — menus | Acessibilidade | Ler os itens dos menus do app da frente só com a barra aberta, e clicar no escolhido | A barra busca todo o resto, sem os menus |
@@ -386,9 +388,12 @@ A maioria dos utilitários de borda de tela pede Acessibilidade ou Monitoramento
 
 ### E a rede?
 
-O Docka faz **uma** conexão de saída, e só quando você pede: ao adicionar um **site** à órbita, ele busca a logo daquele site (`apple-touch-icon` ou `favicon.ico`) **no próprio site** — nunca num resolvedor de terceiros, que receberia sua lista de sites de brinde. Sessão efêmera (sem cookies), resposta limitada a 1 MB, resultado em cache local. Sem rede, o anel usa um globo desenhado localmente e nada quebra.
+O Docka só se conecta quando você pede, e em dois casos:
 
-Fora isso: **nenhuma** conexão. Sem telemetria, sem verificação de atualização, sem analytics.
+- ao adicionar um **site** à órbita, ele busca a logo daquele site (`apple-touch-icon` ou `favicon.ico`) **no próprio site** — nunca num resolvedor de terceiros, que receberia sua lista de sites de brinde. Sessão efêmera (sem cookies), resposta limitada a 1 MB, resultado em cache local. Sem rede, o anel usa um globo desenhado localmente e nada quebra;
+- ao clicar em **Procurar** nas atualizações da Manutenção, ele lê o feed que cada app declara no próprio Info.plist (o do desenvolvedor) e, para os apps da App Store, pergunta à Apple a versão atual. Sessão efêmera, nada sobre você vai junto.
+
+Fora isso: **nenhuma** conexão. Sem telemetria, sem verificação de atualização do próprio Docka, sem analytics.
 
 ## Instalação
 

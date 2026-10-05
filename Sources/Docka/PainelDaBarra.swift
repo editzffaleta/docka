@@ -563,6 +563,10 @@ private struct AbaUtilidades: View {
                         descricao: "Comprimir, converter, GIF e texto", atalho: .midia) {
                 MidiaController.shared.abrir()
             }
+            LinhaDeAcao(simbolo: "wrench.and.screwdriver", titulo: "Manutenção",
+                        descricao: "Atualizações, limpeza, desinstalar, Homebrew, portas", atalho: .manutencao) {
+                ManutencaoController.shared.abrir()
+            }
             LinhaDeAcao(simbolo: "keyboard.badge.ellipsis", titulo: "Modo de limpeza",
                         descricao: "Trava o teclado para passar um pano", atalho: .limpeza) {
                 ModoDeLimpezaController.shared.comecar()

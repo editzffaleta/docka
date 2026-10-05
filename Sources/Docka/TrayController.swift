@@ -410,6 +410,7 @@ final class TrayManager {
         case .mudoMicrofones:  SomController.shared.alternarMudo()
         case .gravarTela:      if store.capturaControl || GravacaoController.shared.gravando { GravacaoController.shared.alternar() }
         case .midia:           MidiaController.shared.abrir()
+        case .manutencao:      ManutencaoController.shared.abrir()
         }
     }
 

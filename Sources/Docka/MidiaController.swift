@@ -323,7 +323,9 @@ final class MidiaController: NSObject, NSWindowDelegate {
                              styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
             w.title = "Ferramentas de mídia"
             w.isReleasedWhenClosed = false
-            w.contentView = NSHostingView(rootView: MidiaView().environmentObject(modelo))
+            let hv = NSHostingView(rootView: MidiaView().environmentObject(modelo))
+            hv.sizingOptions = []
+            w.contentView = hv
             w.center()
             w.delegate = self
             return w

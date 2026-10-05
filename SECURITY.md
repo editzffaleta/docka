@@ -111,6 +111,12 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   `hdiutil info` para saber de que imagem veio o volume, copia o app para
   /Applications só depois do seu clique, e o que é substituído ou apagado vai
   para o Lixo — nada é apagado de vez
+- ℹ️ Manutenção: nada roda sozinho. As atualizações só consultam a rede ao clicar em
+  Procurar (o feed declarado por cada app e a busca pública da App Store, em sessão
+  efêmera); limpeza, mensageiros e desinstalador movem para o Lixo, nunca apagam de
+  vez, e recusam apps do macOS; o Homebrew roda os comandos do próprio `brew`, com
+  as permissões do usuário; "Encerrar" nas portas manda o pedido normal de fechar
+  (SIGTERM) a um processo do próprio usuário, depois de confirmar
 - ℹ️ Mídia: a gravação de tela usa o ScreenCaptureKit só entre o início e o
   parar que você escolhe, grava num arquivo local e deixa as janelas do Docka fora
   da imagem; as ferramentas de mídia convertem com AVFoundation, ImageIO e Vision

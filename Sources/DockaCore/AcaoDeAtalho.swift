@@ -62,6 +62,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case gravarTela
     /// Abre as ferramentas de mídia.
     case midia
+    /// Abre a janela de manutenção.
+    case manutencao
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -94,6 +96,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .mudoMicrofones:    return "mudoMicrofones"
         case .gravarTela:        return "gravarTela"
         case .midia:             return "midia"
+        case .manutencao:        return "manutencao"
         }
     }
 
@@ -122,6 +125,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "mudoMicrofones": self = .mudoMicrofones
         case "gravarTela": self = .gravarTela
         case "midia": self = .midia
+        case "manutencao": self = .manutencao
         default:
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {

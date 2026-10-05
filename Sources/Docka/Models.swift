@@ -205,6 +205,7 @@ final class DockaStore: ObservableObject {
         static let dmgParaOLixo = "docka.dmgTrashAfter"
         static let barraArquivos = "docka.commandBarFiles"
         static let saidaPorApp = "docka.outputPerApp"
+        static let pastasDeMensageiros = "docka.messengerFolders"
         static let gravacaoSomDoSistema = "docka.recordSystemAudio"
         static let gravacaoMicrofone = "docka.recordMicrophone"
         static let gravacaoCliques = "docka.recordClicks"
@@ -609,6 +610,11 @@ final class DockaStore: ObservableObject {
     @Published var gravacaoQuadros: Int { didSet { defaults.set(gravacaoQuadros, forKey: Key.gravacaoQuadros) } }
     @Published var gravacaoDepois: String { didSet { defaults.set(gravacaoDepois, forKey: Key.gravacaoDepois) } }
 
+    /// Pastas de downloads que a manutenção trata como de mensageiro.
+    @Published var pastasDeMensageiros: [String] {
+        didSet { defaults.set(pastasDeMensageiros, forKey: Key.pastasDeMensageiros) }
+    }
+
     /// A saída de som de cada app (bundle → UID do dispositivo).
     @Published var saidaPorApp: [String: String] {
         didSet { defaults.set(saidaPorApp, forKey: Key.saidaPorApp); MixerModelo.shared.sincronizarRegras() }
@@ -968,6 +974,7 @@ final class DockaStore: ObservableObject {
         case .mudoMicrofones: return "Silenciar os microfones"
         case .gravarTela: return "Gravar a tela"
         case .midia: return "Ferramentas de mídia"
+        case .manutencao: return "Manutenção"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -1310,6 +1317,7 @@ final class DockaStore: ObservableObject {
         dmgParaOLixo = defaults.bool(forKey: Key.dmgParaOLixo)
         barraArquivos = defaults.bool(forKey: Key.barraArquivos)
         saidaPorApp = defaults.dictionary(forKey: Key.saidaPorApp) as? [String: String] ?? [:]
+        pastasDeMensageiros = defaults.stringArray(forKey: Key.pastasDeMensageiros) ?? []
         gravacaoSomDoSistema = defaults.bool(forKey: Key.gravacaoSomDoSistema)
         gravacaoMicrofone = defaults.bool(forKey: Key.gravacaoMicrofone)
         gravacaoCliques = defaults.bool(forKey: Key.gravacaoCliques)

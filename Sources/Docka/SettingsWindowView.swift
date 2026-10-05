@@ -3120,6 +3120,8 @@ private struct AtalhoView: View {
                 }
                 linha(.midia, titulo: "Ferramentas de mídia",
                       detalhe: "Comprimir e converter vídeo e imagem, GIF, texto")
+                linha(.manutencao, titulo: "Manutenção",
+                      detalhe: "Atualizações, limpeza, mensageiros, desinstalador, Homebrew, portas")
             } header: {
                 Text("Mídia")
             }

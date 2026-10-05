@@ -108,7 +108,7 @@ pesado. Cada um escrito do zero, opcional e desligado por padrão.
 | 4. Painéis | barra de comando (apps, janelas, arquivos, histórico, snippets, comandos de menu, contas, conversões, emojis); painel rápido; alternâncias rápidas; modo de limpeza | Acessibilidade (partes) | ✅ |
 | 5. Áudio | ferramentas do microfone; saída de som por app | áudio do sistema | ✅ |
 | 6. Mídia | gravação de tela; converter e comprimir vídeo e imagem | Gravação de Tela | ✅ |
-| 7. Manutenção | atualizações de apps; limpeza de caches; downloads dos mensageiros; desinstalador; Homebrew; portas abertas | — (partes: Acesso Total ao Disco) | ⏳ |
+| 7. Manutenção | atualizações de apps; limpeza de caches; downloads dos mensageiros; desinstalador; Homebrew; portas abertas | — (partes: Acesso Total ao Disco) | ✅ |
 
 Ficam de fora: controle de ventoinha (o MacBook Air não tem ventoinha, e
 exigiria um ajudante com privilégio de root) e brilho extra (só em telas
@@ -117,7 +117,8 @@ XDR).
 ## Fora do escopo
 
 Coisas do Vorssaint que não combinam com um app de borda leve e sem
-dependências: controle de ventoinha (helper com root), gerenciador do
-Homebrew, atualizador de apps, desinstalador, gravação de tela com editor de
-vídeo. (A Ilha Dinâmica e os agentes de IA saíram daqui: viraram a fase 6.) Podem ser reavaliadas
-depois.
+dependências: controle de ventoinha (helper com root), o editor de vídeo da
+gravação de tela (cortes, zoom automático, desfoque) e o link de
+compartilhamento, que exigiria um servidor. (A Ilha Dinâmica e os agentes de
+IA viraram a fase 6; o Homebrew, o atualizador, o desinstalador e a gravação
+de tela, a fase 7.) Podem ser reavaliadas depois.

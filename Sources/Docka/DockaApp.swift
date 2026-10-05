@@ -236,6 +236,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--manutencao-selftest") {
+            let pasta = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"] ?? "/tmp"
+            Task { @MainActor in
+                print("manutencao:\n\(await ManutencaoController.autoteste(pasta: pasta))")
+                fflush(stdout)
+                NSApp.terminate(nil)
+            }
+            return
+        }
+
         if CommandLine.arguments.contains("--midia-selftest") {
             let pasta = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"] ?? "/tmp"
             Task { @MainActor in

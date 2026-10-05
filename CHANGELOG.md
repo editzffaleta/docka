@@ -47,6 +47,20 @@ todo o resto por aqui.
   - **Modo de limpeza**: o teclado para de responder por um tempo, com as
     telas pretas ou um aviso pequeno; termina sozinho ou segurando o botão.
     Pede Acessibilidade.
+- **Manutenção** (janela nova, pela aba Utilidades, atalho ou barra de comando):
+  - **Atualizações**: confere os apps no feed do próprio desenvolvedor, na
+    App Store e no Homebrew — só quando você clica em Procurar.
+  - **Limpeza**: caches, registros e restos de apps já removidos, com o
+    tamanho de cada um; os do macOS, o de app aberto e os restos vêm
+    desmarcados.
+  - **Downloads dos mensageiros** (WhatsApp, Telegram e pastas suas): os mais
+    velhos que o prazo vão para o Lixo ou são juntados por mês.
+  - **Desinstalador**: o app e os arquivos dele na Biblioteca, revisados
+    antes; apps do macOS não são removidos.
+  - **Homebrew**: procurar, instalar e remover fórmulas e casks.
+  - **Portas abertas**: quem está esperando conexões, só no Mac ou na rede,
+    com o botão para encerrar.
+  - Tudo o que sai vai para o Lixo, nunca apagado de vez.
 - **Gravação de tela** (na página Captura): uma área ou a tela inteira,
   com o som do Mac e o microfone em faixas separadas, os cliques à mostra e
   um controle pequeno com o tempo e o parar. As janelas do Docka não
