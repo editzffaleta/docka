@@ -10,14 +10,14 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, recursos, sistema, ilha, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
+    case geral, recursos, sistema, ilha, teclado, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// A barra lateral em grupos com título — com mais de vinte seções, um
     /// vão entre blocos já não dizia onde procurar cada coisa.
     static let grupos: [(titulo: String, itens: [Secao])] = [
         ("Essenciais", [.geral, .recursos, .sistema, .ilha, .energia, .monitor]),
-        ("Controles de janela", [.mouse, .alternador, .janelas, .encerrar, .dock]),
+        ("Controles de janela", [.mouse, .teclado, .alternador, .janelas, .encerrar, .dock]),
         ("Arquivos", [.clipboard, .prateleira, .captura]),
         ("Bordas", [.bandeja, .apps, .aparencia, .orbita, .notas, .brilho, .volume]),
         ("Utilidades", [.acoes, .atalho]),
@@ -43,6 +43,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .clipboard: return "Área de transferência"
         case .janelas:   return "Encaixe de janelas"
         case .mouse:     return "Mouse"
+        case .teclado:   return "Teclado"
         case .captura:   return "Captura"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
@@ -74,6 +75,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .energia:    return "bolt"
         case .monitor:    return "chart.xyaxis.line"
         case .mouse:      return "computermouse"
+        case .teclado:    return "keyboard"
         case .alternador: return "rectangle.on.rectangle"
         case .encerrar:   return "xmark.square"
         case .dock:       return "menubar.dock.rectangle"
@@ -116,6 +118,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .clipboard: return .cyan
         case .janelas:   return .blue
         case .mouse:     return .gray
+        case .teclado:   return .gray
         case .captura:   return .purple
         case .brilho:    return .yellow
         case .volume:    return .pink
@@ -233,6 +236,7 @@ struct SettingsWindowView: View {
         case .clipboard: ClipboardSettingsView()
         case .janelas:   JanelasSettingsView()
         case .mouse:     MouseSettingsView()
+        case .teclado:   TecladoSettingsView()
         case .captura:   CapturaSettingsView()
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
@@ -297,6 +301,11 @@ extension DockaStore {
             RecursoComPermissao(nome: "Alternador com janelas e filtros", permissoes: [.acessibilidade],
                                 ligado: alternadorControl && (alternadorJanelas || alternadorSoTela || alternadorSemJanela)),
             RecursoComPermissao(nome: "Ajustes do mouse", permissoes: [.acessibilidade], ligado: mouseControl),
+            RecursoComPermissao(nome: "Foco segue o mouse", permissoes: [.acessibilidade], ligado: focoSegueMouse),
+            RecursoComPermissao(nome: "Filtro de clique duplo", permissoes: [.acessibilidade], ligado: filtroDeClique),
+            RecursoComPermissao(nome: "Clique do meio com três dedos", permissoes: [.acessibilidade], ligado: cliqueDoMeio),
+            RecursoComPermissao(nome: "Repique de teclas", permissoes: [.acessibilidade], ligado: repiqueDeTeclas),
+            RecursoComPermissao(nome: "Tecla super", permissoes: [.acessibilidade], ligado: teclaSuper),
             RecursoComPermissao(nome: "Sair ao fechar", permissoes: [.acessibilidade], ligado: sairAoFecharControl),
             RecursoComPermissao(nome: "Proteção do ⌘Q e ⌘W", permissoes: [.acessibilidade], ligado: protecaoQ || protecaoW),
             RecursoComPermissao(nome: "Botão verde maximiza", permissoes: [.acessibilidade], ligado: botaoVerdeMaximiza),
@@ -1916,7 +1925,88 @@ private struct MouseSettingsView: View {
                         Text("O \(BotaoDoMouse.nome(store.orbitaBotao).lowercased()) abre a Órbita e continua com ela.")
                     }
                 }
+                Section {
+                    ForEach(MouseETeclado.botoesConfiguraveis.prefix(4), id: \.self) { b in
+                        Picker(MouseETeclado.nomeDoBotao(b), selection: Binding(
+                            get: { store.mouseAcoesDosBotoes[String(b)] ?? MouseETeclado.AcaoDoBotao.nada.rawValue },
+                            set: { store.mouseAcoesDosBotoes[String(b)] = $0 })) {
+                            ForEach(MouseETeclado.AcaoDoBotao.allCases) { Text($0.titulo).tag($0.rawValue) }
+                        }
+                    }
+                } header: {
+                    Text("O que cada botão faz")
+                } footer: {
+                    Text("\"O de sempre\" deixa o botão como estava (inclusive voltar e avançar, se ligados acima). O botão que abre a Órbita continua com ela.")
+                }
                 SecaoDeAppsIgnorados()
+            }
+
+            Section {
+                Toggle(isOn: $store.focoSegueMouse) {
+                    Text("O foco segue o mouse")
+                    Text("Parar o cursor sobre a janela de outro app traz esse app para a frente — sem clicar. Arrastando algo ou segurando uma tecla, nada muda.")
+                }
+                if store.focoSegueMouse {
+                    Picker("Depois de parado por", selection: $store.focoAtraso) {
+                        Text("Na hora").tag(0.1)
+                        Text("0,3 segundo").tag(0.3)
+                        Text("Meio segundo").tag(0.5)
+                        Text("Um segundo").tag(1.0)
+                    }
+                }
+                Toggle(isOn: $store.filtroDeClique) {
+                    Text("Filtrar o clique duplo acidental")
+                    Text("Para mouses com o botão gasto, que dão dois cliques num só: um segundo clique que chega em poucos milissegundos, no mesmo lugar, é descartado. O clique duplo de propósito continua funcionando.")
+                }
+                if store.filtroDeClique {
+                    LabeledContent("Janela do repique") {
+                        Slider(value: $store.filtroDeCliqueMs, in: 30...120, step: 5).frame(width: 200)
+                        Text("\(Int(store.filtroDeCliqueMs)) ms").monospacedDigit().frame(width: 50)
+                    }
+                }
+                Toggle(isOn: $store.cliqueDoMeio) {
+                    Text("Clique com três dedos é o clique do meio")
+                    Text("No trackpad, clicar com três dedos encostados vira o clique do meio — abrir link em nova aba, fechar aba no navegador.")
+                }
+            } header: {
+                Text("Mais do mouse")
+            } footer: {
+                Text("Estes três pedem Acessibilidade e funcionam mesmo com o módulo do mouse desligado.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+/// Ajustes → Teclado: repique de teclas e a tecla super.
+private struct TecladoSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.repiqueDeTeclas) {
+                    Text("Ignorar o repique das teclas")
+                    Text("Para teclados que repetem a letra sem querer: a mesma tecla de novo em poucos milissegundos é descartada. Segurar a tecla para repetir continua funcionando.")
+                }
+                if store.repiqueDeTeclas {
+                    LabeledContent("Janela do repique") {
+                        Slider(value: $store.repiqueMs, in: 20...100, step: 5).frame(width: 200)
+                        Text("\(Int(store.repiqueMs)) ms").monospacedDigit().frame(width: 50)
+                    }
+                }
+            } header: {
+                Text("Repique")
+            }
+            Section {
+                Toggle(isOn: $store.teclaSuper) {
+                    Text("Caps Lock vira a tecla super (⌃⌥⇧⌘)")
+                    Text("Segurar o Caps Lock aperta ⌃⌥⇧⌘ de uma vez — quatro modificadores num dedo só, para atalhos que nenhum app usa. O Caps Lock deixa de travar as maiúsculas enquanto a opção estiver ligada, e volta ao normal ao desligar ou ao fechar o Docka.")
+                }
+            } header: {
+                Text("Tecla super")
+            } footer: {
+                Text("Pedem Acessibilidade. Os atalhos com ⌃⌥⇧⌘ podem ser gravados nos ajustes de Atalhos do Docka ou de qualquer app.")
             }
         }
         .formStyle(.grouped)
@@ -2750,6 +2840,8 @@ enum AjustesAutoteste {
             desenhar(DockSettingsView().frame(width: 600, height: 300), "ajustes-dock", NSSize(width: 600, height: 300)),
             desenhar(IlhaSettingsView().frame(width: 600, height: 900), "ajustes-ilha", NSSize(width: 600, height: 900)),
             desenhar(AjustesDoSistemaView().frame(width: 600, height: 720), "ajustes-sistema", NSSize(width: 600, height: 720)),
+            desenhar(TecladoSettingsView().frame(width: 600, height: 420), "ajustes-teclado", NSSize(width: 600, height: 420)),
+            desenhar(MouseSettingsView().frame(width: 600, height: 1300), "ajustes-mouse", NSSize(width: 600, height: 1300)),
             {
                 // o DDC responde (ou não) em segundo plano: espera a resposta antes de desenhar
                 TelasDeBrilho.shared.atualizarTelas()

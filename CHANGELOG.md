@@ -18,6 +18,17 @@ todo o resto por aqui.
     ligado antes. Pede a permissão de Bluetooth.
   - **Aceleração do mouse**: sem aceleração ou com a curva escolhida, na
     hora; ao desligar a opção, volta o que estava antes.
+- **Mouse e teclado** (todos opcionais, pedem Acessibilidade):
+  - **O foco segue o mouse**: parar o cursor sobre a janela de outro app
+    traz esse app para a frente, sem clicar.
+  - **Filtro de clique duplo acidental**, para mouses com o botão gasto.
+  - **Clique com três dedos é o clique do meio**, no trackpad.
+  - **O que cada botão do mouse faz**: voltar, avançar, Mission Control,
+    Apps, copiar, colar, desfazer, nova aba, fechar aba ou clique do meio.
+  - **Repique de teclas**, para teclados que repetem a letra sem querer
+    (página nova: Teclado).
+  - **Tecla super**: o Caps Lock vira ⌃⌥⇧⌘ enquanto está apertado; volta
+    a ser Caps Lock ao desligar ou fechar o Docka.
 
 ## [1.5.2] — 2026-10-05
 

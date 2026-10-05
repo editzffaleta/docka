@@ -113,6 +113,17 @@ final class MouseController {
             return e
 
         case .otherMouseDown, .otherMouseUp:
+            let botao = Int(e.getIntegerValueField(.mouseEventButtonNumber))
+            // uma ação escolhida para este botão (menos o da Órbita, que é dela)
+            if let acao = MouseETeclado.acao(botao: botao, gravadas: store.mouseAcoesDosBotoes),
+               !(store.orbitaControl && store.orbitaBotao == botao) {
+                if acao == .cliqueDoMeio {
+                    e.setIntegerValueField(.mouseEventButtonNumber, value: 2)
+                    return e
+                }
+                if tipo == .otherMouseDown { Self.executar(acao) }
+                return nil
+            }
             guard store.mouseBotoes,
                   let nav = Rolagem.navegacao(botao: Int(e.getIntegerValueField(.mouseEventButtonNumber)),
                                               botaoDaOrbita: store.orbitaControl ? store.orbitaBotao : BotaoDoMouse.nenhum)
@@ -127,6 +138,26 @@ final class MouseController {
 
         default:
             return e
+        }
+    }
+
+    /// Fora do tap: abrir um app ou mandar um atalho pode demorar.
+    static func executar(_ acao: MouseETeclado.AcaoDoBotao) {
+        DispatchQueue.main.async {
+            if let tecla = acao.tecla {
+                Colagem.enviarComando(Character(tecla), reserva: Colagem.codigoDaTecla(para: Character(tecla)) ?? 0)
+                return
+            }
+            switch acao {
+            case .missionControl:
+                NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Mission Control.app"))
+            case .apps:
+                let apps = ["/System/Applications/Apps.app", "/System/Applications/Launchpad.app"]
+                if let a = apps.first(where: { FileManager.default.fileExists(atPath: $0) }) {
+                    NSWorkspace.shared.open(URL(fileURLWithPath: a))
+                }
+            default: break
+            }
         }
     }
 

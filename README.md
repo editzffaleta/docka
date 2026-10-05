@@ -166,6 +166,11 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Rolagem suave** | Cada dente vira um deslize curto com desaceleração; dentes seguidos se somam |
 | **Rolar de lado** | Segurando ⌥, ⌃ ou ⌘, a roda rola na horizontal |
 | **Botões laterais** | Voltam e avançam no Finder, Safari, Chrome e outros (⌘[ / ⌘]); o botão da Órbita continua com ela |
+| **Foco segue o mouse** *(Acessibilidade)* | Parar o cursor sobre a janela de outro app traz o app para a frente, sem clicar |
+| **Clique duplo acidental** *(Acessibilidade)* | Descarta o segundo clique que chega em poucos milissegundos no mesmo lugar — mouse com o botão gasto |
+| **Clique do meio com três dedos** *(Acessibilidade)* | No trackpad, clicar com três dedos vira o clique do meio |
+| **O que cada botão faz** | Voltar, avançar, Mission Control, Apps, copiar, colar, desfazer, nova aba, fechar aba ou clique do meio, por botão |
+| **Repique de teclas e tecla super** *(Acessibilidade)* | Ignora a letra repetida sem querer; o Caps Lock vira ⌃⌥⇧⌘ enquanto apertado |
 | **Apps a ignorar** | Com um deles na frente, o mouse fica como o sistema manda |
 
 ### Captura *(módulo opcional)*

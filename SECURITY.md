@@ -100,6 +100,12 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   ou atualização automática
 - ❌ Não lê conteúdo de arquivos do usuário (arrastar-e-soltar apenas repassa URLs ao app de destino via `NSWorkspace`)
 - ❌ Não roda com privilégios elevados nem instala helpers/daemons
+- ℹ️ Mouse e teclado, cada um só com a opção ligada: o "repique de teclas" e a
+  "tecla super" interceptam o teclado (só olham o código da tecla e o momento, para
+  descartar a repetição ou somar ⌃⌥⇧⌘ — nada é guardado); a tecla super remapeia o
+  Caps Lock para F18 no sistema de eventos (`UserKeyMapping`, somado aos remapeamentos
+  que já existiam e desfeito ao desligar ou fechar o Docka); o clique do meio lê só a
+  CONTAGEM de dedos no trackpad, pela MultitouchSupport do sistema
 - ℹ️ Ajustes do sistema, cada um só com a opção ligada: "Espaços na ordem" grava
   `mru-spaces` nas preferências do Dock e reinicia o Dock; "Bluetooth no repouso"
   desliga e religa o Bluetooth pelo IOBluetooth (pede a permissão de Bluetooth);

@@ -200,6 +200,16 @@ final class DockaStore: ObservableObject {
         static let ilhaNotificacoes = "docka.islandNotifications"
         static let ilhaAvisoAgentes = "docka.islandAgentNotice"
         static let bloquearMusica = "docka.blockMusicApp"
+        static let focoSegueMouse = "docka.focusFollowsMouse"
+        static let focoAtraso = "docka.focusFollowsMouseDelay"
+        static let focoIgnorados = "docka.focusFollowsMouseIgnored"
+        static let filtroDeClique = "docka.doubleClickFilter"
+        static let filtroDeCliqueMs = "docka.doubleClickFilterMs"
+        static let repiqueDeTeclas = "docka.keyDebounce"
+        static let repiqueMs = "docka.keyDebounceMs"
+        static let cliqueDoMeio = "docka.trackpadMiddleClick"
+        static let teclaSuper = "docka.hyperKey"
+        static let mouseAcoesDosBotoes = "docka.mouseButtonActions"
         static let bluetoothNoRepouso = "docka.bluetoothOffOnSleep"
         static let aceleracaoControl = "docka.pointerAccelerationControl"
         static let aceleracao = "docka.pointerAcceleration"
@@ -548,6 +558,23 @@ final class DockaStore: ObservableObject {
             NotificacoesModelo.shared.sincronizar()
         }
     }
+    // Mouse e teclado (grupo 2 da fase 7): cada um liga o seu tap só quando ligado.
+    @Published var focoSegueMouse: Bool { didSet { defaults.set(focoSegueMouse, forKey: Key.focoSegueMouse); mudouEntrada(focoSegueMouse) } }
+    @Published var focoAtraso: Double { didSet { defaults.set(focoAtraso, forKey: Key.focoAtraso) } }
+    @Published var focoIgnorados: [String] { didSet { defaults.set(focoIgnorados, forKey: Key.focoIgnorados) } }
+    @Published var filtroDeClique: Bool { didSet { defaults.set(filtroDeClique, forKey: Key.filtroDeClique); mudouEntrada(filtroDeClique) } }
+    @Published var filtroDeCliqueMs: Double { didSet { defaults.set(filtroDeCliqueMs, forKey: Key.filtroDeCliqueMs) } }
+    @Published var repiqueDeTeclas: Bool { didSet { defaults.set(repiqueDeTeclas, forKey: Key.repiqueDeTeclas); mudouEntrada(repiqueDeTeclas) } }
+    @Published var repiqueMs: Double { didSet { defaults.set(repiqueMs, forKey: Key.repiqueMs) } }
+    @Published var cliqueDoMeio: Bool { didSet { defaults.set(cliqueDoMeio, forKey: Key.cliqueDoMeio); mudouEntrada(cliqueDoMeio) } }
+    @Published var teclaSuper: Bool { didSet { defaults.set(teclaSuper, forKey: Key.teclaSuper); mudouEntrada(teclaSuper) } }
+    @Published var mouseAcoesDosBotoes: [String: String] { didSet { defaults.set(mouseAcoesDosBotoes, forKey: Key.mouseAcoesDosBotoes) } }
+
+    private func mudouEntrada(_ ligou: Bool) {
+        pedirAcessibilidadeSe(ligou)
+        MouseETecladoController.shared.sincronizar()
+    }
+
     /// Fecha o app Música quando ele abre sozinho (tecla de tocar, fones).
     @Published var bloquearMusica: Bool { didSet { defaults.set(bloquearMusica, forKey: Key.bloquearMusica) } }
     /// Desliga o Bluetooth ao dormir e religa ao acordar.
@@ -623,6 +650,7 @@ final class DockaStore: ObservableObject {
         ArrastoComTeclaController.shared.sincronizar()
         PreviaDoDockController.shared.sincronizar()
         IlhaController.shared.sincronizar()
+        MouseETecladoController.shared.sincronizar()
         NotificacoesModelo.shared.sincronizar()
     }
 
@@ -1038,6 +1066,14 @@ final class DockaStore: ObservableObject {
             Key.ilhaNotificacoes: false,
             Key.ilhaAvisoAgentes: true,
             Key.bloquearMusica: false,
+            Key.focoSegueMouse: false,
+            Key.focoAtraso: 0.3,
+            Key.filtroDeClique: false,
+            Key.filtroDeCliqueMs: 60.0,
+            Key.repiqueDeTeclas: false,
+            Key.repiqueMs: 40.0,
+            Key.cliqueDoMeio: false,
+            Key.teclaSuper: false,
             Key.bluetoothNoRepouso: false,
             Key.aceleracaoControl: false,
             Key.aceleracao: -1.0,
@@ -1181,6 +1217,16 @@ final class DockaStore: ObservableObject {
         ilhaNotificacoes = defaults.bool(forKey: Key.ilhaNotificacoes)
         ilhaAvisoAgentes = defaults.bool(forKey: Key.ilhaAvisoAgentes)
         bloquearMusica = defaults.bool(forKey: Key.bloquearMusica)
+        focoSegueMouse = defaults.bool(forKey: Key.focoSegueMouse)
+        focoAtraso = defaults.double(forKey: Key.focoAtraso)
+        focoIgnorados = defaults.stringArray(forKey: Key.focoIgnorados) ?? []
+        filtroDeClique = defaults.bool(forKey: Key.filtroDeClique)
+        filtroDeCliqueMs = defaults.double(forKey: Key.filtroDeCliqueMs)
+        repiqueDeTeclas = defaults.bool(forKey: Key.repiqueDeTeclas)
+        repiqueMs = defaults.double(forKey: Key.repiqueMs)
+        cliqueDoMeio = defaults.bool(forKey: Key.cliqueDoMeio)
+        teclaSuper = defaults.bool(forKey: Key.teclaSuper)
+        mouseAcoesDosBotoes = (defaults.dictionary(forKey: Key.mouseAcoesDosBotoes) as? [String: String]) ?? [:]
         bluetoothNoRepouso = defaults.bool(forKey: Key.bluetoothNoRepouso)
         aceleracaoControl = defaults.bool(forKey: Key.aceleracaoControl)
         aceleracao = defaults.double(forKey: Key.aceleracao)

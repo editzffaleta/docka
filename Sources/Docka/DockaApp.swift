@@ -267,6 +267,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         NotasModelo.shared.gravarAgora()
         HistoricoModelo.shared.gravarAgora()
+        // o Caps Lock volta a ser Caps Lock com o Docka fechado
+        MouseETecladoController.shared.encerrar()
     }
 
     // a bandeja continua viva com a janela fechada — é o ponto do app
