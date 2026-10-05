@@ -67,6 +67,35 @@ private struct RootView: View {
     }
 }
 
+// MARK: - Permissões
+
+/// Religa os módulos quando uma permissão muda.
+///
+/// Os taps são criados cedo, na abertura do app — e nesse instante a
+/// Acessibilidade pode ainda responder "não", mesmo concedida. Sem uma nova
+/// tentativa, os recursos ficavam desligados até alguém abrir os ajustes
+/// (achado testando). A checagem é barata e não toca em nada.
+final class VigiaDePermissoes {
+    static let shared = VigiaDePermissoes()
+    private var relogio: Timer?
+    private var ultimo: [Permissao: Bool] = [:]
+
+    func comecar() {
+        conferir(forcar: true)
+        let t = Timer(timeInterval: 3, repeats: true) { [weak self] _ in self?.conferir(forcar: false) }
+        t.tolerance = 1
+        RunLoop.main.add(t, forMode: .common)
+        relogio = t
+    }
+
+    private func conferir(forcar: Bool) {
+        let agora = Dictionary(uniqueKeysWithValues: Permissao.allCases.map { ($0, EstadoDaPermissao.concedida($0)) })
+        guard forcar || agora != ultimo else { return }
+        ultimo = agora
+        DockaStore.shared.sincronizarModulosComPermissao()
+    }
+}
+
 // MARK: - Ciclo de vida
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -78,6 +107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         TrayManager.shared.start()
+        VigiaDePermissoes.shared.comecar()
         HotKeyManager.shared.onPress = { acao in
             guard let acao = AcaoDeAtalho(id: acao) else { return }
             TrayManager.shared.executar(acao)
@@ -206,6 +236,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if CommandLine.arguments.contains("--ajustes-selftest") {
             let pasta = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"] ?? "/tmp"
             print("ajustes:\n\(AjustesAutoteste.rodar(pasta: pasta))")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
+        if CommandLine.arguments.contains("--taps-selftest") {
+            print("taps:\n\(CliquesDoSistema.autoteste())")
             fflush(stdout)
             NSApp.terminate(nil)
             return

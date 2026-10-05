@@ -438,7 +438,9 @@ private struct AbaControles: View {
                 LinhaComInterruptor(simbolo: "speaker.wave.2", titulo: "Régua de volume",
                                     descricao: "Volume da saída numa lateral", ligado: $store.volumeControl)
             }
-            grupo("janelas", "Janelas", contagem: [store.janelasControl, store.janelasArrastar, store.alternadorControl]) {
+            grupo("janelas", "Janelas", contagem: [store.janelasControl, store.janelasArrastar, store.arrastarComTecla, store.alternadorControl,
+                                                   store.botaoVerdeMaximiza, store.sairAoFecharControl,
+                                                   store.protecaoQ, store.cliquesNoDock, store.previaDoDock]) {
                 LinhaComInterruptor(simbolo: "rectangle.split.2x1", titulo: "Encaixar janelas",
                                     descricao: "Metades, quartos e terços por atalho", ligado: $store.janelasControl,
                                     aviso: Colagem.permitido ? nil : "Falta a Acessibilidade")
@@ -446,8 +448,26 @@ private struct AbaControles: View {
                 LinhaComInterruptor(simbolo: "arrow.up.left.and.arrow.down.right", titulo: "Arrastar até a borda",
                                     descricao: "Solte a janela na borda para encaixar", ligado: $store.janelasArrastar)
                 Separador()
+                LinhaComInterruptor(simbolo: "hand.draw", titulo: "Arrastar segurando teclas",
+                                    descricao: "Mova a janela de qualquer ponto", ligado: $store.arrastarComTecla)
+                Separador()
                 LinhaComInterruptor(simbolo: "square.stack", titulo: "Alternador de apps",
                                     descricao: "Apps na ordem de uso, num atalho próprio", ligado: $store.alternadorControl)
+                Separador()
+                LinhaComInterruptor(simbolo: "plus.rectangle", titulo: "Botão verde maximiza",
+                                    descricao: "Preenche a tela sem criar outro Espaço", ligado: $store.botaoVerdeMaximiza)
+                Separador()
+                LinhaComInterruptor(simbolo: "xmark.square", titulo: "Sair ao fechar",
+                                    descricao: "Encerra os apps escolhidos ao fechar a última janela", ligado: $store.sairAoFecharControl)
+                Separador()
+                LinhaComInterruptor(simbolo: "command", titulo: "Proteger o ⌘Q",
+                                    descricao: "Segurar, duas vezes ou com ⌥ para encerrar", ligado: $store.protecaoQ)
+                Separador()
+                LinhaComInterruptor(simbolo: "menubar.dock.rectangle", titulo: "Cliques no Dock",
+                                    descricao: "Clicar no app ativo minimiza, oculta ou alterna", ligado: $store.cliquesNoDock)
+                Separador()
+                LinhaComInterruptor(simbolo: "rectangle.on.rectangle.angled", titulo: "Prévia do Dock",
+                                    descricao: "Pare no ícone para ver as janelas do app", ligado: $store.previaDoDock)
             }
             grupo("mouse", "Mouse e teclado", contagem: [store.mouseControl, store.gatilhosControl]) {
                 LinhaComInterruptor(simbolo: "computermouse", titulo: "Ajustes do mouse",

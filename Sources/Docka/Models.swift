@@ -177,9 +177,26 @@ final class DockaStore: ObservableObject {
         static let gatilhos = "docka.snippetTriggers"
         static let janelas = "docka.windowSnapping"
         static let janelasArrastar = "docka.windowSnapDrag"
+        static let sairAoFechar = "docka.quitOnClose"
+        static let sairAoFecharApps = "docka.quitOnCloseApps"
+        static let protecaoQ = "docka.protectQuit"
+        static let protecaoW = "docka.protectClose"
+        static let protecaoModo = "docka.protectMode"
+        static let protecaoApps = "docka.protectApps"
+        static let botaoVerde = "docka.greenButtonMaximizes"
+        static let arrastarComTecla = "docka.modifierDrag"
+        static let arrastarTeclas = "docka.modifierDragKeys"
+        static let arrastarRedimensiona = "docka.modifierDragResize"
+        static let cliquesNoDock = "docka.dockClicks"
+        static let previaDoDock = "docka.dockPreview"
+        static let previaDoDockMiniaturas = "docka.dockPreviewThumbnails"
+        static let previaDoDockAtraso = "docka.dockPreviewDelay"
+        static let acaoNoCliqueDoDock = "docka.dockClickAction"
         static let alternador = "docka.switcher"
         static let alternadorJanelas = "docka.switcherWindows"
         static let alternadorPrevias = "docka.switcherPreviews"
+        static let alternadorSoTela = "docka.switcherCurrentScreen"
+        static let alternadorSemJanela = "docka.switcherHideWindowless"
         static let mouse = "docka.mouse"
         static let mouseInverterV = "docka.mouseInvertVertical"
         static let mouseInverterH = "docka.mouseInvertHorizontal"
@@ -466,6 +483,85 @@ final class DockaStore: ObservableObject {
             ArrastoDeJanelas.shared.sincronizar()
         }
     }
+    /// Encerrar os apps escolhidos quando a última janela fecha.
+    @Published var sairAoFecharControl: Bool {
+        didSet { defaults.set(sairAoFecharControl, forKey: Key.sairAoFechar); pedirAcessibilidadeSe(sairAoFecharControl); sincronizarJanelasEDock() }
+    }
+    @Published var sairAoFecharApps: [String] {
+        didSet { defaults.set(sairAoFecharApps, forKey: Key.sairAoFecharApps); sincronizarJanelasEDock() }
+    }
+    /// Proteção do ⌘Q e do ⌘W.
+    @Published var protecaoQ: Bool {
+        didSet { defaults.set(protecaoQ, forKey: Key.protecaoQ); pedirAcessibilidadeSe(protecaoQ); sincronizarJanelasEDock() }
+    }
+    @Published var protecaoW: Bool {
+        didSet { defaults.set(protecaoW, forKey: Key.protecaoW); pedirAcessibilidadeSe(protecaoW); sincronizarJanelasEDock() }
+    }
+    @Published var protecaoModo: String {
+        didSet { defaults.set(protecaoModo, forKey: Key.protecaoModo); sincronizarJanelasEDock() }
+    }
+    /// Apps protegidos; vazio = todos.
+    @Published var protecaoApps: [String] { didSet { defaults.set(protecaoApps, forKey: Key.protecaoApps) } }
+    /// O botão verde maximiza na área útil, sem criar outro Espaço.
+    @Published var botaoVerdeMaximiza: Bool {
+        didSet { defaults.set(botaoVerdeMaximiza, forKey: Key.botaoVerde); pedirAcessibilidadeSe(botaoVerdeMaximiza); sincronizarJanelasEDock() }
+    }
+    /// Clicar no ícone do app ativo no Dock minimiza, oculta ou alterna.
+    @Published var cliquesNoDock: Bool {
+        didSet { defaults.set(cliquesNoDock, forKey: Key.cliquesNoDock); pedirAcessibilidadeSe(cliquesNoDock); sincronizarJanelasEDock() }
+    }
+    /// Prévia das janelas ao parar o cursor num ícone do Dock.
+    @Published var previaDoDock: Bool {
+        didSet {
+            defaults.set(previaDoDock, forKey: Key.previaDoDock)
+            pedirAcessibilidadeSe(previaDoDock)
+            if previaDoDock && previaDoDockMiniaturas && !CapturaController.permitido { CapturaController.pedirPermissao() }
+            PreviaDoDockController.shared.sincronizar()
+        }
+    }
+    @Published var previaDoDockMiniaturas: Bool {
+        didSet {
+            defaults.set(previaDoDockMiniaturas, forKey: Key.previaDoDockMiniaturas)
+            if previaDoDockMiniaturas && !CapturaController.permitido { CapturaController.pedirPermissao() }
+        }
+    }
+    @Published var previaDoDockAtraso: Double { didSet { defaults.set(previaDoDockAtraso, forKey: Key.previaDoDockAtraso) } }
+
+    @Published var acaoNoCliqueDoDock: String { didSet { defaults.set(acaoNoCliqueDoDock, forKey: Key.acaoNoCliqueDoDock) } }
+
+    private func pedirAcessibilidadeSe(_ ligado: Bool) {
+        if ligado && !Colagem.permitido { Colagem.pedirPermissao() }
+    }
+
+    /// Religa tudo o que depende de permissão — chamado quando o app termina
+    /// de abrir e sempre que uma permissão muda.
+    func sincronizarModulosComPermissao() {
+        sincronizarJanelasEDock()
+        MouseController.shared.sincronizar()
+        GatilhosController.shared.sincronizar()
+        ArrastoDeJanelas.shared.sincronizar()
+        ArrastoComTeclaController.shared.sincronizar()
+        PreviaDoDockController.shared.sincronizar()
+    }
+
+    /// Liga ou desliga os vigias e taps destes recursos conforme os ajustes.
+    func sincronizarJanelasEDock() {
+        SairAoFecharController.shared.sincronizar()
+        ProtecaoController.shared.sincronizar()
+        CliquesDoSistema.shared.sincronizar()
+    }
+
+    /// Mover e redimensionar a janela de qualquer ponto, segurando teclas.
+    @Published var arrastarComTecla: Bool {
+        didSet {
+            defaults.set(arrastarComTecla, forKey: Key.arrastarComTecla)
+            pedirAcessibilidadeSe(arrastarComTecla)
+            ArrastoComTeclaController.shared.sincronizar()
+        }
+    }
+    @Published var arrastarTeclas: String { didSet { defaults.set(arrastarTeclas, forKey: Key.arrastarTeclas) } }
+    @Published var arrastarRedimensiona: Bool { didSet { defaults.set(arrastarRedimensiona, forKey: Key.arrastarRedimensiona) } }
+
     /// Encaixar arrastando a janela até a borda da tela.
     @Published var janelasArrastar: Bool {
         didSet {
@@ -521,6 +617,15 @@ final class DockaStore: ObservableObject {
     @Published var capturaNaMesa: Bool { didSet { defaults.set(capturaNaMesa, forKey: Key.capturaNaMesa) } }
     /// Abre a captura de área no editor de anotação.
     @Published var capturaEditar: Bool { didSet { defaults.set(capturaEditar, forKey: Key.capturaEditar) } }
+
+    /// Alternador: só o que está na tela do cursor.
+    @Published var alternadorSoTela: Bool {
+        didSet { defaults.set(alternadorSoTela, forKey: Key.alternadorSoTela); if alternadorSoTela && !Colagem.permitido { Colagem.pedirPermissao() } }
+    }
+    /// Alternador: esconder apps abertos sem nenhuma janela.
+    @Published var alternadorSemJanela: Bool {
+        didSet { defaults.set(alternadorSemJanela, forKey: Key.alternadorSemJanela); if alternadorSemJanela && !Colagem.permitido { Colagem.pedirPermissao() } }
+    }
 
     /// Miniaturas das janelas no alternador — pede Gravação de Tela.
     @Published var alternadorPrevias: Bool {
@@ -832,9 +937,24 @@ final class DockaStore: ObservableObject {
             Key.gatilhos: false,
             Key.janelas: false,
             Key.janelasArrastar: false,
+            Key.sairAoFechar: false,
+            Key.protecaoQ: false,
+            Key.protecaoW: false,
+            Key.protecaoModo: ModoDeProtecao.segurar.rawValue,
+            Key.botaoVerde: false,
+            Key.arrastarComTecla: false,
+            Key.arrastarTeclas: TeclasDoArrasto.controleOpcao.rawValue,
+            Key.arrastarRedimensiona: true,
+            Key.cliquesNoDock: false,
+            Key.previaDoDock: false,
+            Key.previaDoDockMiniaturas: true,
+            Key.previaDoDockAtraso: 0.5,
+            Key.acaoNoCliqueDoDock: AcaoNoCliqueDoDock.minimizar.rawValue,
             Key.alternador: false,
             Key.alternadorJanelas: false,
             Key.alternadorPrevias: false,
+            Key.alternadorSoTela: false,
+            Key.alternadorSemJanela: false,
             Key.mouse: false,
             Key.mouseInverterV: false,
             Key.mouseInverterH: false,
@@ -939,9 +1059,26 @@ final class DockaStore: ObservableObject {
         gatilhosControl = defaults.bool(forKey: Key.gatilhos)
         janelasControl = defaults.bool(forKey: Key.janelas)
         janelasArrastar = defaults.bool(forKey: Key.janelasArrastar)
+        sairAoFecharControl = defaults.bool(forKey: Key.sairAoFechar)
+        sairAoFecharApps = defaults.stringArray(forKey: Key.sairAoFecharApps) ?? []
+        protecaoQ = defaults.bool(forKey: Key.protecaoQ)
+        protecaoW = defaults.bool(forKey: Key.protecaoW)
+        protecaoModo = defaults.string(forKey: Key.protecaoModo) ?? ModoDeProtecao.segurar.rawValue
+        protecaoApps = defaults.stringArray(forKey: Key.protecaoApps) ?? []
+        botaoVerdeMaximiza = defaults.bool(forKey: Key.botaoVerde)
+        arrastarComTecla = defaults.bool(forKey: Key.arrastarComTecla)
+        arrastarTeclas = defaults.string(forKey: Key.arrastarTeclas) ?? TeclasDoArrasto.controleOpcao.rawValue
+        arrastarRedimensiona = defaults.bool(forKey: Key.arrastarRedimensiona)
+        cliquesNoDock = defaults.bool(forKey: Key.cliquesNoDock)
+        previaDoDock = defaults.bool(forKey: Key.previaDoDock)
+        previaDoDockMiniaturas = defaults.bool(forKey: Key.previaDoDockMiniaturas)
+        previaDoDockAtraso = defaults.double(forKey: Key.previaDoDockAtraso)
+        acaoNoCliqueDoDock = defaults.string(forKey: Key.acaoNoCliqueDoDock) ?? AcaoNoCliqueDoDock.minimizar.rawValue
         alternadorControl = defaults.bool(forKey: Key.alternador)
         alternadorJanelas = defaults.bool(forKey: Key.alternadorJanelas)
         alternadorPrevias = defaults.bool(forKey: Key.alternadorPrevias)
+        alternadorSoTela = defaults.bool(forKey: Key.alternadorSoTela)
+        alternadorSemJanela = defaults.bool(forKey: Key.alternadorSemJanela)
         mouseControl = defaults.bool(forKey: Key.mouse)
         mouseInverterVertical = defaults.bool(forKey: Key.mouseInverterV)
         mouseInverterHorizontal = defaults.bool(forKey: Key.mouseInverterH)
@@ -1002,6 +1139,7 @@ final class DockaStore: ObservableObject {
             MouseController.shared.sincronizar()
             GatilhosController.shared.sincronizar()
             ArrastoDeJanelas.shared.sincronizar()
+            DockaStore.shared.sincronizarJanelasEDock()
         }
     }
 

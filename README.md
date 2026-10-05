@@ -148,7 +148,13 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Outra tela** | Leva a janela para a próxima tela mantendo a proporção: a metade esquerda de uma vira a metade esquerda da outra |
 | **Voltar** | Devolve a janela ao tamanho e lugar de antes do primeiro encaixe |
 | **Arrastar até a borda** | Leve a janela até a borda: laterais dão metades, cantos dão quartos, o topo maximiza — com prévia de onde ela vai parar |
-| **Alternador de apps** | Num atalho próprio (sugestão ⌥Tab): apps na ordem de uso, segure e aperte para avançar, solte para trocar. Sem permissão; com Acessibilidade, uma entrada por janela; com Gravação de Tela, miniaturas das janelas. Não substitui o ⌘Tab |
+| **Botão verde maximiza** *(Acessibilidade)* | Preenche a tela sem criar outro Espaço; de novo, volta ao tamanho de antes; com ⌥, o de sempre |
+| **Sair ao fechar** *(Acessibilidade)* | Os apps escolhidos encerram quando a última janela fecha |
+| **Prévia do Dock** *(Acessibilidade; miniaturas com Gravação de Tela)* | Pare o cursor num ícone do Dock para ver as janelas do app; clique para trazer uma (minimizada volta do Dock), × para fechar |
+| **Arrastar segurando teclas** *(Acessibilidade)* | Com ⌃⌥ apertado, arraste de qualquer ponto para mover a janela; com o botão direito, redimensione pelo canto mais perto |
+| **Proteção do ⌘Q e ⌘W** *(Acessibilidade)* | Segurar, apertar duas vezes ou usar ⌥ para confirmar — só esses dois atalhos são interceptados |
+| **Cliques no Dock** *(Acessibilidade)* | Clicar no ícone do app ativo minimiza, oculta ou passa para a próxima janela |
+| **Alternador de apps** | Num atalho próprio (sugestão ⌥Tab): apps na ordem de uso, segure e aperte para avançar, solte para trocar; digite para buscar pelo nome ou título. Sem permissão; com Acessibilidade, uma entrada por janela; com Gravação de Tela, miniaturas das janelas. Não substitui o ⌘Tab |
 
 ### Mouse *(módulo opcional, Acessibilidade)*
 
@@ -238,6 +244,8 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 ├── Clipboard.swift          — histórico (sigilo, limite, busca), limpar link, apagar
 ├── Snippets.swift           — snippets, variáveis e busca
 ├── Encaixe.swift            — layouts de janela, ciclo de larguras, coordenadas
+├── JanelasEDock.swift       — sair ao fechar, proteção de atalho, botão verde, cliques no Dock, arrastar com tecla
+├── PreviaDoDock.swift       — quando mostrar e esconder a prévia do Dock, e onde
 ├── Alternador.swift         — ordem de uso, seleção e soltar do modificador
 ├── Rolagem.swift            — inverter, linear, de lado, deslize suave, botões laterais
 ├── Captura.swift            — formatos de cor, ordem de leitura do OCR, nome do arquivo
@@ -268,6 +276,10 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── SnippetsController.swift — snippets em disco e o painel de escolha
 ├── GatilhosController.swift — módulo "Expandir gatilhos": escuta só de teclas, memória curta
 ├── JanelasBackend.swift     — módulo "Encaixar janelas": atalhos e arrastar até a borda
+├── SairEProtecao.swift      — sair ao fechar, proteção do ⌘Q/⌘W e a dica na tela
+├── CliquesDoSistema.swift   — botão verde e cliques no Dock: um tap de clique só
+├── ArrastoComTecla.swift    — mover e redimensionar segurando teclas
+├── PreviaDoDockController.swift — a prévia das janelas sobre os ícones do Dock
 ├── AlternadorController.swift — o alternador: histórico de uso, painel e ativação
 ├── MouseController.swift    — módulo do mouse: o event tap e a rolagem suave
 ├── CapturaController.swift  — conta-gotas, OCR/QR pelo Vision e captura de área
@@ -320,9 +332,13 @@ sem ela continuam funcionando no modo sem permissão.
 | Expandir gatilhos | Monitoramento de Entrada + Acessibilidade | Ver as teclas para achar o gatilho (só os últimos 32 caracteres, na memória), apagá-lo e colar o snippet | Os snippets continuam pelo painel |
 | Colar sozinho | Acessibilidade | Enviar ⌘V ao app da frente ao escolher no histórico ou num snippet | O item só fica copiado, pronto para o seu ⌘V |
 | Alternador — cada janela | Acessibilidade | Listar janelas pelo título e trazer a escolhida para a frente | O alternador troca de app, sem listar janelas |
+| Alternador — filtros | Acessibilidade | Saber em que tela estão as janelas e quais apps não têm nenhuma | Os filtros ficam desligados |
 | Alternador — prévias | Gravação de Tela | Miniaturas das janelas enquanto o alternador está aberto; nada é gravado | Ícones no lugar das miniaturas |
 | Captura | Gravação de Tela | Capturar a área que você seleciona, para OCR, QR ou imagem — reconhecimento no próprio Mac | Só o conta-gotas funciona |
 | Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse — nunca o teclado | O mouse segue como o sistema manda |
+| Prévia do Dock | Acessibilidade | Saber sobre qual ícone do Dock o cursor está e listar, trazer ou fechar as janelas do app | Nenhuma prévia aparece |
+| Prévia do Dock — miniaturas | Gravação de Tela | Capturar as janelas do app só enquanto a prévia está aberta; nada é gravado | Ícone do app e título no lugar da miniatura |
+| Arrastar segurando teclas | Acessibilidade | Interceptar cliques com as teclas escolhidas apertadas e mover a janela sob o cursor | Arrastar só pela barra de título, como sempre |
 | Encaixar janelas | Acessibilidade | Ler e mudar posição e tamanho da janela da frente, no atalho ou no menu Janelas | Os atalhos não fazem nada (um aviso sonoro) e os ajustes mostram o que falta |
 
 > Assinado sem certificado de desenvolvedor (ad-hoc), o Docka muda de assinatura a cada versão compilada, e o macOS pode pedir a permissão de novo depois de uma atualização.

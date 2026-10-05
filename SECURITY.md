@@ -71,9 +71,16 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   | Expandir gatilhos | Monitoramento de Entrada + Acessibilidade | Ver as teclas digitadas para achar o gatilho de um snippet (guarda só os últimos 32 caracteres, na memória; campos de senha nunca chegam) e então apagar o gatilho e colar o texto |
   | Colar sozinho | Acessibilidade | Enviar um ⌘V ao app da frente depois que você escolhe um item do histórico ou um snippet |
   | Alternador — mostrar cada janela | Acessibilidade | Listar as janelas abertas pelo título e trazer a escolhida para a frente |
+  | Alternador — filtros | Acessibilidade | Ler a posição das janelas para filtrar por tela e esconder apps sem janela |
   | Alternador — prévias | Gravação de Tela | Capturar miniaturas das janelas só enquanto o alternador está aberto; ficam na memória e somem ao fechar |
   | Captura | Gravação de Tela | Capturar a área que você seleciona (pelo seletor do próprio macOS) para copiar o texto, ler um QR ou salvar a imagem. O reconhecimento roda no Mac, pelo Vision; nada é enviado |
   | Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse (nunca o teclado) para inverter, deixar linear, suavizar e voltar/avançar |
+  | Sair ao fechar | Acessibilidade | Contar as janelas dos apps escolhidos e pedir o encerramento quando chegam a zero |
+  | Proteção do ⌘Q e ⌘W | Acessibilidade | Interceptar o teclado, agindo só sobre ⌘Q e ⌘W; as outras teclas passam sem serem guardadas |
+  | Prévia do Dock | Acessibilidade | Perguntar qual ícone do Dock está sob o cursor (só perto da borda da tela) e listar, trazer ou fechar as janelas do app |
+  | Prévia do Dock — miniaturas | Gravação de Tela | Capturar as janelas do app só enquanto a prévia está aberta; ficam na memória e somem ao fechar |
+  | Arrastar segurando teclas | Acessibilidade | Interceptar cliques só com as teclas escolhidas apertadas, e mover ou redimensionar a janela sob o cursor |
+  | Botão verde e cliques no Dock | Acessibilidade | Interceptar cliques e perguntar o que está sob o cursor; só o botão verde e ícones de app no Dock são assumidos |
   | Encaixar janelas | Acessibilidade | Ler e mudar posição e tamanho da janela da frente quando você usa um atalho ou o menu Janelas |
 
 - ❌ Não captura teclado (os atalhos usam `RegisterEventHotKey`, que entrega apenas aquele atalho) — **exceto** com o módulo "Expandir gatilhos" ligado, que escuta as teclas como descrito na tabela acima

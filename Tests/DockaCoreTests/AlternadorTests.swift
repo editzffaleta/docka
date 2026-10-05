@@ -72,4 +72,30 @@ struct AlternadorTests {
         #expect(Alternador.miniatura(CGSize(width: 500, height: 1000), caixa: CGSize(width: 160, height: 100))
                 == CGSize(width: 50, height: 100))
     }
+
+    @Test("Busca por palavras, no nome ou no título, sem acento")
+    func busca() {
+        #expect(Alternador.combina("safari git", nome: "Safari", titulo: "GitHub — editzffaleta"))
+        #expect(Alternador.combina("acao", nome: "Notas", titulo: "Ação rápida"))
+        #expect(!Alternador.combina("safari mail", nome: "Safari", titulo: "GitHub"))
+        #expect(Alternador.combina("  ", nome: "Qualquer", titulo: nil))
+        #expect(Alternador.combina("term", nome: "Terminal", titulo: nil))
+    }
+
+    @Test("Filtros: tela do cursor e apps sem janela")
+    func filtros() {
+        let esquerda = CGRect(x: 0, y: 0, width: 1710, height: 1112)
+        let direita = CGRect(x: 1710, y: 0, width: 2560, height: 1440)
+        let naEsquerda = CGRect(x: 100, y: 100, width: 800, height: 600)
+        let naDireita = CGRect(x: 2000, y: 100, width: 800, height: 600)
+        #expect(Alternador.passa(janelas: [naEsquerda], semJanelaEsconde: false, soTela: esquerda))
+        #expect(!Alternador.passa(janelas: [naDireita], semJanelaEsconde: false, soTela: esquerda))
+        #expect(Alternador.passa(janelas: [naDireita, naEsquerda], semJanelaEsconde: false, soTela: esquerda))
+        #expect(!Alternador.passa(janelas: [], semJanelaEsconde: true, soTela: nil))
+        #expect(Alternador.passa(janelas: [], semJanelaEsconde: false, soTela: nil))
+        // sem permissão não dá para saber: não esconde nada
+        #expect(Alternador.passa(janelas: nil, semJanelaEsconde: true, soTela: direita))
+        // meio a meio: vale onde está o centro
+        #expect(Alternador.naTela(CGRect(x: 1500, y: 0, width: 600, height: 400), tela: direita))
+    }
 }
