@@ -10,7 +10,7 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, recursos, sistema, ilha, teclado, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
+    case geral, recursos, sistema, ilha, teclado, finder, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// A barra lateral em grupos com título — com mais de vinte seções, um
@@ -18,7 +18,7 @@ enum Secao: String, CaseIterable, Identifiable {
     static let grupos: [(titulo: String, itens: [Secao])] = [
         ("Essenciais", [.geral, .recursos, .sistema, .ilha, .energia, .monitor]),
         ("Controles de janela", [.mouse, .teclado, .alternador, .janelas, .encerrar, .dock]),
-        ("Arquivos", [.clipboard, .prateleira, .captura]),
+        ("Arquivos", [.finder, .clipboard, .prateleira, .captura]),
         ("Bordas", [.bandeja, .apps, .aparencia, .orbita, .notas, .brilho, .volume]),
         ("Utilidades", [.acoes, .atalho]),
         ("", [.sobre]),
@@ -44,6 +44,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .janelas:   return "Encaixe de janelas"
         case .mouse:     return "Mouse"
         case .teclado:   return "Teclado"
+        case .finder:    return "Finder"
         case .captura:   return "Captura"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
@@ -76,6 +77,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .monitor:    return "chart.xyaxis.line"
         case .mouse:      return "computermouse"
         case .teclado:    return "keyboard"
+        case .finder:     return "folder"
         case .alternador: return "rectangle.on.rectangle"
         case .encerrar:   return "xmark.square"
         case .dock:       return "menubar.dock.rectangle"
@@ -119,6 +121,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .janelas:   return .blue
         case .mouse:     return .gray
         case .teclado:   return .gray
+        case .finder:    return .blue
         case .captura:   return .purple
         case .brilho:    return .yellow
         case .volume:    return .pink
@@ -237,6 +240,7 @@ struct SettingsWindowView: View {
         case .janelas:   JanelasSettingsView()
         case .mouse:     MouseSettingsView()
         case .teclado:   TecladoSettingsView()
+        case .finder:    FinderSettingsView()
         case .captura:   CapturaSettingsView()
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
@@ -304,6 +308,7 @@ extension DockaStore {
             RecursoComPermissao(nome: "Foco segue o mouse", permissoes: [.acessibilidade], ligado: focoSegueMouse),
             RecursoComPermissao(nome: "Filtro de clique duplo", permissoes: [.acessibilidade], ligado: filtroDeClique),
             RecursoComPermissao(nome: "Clique do meio com três dedos", permissoes: [.acessibilidade], ligado: cliqueDoMeio),
+            RecursoComPermissao(nome: "Recortar e colar no Finder", permissoes: [.acessibilidade], ligado: recorteNoFinder),
             RecursoComPermissao(nome: "Repique de teclas", permissoes: [.acessibilidade], ligado: repiqueDeTeclas),
             RecursoComPermissao(nome: "Tecla super", permissoes: [.acessibilidade], ligado: teclaSuper),
             RecursoComPermissao(nome: "Sair ao fechar", permissoes: [.acessibilidade], ligado: sairAoFecharControl),
@@ -1978,6 +1983,36 @@ private struct MouseSettingsView: View {
     }
 }
 
+/// Ajustes → Finder: recortar e colar arquivos, e o instalador de .dmg.
+private struct FinderSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.recorteNoFinder) {
+                    Text("⌘X e ⌘V movem arquivos")
+                    Text("No Finder, ⌘X marca os arquivos e o ⌘V em outra pasta move-os para lá — sem lembrar do ⌥⌘V. Renomeando um arquivo, ⌘X continua recortando o texto. Pede Acessibilidade.")
+                }
+            } header: {
+                Text("Recortar e colar")
+            }
+            Section {
+                Toggle(isOn: $store.instaladorDeDmg) {
+                    Text("Oferecer instalar ao abrir um .dmg")
+                    Text("Abrindo uma imagem de disco que traz um app, o Docka oferece copiá-lo para Aplicativos e ejetar a imagem. Uma versão antiga já instalada vai para o Lixo, de onde dá para recuperar.")
+                }
+                if store.instaladorDeDmg {
+                    Toggle("Depois de instalar, mandar o .dmg para o Lixo", isOn: $store.dmgParaOLixo)
+                }
+            } header: {
+                Text("Imagem de disco")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
 /// Ajustes → Teclado: repique de teclas e a tecla super.
 private struct TecladoSettingsView: View {
     @EnvironmentObject var store: DockaStore
@@ -2841,6 +2876,8 @@ enum AjustesAutoteste {
             desenhar(IlhaSettingsView().frame(width: 600, height: 900), "ajustes-ilha", NSSize(width: 600, height: 900)),
             desenhar(AjustesDoSistemaView().frame(width: 600, height: 720), "ajustes-sistema", NSSize(width: 600, height: 720)),
             desenhar(TecladoSettingsView().frame(width: 600, height: 420), "ajustes-teclado", NSSize(width: 600, height: 420)),
+            desenhar(FinderSettingsView().frame(width: 600, height: 380), "ajustes-finder", NSSize(width: 600, height: 380)),
+            InstaladorPanel.desenhar(pasta: pasta),
             desenhar(MouseSettingsView().frame(width: 600, height: 1300), "ajustes-mouse", NSSize(width: 600, height: 1300)),
             {
                 // o DDC responde (ou não) em segundo plano: espera a resposta antes de desenhar

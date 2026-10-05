@@ -104,7 +104,7 @@ pesado. Cada um escrito do zero, opcional e desligado por padrão.
 |---|---|---|---|
 | 1. Ajustes do sistema | Espaços em ordem fixa; impedir o app Música de abrir sozinho; Bluetooth desligado no repouso; aceleração do ponteiro | — | ✅ |
 | 2. Mouse e teclado | foco segue o mouse; filtro de clique duplo acidental; repique de teclas; tecla super; atalhos nos botões do mouse; clique do meio | Acessibilidade | ✅ |
-| 3. Finder e arquivos | recortar e colar no Finder (⌘X/⌘V); instalador de imagem de disco (.dmg) | Acessibilidade (Finder) | ⏳ |
+| 3. Finder e arquivos | recortar e colar no Finder (⌘X/⌘V); instalador de imagem de disco (.dmg) | Acessibilidade (Finder) | ✅ |
 | 4. Painéis | barra de comando (apps, janelas, arquivos, histórico, snippets, comandos de menu, contas, conversões, emojis); painel rápido; alternâncias rápidas; modo de limpeza | Acessibilidade (partes) | ⏳ |
 | 5. Áudio | ferramentas do microfone; saída de som por app | áudio do sistema | ⏳ |
 | 6. Mídia | gravação de tela; converter e comprimir vídeo e imagem | Gravação de Tela | ⏳ |

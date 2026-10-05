@@ -29,6 +29,13 @@ todo o resto por aqui.
     (página nova: Teclado).
   - **Tecla super**: o Caps Lock vira ⌃⌥⇧⌘ enquanto está apertado; volta
     a ser Caps Lock ao desligar ou fechar o Docka.
+- **Finder** (página nova):
+  - **⌘X e ⌘V movem arquivos**: o ⌘X marca, o ⌘V em outra pasta move —
+    sem lembrar do ⌥⌘V. Renomeando, ⌘X continua recortando o texto. Pede
+    Acessibilidade.
+  - **Instalador de imagem de disco**: ao abrir um .dmg que traz um app, o
+    Docka oferece copiá-lo para Aplicativos (a versão antiga vai para o
+    Lixo), ejeta a imagem e, se quiser, manda o .dmg para o Lixo.
 
 ## [1.5.2] — 2026-10-05
 

@@ -200,6 +200,9 @@ final class DockaStore: ObservableObject {
         static let ilhaNotificacoes = "docka.islandNotifications"
         static let ilhaAvisoAgentes = "docka.islandAgentNotice"
         static let bloquearMusica = "docka.blockMusicApp"
+        static let recorteNoFinder = "docka.finderCutPaste"
+        static let instaladorDeDmg = "docka.dmgInstaller"
+        static let dmgParaOLixo = "docka.dmgTrashAfter"
         static let focoSegueMouse = "docka.focusFollowsMouse"
         static let focoAtraso = "docka.focusFollowsMouseDelay"
         static let focoIgnorados = "docka.focusFollowsMouseIgnored"
@@ -573,7 +576,16 @@ final class DockaStore: ObservableObject {
     private func mudouEntrada(_ ligou: Bool) {
         pedirAcessibilidadeSe(ligou)
         MouseETecladoController.shared.sincronizar()
+        FinderEArquivosController.shared.sincronizar()
     }
+
+    /// ⌘X e ⌘V movem arquivos no Finder.
+    @Published var recorteNoFinder: Bool {
+        didSet { defaults.set(recorteNoFinder, forKey: Key.recorteNoFinder); pedirAcessibilidadeSe(recorteNoFinder); FinderEArquivosController.shared.sincronizar() }
+    }
+    /// Ao abrir um .dmg com um app, oferece instalar em Aplicativos.
+    @Published var instaladorDeDmg: Bool { didSet { defaults.set(instaladorDeDmg, forKey: Key.instaladorDeDmg) } }
+    @Published var dmgParaOLixo: Bool { didSet { defaults.set(dmgParaOLixo, forKey: Key.dmgParaOLixo) } }
 
     /// Fecha o app Música quando ele abre sozinho (tecla de tocar, fones).
     @Published var bloquearMusica: Bool { didSet { defaults.set(bloquearMusica, forKey: Key.bloquearMusica) } }
@@ -1066,6 +1078,9 @@ final class DockaStore: ObservableObject {
             Key.ilhaNotificacoes: false,
             Key.ilhaAvisoAgentes: true,
             Key.bloquearMusica: false,
+            Key.recorteNoFinder: false,
+            Key.instaladorDeDmg: false,
+            Key.dmgParaOLixo: false,
             Key.focoSegueMouse: false,
             Key.focoAtraso: 0.3,
             Key.filtroDeClique: false,
@@ -1217,6 +1232,9 @@ final class DockaStore: ObservableObject {
         ilhaNotificacoes = defaults.bool(forKey: Key.ilhaNotificacoes)
         ilhaAvisoAgentes = defaults.bool(forKey: Key.ilhaAvisoAgentes)
         bloquearMusica = defaults.bool(forKey: Key.bloquearMusica)
+        recorteNoFinder = defaults.bool(forKey: Key.recorteNoFinder)
+        instaladorDeDmg = defaults.bool(forKey: Key.instaladorDeDmg)
+        dmgParaOLixo = defaults.bool(forKey: Key.dmgParaOLixo)
         focoSegueMouse = defaults.bool(forKey: Key.focoSegueMouse)
         focoAtraso = defaults.double(forKey: Key.focoAtraso)
         focoIgnorados = defaults.stringArray(forKey: Key.focoIgnorados) ?? []

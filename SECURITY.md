@@ -106,6 +106,11 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   Caps Lock para F18 no sistema de eventos (`UserKeyMapping`, somado aos remapeamentos
   que já existiam e desfeito ao desligar ou fechar o Docka); o clique do meio lê só a
   CONTAGEM de dedos no trackpad, pela MultitouchSupport do sistema
+- ℹ️ Finder, cada um só com a opção ligada: o recortar e colar intercepta o teclado
+  só com o Finder na frente e só olha ⌘X e ⌘V; o instalador de .dmg lê o
+  `hdiutil info` para saber de que imagem veio o volume, copia o app para
+  /Applications só depois do seu clique, e o que é substituído ou apagado vai
+  para o Lixo — nada é apagado de vez
 - ℹ️ Ajustes do sistema, cada um só com a opção ligada: "Espaços na ordem" grava
   `mru-spaces` nas preferências do Dock e reinicia o Dock; "Bluetooth no repouso"
   desliga e religa o Bluetooth pelo IOBluetooth (pede a permissão de Bluetooth);
