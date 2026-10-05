@@ -61,4 +61,25 @@ struct DDCTests {
         #expect(DDC.fabricante("ab") == nil)
         #expect(DDC.fabricante("A1C") == nil)
     }
+
+    @Test("Diagnóstico: o que um LG atrás de um adaptador USB-C → HDMI devolveu de verdade")
+    func diagnosticoReal() {
+        // escrita recusada (0xE0114102) e a leitura trazendo o EDID da LG ("GSM", modelo 23518)
+        let lido: [UInt8] = [0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x1E, 0x6D, 0xDE, 0x5B]
+        #expect(DDC.diagnostico(escrita: Int32(bitPattern: 0xE011_4102), resposta: lido) == .soEDID)
+    }
+
+    @Test("Diagnóstico: resposta boa, escrita recusada, silêncio, brilho não suportado, estranha")
+    func diagnosticoCasos() {
+        // uma resposta válida montada como o monitor manda
+        var r: [UInt8] = [0x6E, 0x88, 0x02, 0x00, 0x10, 0x00, 0x00, 0x64, 0x00, 0x46]
+        r.append(r.reduce(0x50, ^))
+        #expect(DDC.diagnostico(escrita: 0, resposta: r) == .respondeu(atual: 70, maximo: 100))
+        #expect(DDC.diagnostico(escrita: -5, resposta: [UInt8](repeating: 0, count: 11)) == .escritaRecusada(codigo: -5))
+        #expect(DDC.diagnostico(escrita: 0, resposta: [UInt8](repeating: 0xFF, count: 11)) == .silencio)
+        var nao = r; nao[3] = 0x01
+        #expect(DDC.diagnostico(escrita: 0, resposta: nao) == .brilhoNaoSuportado)
+        #expect(DDC.diagnostico(escrita: 0, resposta: [0x6E, 0x12, 0x34, 0, 0, 0, 0, 0, 0, 0, 0]) == .respostaEstranha)
+        #expect(DDC.Diagnostico.escritaRecusada(codigo: Int32(bitPattern: 0xE011_4102)).explicacao.contains("0xE0114102"))
+    }
 }

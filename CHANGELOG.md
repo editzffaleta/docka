@@ -4,6 +4,18 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
+## [Não lançado]
+
+### Mudou
+
+- **O autoteste do DDC diz por que o monitor não respondeu** (`Docka --ddc-selftest`):
+  o Mac recusou o pedido, o caminho entrega só o EDID (adaptador, hub ou
+  dock que não repassa o DDC/CI, ou a opção desligada no monitor), o
+  monitor não aceita brilho por DDC, silêncio ou resposta estranha — com os
+  bytes crus logo abaixo. Nasceu do primeiro teste com um monitor de
+  verdade: um LG atrás de um adaptador USB-C → HDMI, que entrega o EDID e
+  recusa os comandos. Continua só lendo.
+
 ## [1.5.0] — 2026-10-05
 
 A Ilha Dinâmica: uma ilha em volta do recorte da câmera com treze seções —
