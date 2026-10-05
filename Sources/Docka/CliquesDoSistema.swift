@@ -171,7 +171,7 @@ final class CliquesDoSistema {
     }
 
     /// O app de um ícone do Dock — só ícones de app, e só do processo do Dock.
-    private static func appDoIconeDoDock(_ el: AXUIElement) -> NSRunningApplication? {
+    static func appDoIconeDoDock(_ el: AXUIElement) -> NSRunningApplication? {
         var pid: pid_t = 0
         AXUIElementGetPid(el, &pid)
         guard NSRunningApplication(processIdentifier: pid)?.bundleIdentifier == "com.apple.dock",

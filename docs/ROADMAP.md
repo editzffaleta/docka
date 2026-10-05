@@ -71,7 +71,7 @@ registro — acrescentados aqui.
 | Proteção do ⌘Q e ⌘W (segurar, toque duplo ou tecla extra) | Acessibilidade | ✅ |
 | Botão verde maximiza sem criar outro Espaço | Acessibilidade | ✅ |
 | Cliques no Dock: minimizar, ocultar ou alternar janelas | Acessibilidade | ✅ |
-| Prévia do Dock: janelas do app ao passar o mouse no ícone | Acessibilidade + Gravação de Tela | ⏳ |
+| Prévia do Dock: janelas do app ao passar o mouse no ícone | Acessibilidade + Gravação de Tela | ✅ |
 | Alternador: busca e filtros | — (filtros: Acessibilidade) | ✅ |
 | Arrastar janelas segurando uma tecla, de qualquer ponto | Acessibilidade | ✅ |
 

@@ -188,6 +188,9 @@ final class DockaStore: ObservableObject {
         static let arrastarTeclas = "docka.modifierDragKeys"
         static let arrastarRedimensiona = "docka.modifierDragResize"
         static let cliquesNoDock = "docka.dockClicks"
+        static let previaDoDock = "docka.dockPreview"
+        static let previaDoDockMiniaturas = "docka.dockPreviewThumbnails"
+        static let previaDoDockAtraso = "docka.dockPreviewDelay"
         static let acaoNoCliqueDoDock = "docka.dockClickAction"
         static let alternador = "docka.switcher"
         static let alternadorJanelas = "docka.switcherWindows"
@@ -507,6 +510,23 @@ final class DockaStore: ObservableObject {
     @Published var cliquesNoDock: Bool {
         didSet { defaults.set(cliquesNoDock, forKey: Key.cliquesNoDock); pedirAcessibilidadeSe(cliquesNoDock); sincronizarJanelasEDock() }
     }
+    /// Prévia das janelas ao parar o cursor num ícone do Dock.
+    @Published var previaDoDock: Bool {
+        didSet {
+            defaults.set(previaDoDock, forKey: Key.previaDoDock)
+            pedirAcessibilidadeSe(previaDoDock)
+            if previaDoDock && previaDoDockMiniaturas && !CapturaController.permitido { CapturaController.pedirPermissao() }
+            PreviaDoDockController.shared.sincronizar()
+        }
+    }
+    @Published var previaDoDockMiniaturas: Bool {
+        didSet {
+            defaults.set(previaDoDockMiniaturas, forKey: Key.previaDoDockMiniaturas)
+            if previaDoDockMiniaturas && !CapturaController.permitido { CapturaController.pedirPermissao() }
+        }
+    }
+    @Published var previaDoDockAtraso: Double { didSet { defaults.set(previaDoDockAtraso, forKey: Key.previaDoDockAtraso) } }
+
     @Published var acaoNoCliqueDoDock: String { didSet { defaults.set(acaoNoCliqueDoDock, forKey: Key.acaoNoCliqueDoDock) } }
 
     private func pedirAcessibilidadeSe(_ ligado: Bool) {
@@ -521,6 +541,7 @@ final class DockaStore: ObservableObject {
         GatilhosController.shared.sincronizar()
         ArrastoDeJanelas.shared.sincronizar()
         ArrastoComTeclaController.shared.sincronizar()
+        PreviaDoDockController.shared.sincronizar()
     }
 
     /// Liga ou desliga os vigias e taps destes recursos conforme os ajustes.
@@ -925,6 +946,9 @@ final class DockaStore: ObservableObject {
             Key.arrastarTeclas: TeclasDoArrasto.controleOpcao.rawValue,
             Key.arrastarRedimensiona: true,
             Key.cliquesNoDock: false,
+            Key.previaDoDock: false,
+            Key.previaDoDockMiniaturas: true,
+            Key.previaDoDockAtraso: 0.5,
             Key.acaoNoCliqueDoDock: AcaoNoCliqueDoDock.minimizar.rawValue,
             Key.alternador: false,
             Key.alternadorJanelas: false,
@@ -1046,6 +1070,9 @@ final class DockaStore: ObservableObject {
         arrastarTeclas = defaults.string(forKey: Key.arrastarTeclas) ?? TeclasDoArrasto.controleOpcao.rawValue
         arrastarRedimensiona = defaults.bool(forKey: Key.arrastarRedimensiona)
         cliquesNoDock = defaults.bool(forKey: Key.cliquesNoDock)
+        previaDoDock = defaults.bool(forKey: Key.previaDoDock)
+        previaDoDockMiniaturas = defaults.bool(forKey: Key.previaDoDockMiniaturas)
+        previaDoDockAtraso = defaults.double(forKey: Key.previaDoDockAtraso)
         acaoNoCliqueDoDock = defaults.string(forKey: Key.acaoNoCliqueDoDock) ?? AcaoNoCliqueDoDock.minimizar.rawValue
         alternadorControl = defaults.bool(forKey: Key.alternador)
         alternadorJanelas = defaults.bool(forKey: Key.alternadorJanelas)

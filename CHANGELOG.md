@@ -20,6 +20,10 @@ todo o resto por aqui.
   ícone dele minimiza as janelas, oculta o app ou passa para a próxima
   janela. Nos outros casos o Dock faz o de sempre.
 - Os quatro pedem Acessibilidade e aparecem na lista de Permissões.
+- **Prévia do Dock**: parar o cursor num ícone de app no Dock da Apple
+  mostra as janelas dele, com miniatura e título; clicar traz a janela para
+  a frente (a minimizada volta do Dock) e o × fecha. Pede Acessibilidade;
+  as miniaturas pedem Gravação de Tela e ficam só na memória.
 - **Arrastar segurando teclas**: com ⌃⌥ (ou outra combinação escolhida)
   apertado, o botão esquerdo move a janela de qualquer ponto dela e o
   direito a redimensiona pelo canto mais perto do clique. Sem as teclas,

@@ -440,7 +440,7 @@ private struct AbaControles: View {
             }
             grupo("janelas", "Janelas", contagem: [store.janelasControl, store.janelasArrastar, store.arrastarComTecla, store.alternadorControl,
                                                    store.botaoVerdeMaximiza, store.sairAoFecharControl,
-                                                   store.protecaoQ, store.cliquesNoDock]) {
+                                                   store.protecaoQ, store.cliquesNoDock, store.previaDoDock]) {
                 LinhaComInterruptor(simbolo: "rectangle.split.2x1", titulo: "Encaixar janelas",
                                     descricao: "Metades, quartos e terços por atalho", ligado: $store.janelasControl,
                                     aviso: Colagem.permitido ? nil : "Falta a Acessibilidade")
@@ -465,6 +465,9 @@ private struct AbaControles: View {
                 Separador()
                 LinhaComInterruptor(simbolo: "menubar.dock.rectangle", titulo: "Cliques no Dock",
                                     descricao: "Clicar no app ativo minimiza, oculta ou alterna", ligado: $store.cliquesNoDock)
+                Separador()
+                LinhaComInterruptor(simbolo: "rectangle.on.rectangle.angled", titulo: "Prévia do Dock",
+                                    descricao: "Pare no ícone para ver as janelas do app", ligado: $store.previaDoDock)
             }
             grupo("mouse", "Mouse e teclado", contagem: [store.mouseControl, store.gatilhosControl]) {
                 LinhaComInterruptor(simbolo: "computermouse", titulo: "Ajustes do mouse",

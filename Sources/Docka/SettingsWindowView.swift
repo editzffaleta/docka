@@ -286,6 +286,9 @@ extension DockaStore {
             RecursoComPermissao(nome: "Gatilhos de snippets", permissoes: [.monitoramentoDeEntrada, .acessibilidade],
                                 ligado: gatilhosControl),
             RecursoComPermissao(nome: "Texto da tela e captura", permissoes: [.gravacaoDeTela], ligado: capturaControl),
+            RecursoComPermissao(nome: "Prévia do Dock", permissoes: [.acessibilidade], ligado: previaDoDock),
+            RecursoComPermissao(nome: "Miniaturas da prévia do Dock", permissoes: [.gravacaoDeTela],
+                                ligado: previaDoDock && previaDoDockMiniaturas),
             RecursoComPermissao(nome: "Prévias do alternador", permissoes: [.gravacaoDeTela],
                                 ligado: alternadorControl && alternadorPrevias),
         ]
@@ -379,6 +382,7 @@ private struct ListaDeRecursos: View {
             ("command", "Proteger o ⌘Q", "Segurar, apertar duas vezes ou usar ⌥ para encerrar", $store.protecaoQ, [.acessibilidade]),
             ("command", "Proteger o ⌘W", "O mesmo para fechar janelas", $store.protecaoW, [.acessibilidade]),
             ("menubar.dock.rectangle", "Cliques no Dock", "Clicar no app ativo minimiza, oculta ou alterna", $store.cliquesNoDock, [.acessibilidade]),
+            ("rectangle.on.rectangle.angled", "Prévia do Dock", "Pare no ícone para ver as janelas do app", $store.previaDoDock, [.acessibilidade, .gravacaoDeTela]),
         ])
         grupo("Arquivos", [
             ("doc.on.clipboard", "Histórico", "O que você copia, com busca", $store.historicoControl, []),
@@ -2034,6 +2038,27 @@ private struct DockSettingsView: View {
 
     var body: some View {
         Form {
+            Section {
+                Toggle(isOn: $store.previaDoDock) {
+                    Text("Prévia das janelas")
+                    Text("Pare o cursor num ícone de app no Dock para ver as janelas dele. Clique numa para trazê-la para a frente — minimizada, ela volta do Dock; o × fecha.")
+                }
+                if store.previaDoDock {
+                    Picker("Aparece depois de", selection: $store.previaDoDockAtraso) {
+                        Text("Na hora").tag(0.15)
+                        Text("Meio segundo").tag(0.5)
+                        Text("Um segundo").tag(1.0)
+                    }
+                    Toggle(isOn: $store.previaDoDockMiniaturas) {
+                        Text("Miniaturas das janelas")
+                        Text("Pede Gravação de Tela. Sem ela, cada janela aparece com o ícone do app e o título.")
+                    }
+                }
+            } header: {
+                Text("Prévia do Dock")
+            } footer: {
+                Text("Pede Acessibilidade, para saber sobre qual ícone o cursor está e listar as janelas. As miniaturas ficam só na memória, enquanto a prévia está aberta.")
+            }
             Section {
                 Toggle(isOn: $store.cliquesNoDock) {
                     Text("Clicar no ícone do app ativo")
