@@ -6,6 +6,21 @@ todo o resto por aqui.
 
 ## [Não lançado]
 
+## [1.6.1] — 2026-10-05
+
+### Corrigido
+
+- **Snippets e histórico abrem prontos para digitar** toda vez: da segunda
+  abertura em diante o campo de busca ficava sem cursor, e o que se
+  digitava se perdia. É a mesma correção que a barra de comando já tinha.
+- **Ajustes › Som** explica que o microfone do iPhone (Continuidade) não
+  tem mudo nem nível no macOS — "silenciar todos" não o alcança.
+
+### Por dentro
+
+- O autoteste de mídia confere soltar arquivos na janela (o que não é
+  vídeo nem imagem fica de fora), e o de manutenção, a busca do Homebrew.
+
 ## [1.6.0] — 2026-10-05
 
 O resto da lista: ajustes do sistema, mouse e teclado, Finder, barra de

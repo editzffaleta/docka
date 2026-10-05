@@ -111,6 +111,26 @@ class PainelDeNotas: NSPanel {
     var aoEsc: (() -> Void)?
     override var canBecomeKey: Bool { true }
     override func cancelOperation(_ sender: Any?) { aoEsc?() }
+
+    /// Entrega o primeiro campo de texto ao teclado, depois do layout.
+    ///
+    /// O foco do SwiftUI sozinho não chega num painel que não ativa o
+    /// Docka: na primeira abertura o pedido nem é visto, e nas seguintes o
+    /// @FocusState já "estava" verdadeiro — o campo ficava sem cursor e o
+    /// que se digitava se perdia.
+    func focarCampo() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let campo = Self.campo(em: self.contentView) else { return }
+            self.makeFirstResponder(campo)
+        }
+    }
+
+    private static func campo(em v: NSView?) -> NSTextField? {
+        guard let v else { return nil }
+        if let t = v as? NSTextField, t.isEditable { return t }
+        for f in v.subviews { if let t = campo(em: f) { return t } }
+        return nil
+    }
 }
 
 final class NotasEstado: ObservableObject {

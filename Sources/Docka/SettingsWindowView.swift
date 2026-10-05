@@ -2730,7 +2730,7 @@ private struct SomSettingsView: View {
             } header: {
                 Text("Microfone")
             } footer: {
-                Text("Com um preferido, ele volta a ser o microfone do sistema sempre que estiver conectado — os AirPods não tomam o lugar do microfone do Mac. Silenciar vale para todos, inclusive os que conectarem depois, e religar devolve cada um como estava; ao fechar o Docka, eles voltam sozinhos. Alguns microfones não deixam mudar o nível.")
+                Text("Com um preferido, ele volta a ser o microfone do sistema sempre que estiver conectado — os AirPods não tomam o lugar do microfone do Mac. Silenciar vale para todos, inclusive os que conectarem depois, e religar devolve cada um como estava; ao fechar o Docka, eles voltam sozinhos. Alguns microfones não deixam mudar o nível, e o do iPhone (Continuidade) não tem mudo nem nível no macOS — silencie esse no próprio iPhone.")
             }
         }
         .formStyle(.grouped)

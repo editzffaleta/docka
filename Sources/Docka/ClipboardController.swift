@@ -317,6 +317,7 @@ final class HistoricoController {
         p.makeKey()
         withAnimation(.spring(duration: 0.28, bounce: 0.15)) { estado.visivel = true }
         estado.pedidoDeFoco += 1
+        p.focarCampo()
     }
 
     func fechar() {
@@ -411,7 +412,13 @@ struct HistoricoView: View {
         .ignoresSafeArea()
         .onKeyPress(.downArrow) { mover(1); return .handled }
         .onKeyPress(.upArrow) { mover(-1); return .handled }
-        .onChange(of: estado.pedidoDeFoco) { _, _ in focado = true }
+        // o @FocusState continuava verdadeiro depois de fechar: solta ao
+        // fechar e pede de novo no ciclo seguinte ao abrir
+        .onChange(of: estado.pedidoDeFoco) { _, _ in
+            focado = false
+            DispatchQueue.main.async { focado = true }
+        }
+        .onChange(of: estado.visivel) { _, visivel in if !visivel { focado = false } }
     }
 
     private func mover(_ passo: Int) {

@@ -478,6 +478,17 @@ extension ManutencaoController {
             conferir("Homebrew: \((json?["formulae"] as? [Any])?.count ?? 0) fórmulas, \((json?["casks"] as? [Any])?.count ?? 0) casks", codigo == 0)
         } else { r.append("ℹ️ Homebrew não instalado") }
 
+        if AtualizacoesModelo.brew != nil {
+            let h = await MainActor.run { HomebrewModelo() }
+            await MainActor.run { h.busca = "wget"; h.buscar() }
+            for _ in 0..<200 where await MainActor.run(body: { h.encontrados.formulas.isEmpty && h.encontrados.casks.isEmpty }) {
+                try? await Task.sleep(nanoseconds: 100_000_000)
+            }
+            let (f, c) = await MainActor.run { (h.encontrados.formulas, h.encontrados.casks) }
+            conferir("busca do Homebrew por \"wget\": \(f.count) fórmulas (\(f.prefix(4).joined(separator: ", "))), \(c.count) casks",
+                     f.contains("wget"))
+        }
+
         for f in MensageirosModelo.conhecidas {
             let existe = FileManager.default.fileExists(atPath: (f.pasta as NSString).expandingTildeInPath)
             r.append("ℹ️ \(f.nome): \(existe ? "pasta encontrada" : "não usado neste Mac")")
