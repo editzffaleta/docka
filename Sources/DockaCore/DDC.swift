@@ -96,6 +96,41 @@ public enum DDC {
         }
     }
 
+    /// Por onde o sinal vai até o monitor, como o macOS registra na tela
+    /// ("Transport": Upstream → Downstream). DisplayPort que vira HDMI no
+    /// meio do caminho passa por um conversor — e os conversores para HDMI
+    /// costumam barrar o DDC/CI.
+    public struct Caminho: Equatable, Sendable {
+        public let de: String
+        public let para: String
+        public init(de: String, para: String) { self.de = de; self.para = para }
+
+        public var conversor: Bool { de.caseInsensitiveCompare(para) != .orderedSame }
+        public var descricao: String { conversor ? "\(Self.nome(de)) → \(Self.nome(para))" : Self.nome(para) }
+
+        static func nome(_ s: String) -> String {
+            switch s.uppercased() {
+            case "DP": return "DisplayPort"
+            case "HDMI": return "HDMI"
+            default: return s
+            }
+        }
+    }
+
+    /// O motivo, para quem lê: com um conversor para HDMI no caminho e o
+    /// monitor sem responder, a explicação é ele — e a saída também.
+    public static func motivo(_ d: Diagnostico?, caminho: Caminho?) -> String {
+        if case .respondeu = d { return d!.explicacao }
+        if let c = caminho, c.conversor, c.para.uppercased() == "HDMI" {
+            switch d {
+            case nil, .soEDID, .escritaRecusada, .silencio:
+                return "ligado por um conversor \(c.descricao) (adaptador ou cabo USB-C → HDMI), que não repassa o DDC/CI. Resolve um cabo USB-C → DisplayPort, se o monitor tiver essa entrada, ou um adaptador para HDMI que repasse o DDC/CI."
+            default: break
+            }
+        }
+        return d?.explicacao ?? "não respondeu ao DDC/CI"
+    }
+
     /// O cabeçalho fixo de todo EDID.
     static let cabecalhoDoEDID: [UInt8] = [0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00]
 

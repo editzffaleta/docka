@@ -18,6 +18,8 @@ final class TelasDeBrilho: ObservableObject {
         let hardware: Bool
         /// Monitor externo que respondeu ao DDC: brilho do próprio painel.
         var ddc: Bool = false
+        /// Por que o monitor externo ficou só no escurecimento.
+        var semDDC: String? = nil
     }
 
     @Published private(set) var telas: [Tela] = []
@@ -42,7 +44,8 @@ final class TelasDeBrilho: ObservableObject {
                                             serie: CGDisplaySerialNumber(id))
             return Tela(id: id, nome: s.localizedName, chave: chave,
                         hardware: BrightnessBackend.ler(id) != nil,
-                        ddc: DDCBackend.shared.monitores[id] != nil)
+                        ddc: DDCBackend.shared.monitores[id] != nil,
+                        semDDC: DDCBackend.shared.motivos[id])
         }
         aplicarTodas()
         // o DDC conversa com o monitor (dezenas de ms): descobre em segundo
@@ -54,6 +57,7 @@ final class TelasDeBrilho: ObservableObject {
             self.telas = self.telas.map { t in
                 var t = t
                 t.ddc = DDCBackend.shared.monitores[t.id] != nil
+                t.semDDC = DDCBackend.shared.motivos[t.id]
                 return t
             }
         }

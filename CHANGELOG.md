@@ -4,6 +4,18 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
+## [Não lançado]
+
+### Mudou
+
+- **O Docka reconhece o conversor DisplayPort → HDMI no caminho do
+  monitor** e diz isso com todas as letras: no autoteste do DDC (com o
+  caminho do sinal) e em **Ajustes › Brilho**, embaixo do monitor que
+  ficou só no escurecimento — com a saída: um cabo USB-C → DisplayPort,
+  se o monitor tiver essa entrada, ou um adaptador que repasse o DDC/CI.
+- Ao reabrir a página de Brilho, o motivo do monitor sem DDC não pisca
+  enquanto o Docka confere de novo.
+
 ## [1.5.1] — 2026-10-05
 
 ### Mudou
