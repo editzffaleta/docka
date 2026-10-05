@@ -59,7 +59,7 @@ public enum Ilha {
         /// Já feita nesta versão do Docka.
         public var disponivel: Bool {
             switch self {
-            case .timer, .controles, .sistema, .arquivos, .rascunho, .capturas, .downloads, .musica: return true
+            case .timer, .controles, .sistema, .arquivos, .rascunho, .capturas, .downloads, .musica, .calendario, .mixer: return true
             default: return false
             }
         }
@@ -244,7 +244,7 @@ public enum Ilha {
     /// O que a ilha fechada mostra nas asas: um ícone à esquerda e um valor à
     /// direita (o timer: relógio e "14m").
     public struct Atividade: Equatable, Identifiable, Sendable {
-        public enum Tipo: String, Sendable { case timer, pomodoro, cronometro, download, musica, aviso }
+        public enum Tipo: String, Sendable { case timer, pomodoro, cronometro, download, musica, calendario, aviso }
 
         public let id: String
         public let tipo: Tipo

@@ -37,6 +37,16 @@ todo o resto por aqui.
   equalizador na outra. Opcionais: **letra sincronizada** (do lrclib.net)
   e **equalizador ao vivo**, que mede o som de verdade (pede Gravação de
   Tela).
+- **Calendário na ilha**: o mês com marca nos dias com compromisso e a
+  agenda do dia, com a cor de cada calendário e o botão "Entrar" nas
+  reuniões com link (Zoom, Meet, Teams, Webex, FaceTime). Fechada, a ilha
+  avisa nas asas quando um compromisso começa em até 15 minutos. Pede
+  acesso aos Calendários — só leitura.
+- **Mixer de volume na ilha**: o volume de cada app que está tocando, de 0
+  a 150%, com mudo; mais o volume geral e a escolha da saída de som. Um app
+  só passa pelo Docka quando você mexe no volume dele; de volta a 100%, ou
+  com o Docka fechado, o som volta direto. Pede a permissão de áudio do
+  sistema (macOS 14.2 ou mais novo).
 
 ## [1.4.0] — 2026-10-05
 

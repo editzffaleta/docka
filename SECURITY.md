@@ -77,6 +77,8 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   | Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse (nunca o teclado) para inverter, deixar linear, suavizar e voltar/avançar |
   | Sair ao fechar | Acessibilidade | Contar as janelas dos apps escolhidos e pedir o encerramento quando chegam a zero |
   | Proteção do ⌘Q e ⌘W | Acessibilidade | Interceptar o teclado, agindo só sobre ⌘Q e ⌘W; as outras teclas passam sem serem guardadas |
+  | Ilha — calendário | Calendários | Ler os compromissos (título, hora, local, notas para achar o link da reunião); nunca escreve nem envia |
+  | Ilha — mixer por app | Gravação de áudio do sistema | Só para os apps cujo volume você mudou: o som deles passa por um toque de processo do Core Audio e volta à saída com outro ganho, sem ser gravado; com o controle em 100% ou o Docka fechado, o macOS desfaz o toque |
   | Ilha — equalizador ao vivo | Gravação de Tela | Medir o áudio que o Mac toca, em pedaços de 21 ms que são medidos e descartados — só com a opção ligada e a música tocando |
   | Ilha — capturas e downloads | Acesso à pasta | Listar nome, data e miniatura dos arquivos recentes da pasta de capturas e de Downloads, só com a seção aberta; o progresso dos downloads vem do que os navegadores anunciam, sem ler os arquivos |
   | Prévia do Dock | Acessibilidade | Perguntar qual ícone do Dock está sob o cursor (só perto da borda da tela) e listar, trazer ou fechar as janelas do app |

@@ -38,6 +38,8 @@ final class IlhaController {
         case .capturas:    return 144
         case .downloads:   return 168
         case .musica:      return DockaStore.shared.ilhaLetra ? 150 : 116
+        case .calendario:  return 200
+        case .mixer:       return 170
         default:           return 124
         }
     }
@@ -90,6 +92,7 @@ final class IlhaController {
         relogio?.invalidate(); relogio = nil
         ArquivosDaIlhaModelo.shared.observarDownloads(false)
         MusicaModelo.shared.ligar(false)
+        MixerModelo.shared.desfazerTudo()
         if panel?.isKeyWindow == true { panel?.resignKey() }
         if let m = monitorDeClique { NSEvent.removeMonitor(m) }
         monitorDeClique = nil
@@ -138,6 +141,10 @@ final class IlhaController {
         if estado.avisoAte.map({ agora > $0 }) == true { estado.avisoAte = nil; estado.aviso = nil }
         let rapido = estado.estado == .aberta && estado.timer.modo == .cronometro && estado.timer.rodando
         if estado.timer.ativo && (rapido ? tiques % 3 == 0 : tiques % 15 == 0) { estado.agora = agora }
+        // a agenda é relida uma vez por minuto, para o aviso do próximo compromisso
+        if tiques % 1800 == 1, !store.ilhaOcultas.contains(Ilha.Secao.calendario.rawValue) {
+            CalendarioModelo.shared.atualizar()
+        }
         if tiques % 15 == 0 {
             ArquivosDaIlhaModelo.shared.lerProgressos()
             atualizarAtividades(agora)
@@ -242,6 +249,7 @@ final class IlhaController {
         if let a = estado.timer.atividade(em: agora) { lista.append(a) }
         if let a = ArquivosDaIlhaModelo.shared.atividade { lista.append(a) }
         if let a = MusicaModelo.shared.atividade { lista.append(a) }
+        if let a = CalendarioModelo.shared.atividade { lista.append(a) }
         let visiveis = Ilha.visiveis(lista, combinar: store.ilhaCombinar, escolhida: estado.escolhida)
         if visiveis != estado.atividades { estado.atividades = visiveis }
     }
@@ -290,6 +298,7 @@ final class IlhaController {
             case .timer, .pomodoro, .cronometro: estado.secao = .timer
             case .download: estado.secao = .downloads
             case .musica: estado.secao = .musica
+            case .calendario: estado.secao = .calendario
             default: estado.secao = nil
             }
             estado.volumeAberto = false
@@ -523,6 +532,8 @@ struct VistaDaIlha: View {
         case .capturas:  CapturasDaIlha(agora: Date())
         case .downloads: DownloadsDaIlha(agora: Date())
         case .musica:    TocandoAgoraView()
+        case .calendario: CalendarioDaIlhaView()
+        case .mixer:     MixerDaIlhaView()
         default:         Text("Em breve").foregroundStyle(.secondary)
         }
     }
@@ -615,6 +626,7 @@ private struct AsasDaIlha: View {
         case .pomodoro:           return Color(red: 1, green: 0.42, blue: 0.36)
         case .download:           return .blue
         case .musica:             return .pink
+        case .calendario:         return .red
         case .aviso:              return .yellow
         }
     }
@@ -833,6 +845,35 @@ enum IlhaAutoteste {
             cena("ilha-volume") { $0.estado = .aberta; $0.volumeAberto = true },
             cena("ilha-aviso") { $0.estado = .aberta; $0.secao = .timer; $0.aviso = "O timer terminou" },
             cena("ilha-controles") { $0.estado = .aberta; $0.secao = .controles },
+            cena("ilha-calendario") { e in
+                let cal = Calendar.current
+                let h = cal.startOfDay(for: agora)
+                func ev(_ id: String, _ t: String, _ i: Double, _ f: Double, _ cor: String, todo: Bool = false,
+                        reuniao: String? = nil, local: String? = nil) -> CalendarioDaIlha.Evento {
+                    .init(id: id, titulo: t, inicio: h.addingTimeInterval(i * 3600), fim: h.addingTimeInterval(f * 3600),
+                          diaInteiro: todo, local: local, cor: cor, reuniao: reuniao.flatMap(URL.init(string:)))
+                }
+                CalendarioModelo.shared.simular([
+                    ev("1", "Feriado municipal", 0, 24, "#34C759", todo: true),
+                    ev("2", "Reunião de produto", 10, 11, "#0A84FF", reuniao: "https://meet.google.com/abc-defg-hij"),
+                    ev("3", "Almoço com a equipe", 12.5, 13.5, "#FF9F0A", local: "Restaurante"),
+                    ev("4", "Revisão do Docka", 16, 17, "#BF5AF2"),
+                    ev("5", "Dentista", 24 * 3 + 9, 24 * 3 + 10, "#FF453A"),
+                ])
+                e.estado = .aberta; e.secao = .calendario
+            },
+            cena("ilha-mixer") { e in
+                let ws = NSWorkspace.shared
+                func app(_ id: String, _ nome: String, _ caminho: String, _ tocando: Bool) -> MixerModelo.App {
+                    .init(id: id, nome: nome, icone: ws.icon(forFile: caminho), tocando: tocando, processos: [])
+                }
+                MixerModelo.shared.simular([
+                    app("com.brave.Browser", "Brave Browser", "/Applications/Brave Browser.app", true),
+                    app("com.apple.Music", "Música", "/System/Applications/Music.app", true),
+                    app("com.tinyspeck.slackmacgap", "Slack", "/System/Applications/Utilities/Terminal.app", false),
+                ], controles: ["com.apple.Music": 0.4, "com.tinyspeck.slackmacgap": 0])
+                e.estado = .aberta; e.secao = .mixer
+            },
             cena("ilha-sistema") { $0.estado = .aberta; $0.secao = .sistema },
             cena("ilha-arquivos") { $0.estado = .aberta; $0.secao = .arquivos },
             cena("ilha-arquivos-alvo") { $0.estado = .aberta; $0.secao = .arquivos; $0.alvo = true },

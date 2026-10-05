@@ -302,6 +302,8 @@ extension DockaStore {
             RecursoComPermissao(nome: "Prévia do Dock", permissoes: [.acessibilidade], ligado: previaDoDock),
             RecursoComPermissao(nome: "Miniaturas da prévia do Dock", permissoes: [.gravacaoDeTela],
                                 ligado: previaDoDock && previaDoDockMiniaturas),
+            RecursoComPermissao(nome: "Calendário na ilha", permissoes: [.calendarios],
+                                ligado: ilhaControl && !ilhaOcultas.contains(Ilha.Secao.calendario.rawValue)),
             RecursoComPermissao(nome: "Prévias do alternador", permissoes: [.gravacaoDeTela],
                                 ligado: alternadorControl && alternadorPrevias),
         ]
@@ -314,6 +316,7 @@ enum EstadoDaPermissao {
         case .acessibilidade:         return Colagem.permitido
         case .gravacaoDeTela:         return CapturaController.permitido
         case .monitoramentoDeEntrada: return GatilhosController.podeEscutar
+        case .calendarios:            return CalendarioModelo.permitido
         }
     }
 }

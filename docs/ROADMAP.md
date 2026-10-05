@@ -90,7 +90,7 @@ outro projeto.
 | 2. Timer | temporizador com régua, Pomodoro e cronômetro, com atividade ao vivo | — | ✅ |
 | 3. Seções do Docka | Controles, Sistema, Arquivos (soltar arquivos na ilha), Rascunho, Capturas recentes, Downloads com progresso | — (Downloads: pasta escolhida) | ✅ |
 | 4. Música | tocando agora com capa e controles, equalizador ao vivo, letra sincronizada | Automação (Música, Spotify) | ✅ |
-| 5. Calendário e mixer | agenda do dia e do mês; volume por app | Calendários | ⏳ |
+| 5. Calendário e mixer | agenda do dia e do mês; volume por app | Calendários | ✅ |
 | 6. Câmera e notificações | espelho da câmera; notificações recentes na ilha | Câmera; Acessibilidade | ⏳ |
 | 7. Agentes de IA | Claude Code e outros: limites, tokens, modelo, projeto e aviso de tarefa longa terminada, lendo os registros locais | — | ⏳ |
 | 8. Além do original | bateria e carregamento, AirPods e fones conectando, Foco, área de transferência, substituto dos avisos de volume e brilho | a definir | ⏳ |
