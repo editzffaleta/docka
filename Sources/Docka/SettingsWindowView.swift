@@ -1998,13 +1998,6 @@ private struct AcoesRapidasView: View {
     var body: some View {
         Form {
             Section {
-                Toggle(isOn: $store.acoesRapidas) {
-                    Text("Mostrar no menu da barra")
-                    Text("Um submenu com as ações abaixo. Os atalhos funcionam mesmo com ele desligado.")
-                }
-            }
-
-            Section {
                 ForEach(disponiveis) { a in
                     LabeledContent {
                         Button("Executar") { AcoesRapidasBackend.executar(a) }
@@ -2018,7 +2011,7 @@ private struct AcoesRapidasView: View {
                     }
                 }
             } footer: {
-                Text("Nenhuma pede permissão. Esvaziar o Lixo e trocar claro/escuro ficaram de fora porque exigiriam autorizar o Docka a controlar o Finder e os Eventos do Sistema.")
+                Text("Elas também ficam na aba Rápido do painel da barra de menus, e cada uma pode ter um atalho. Nenhuma pede permissão. Esvaziar o Lixo e trocar claro/escuro ficaram de fora porque exigiriam autorizar o Docka a controlar o Finder e os Eventos do Sistema.")
             }
         }
         .formStyle(.grouped)
