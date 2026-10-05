@@ -69,6 +69,25 @@ struct IlhaSettingsView: View {
                     Text("Notificações")
                 }
 
+                Section {
+                    Toggle(isOn: $store.ilhaAvisoAgentes) {
+                        Text("Avisar quando uma tarefa longa terminar")
+                        Text("Quando o Claude Code termina de trabalhar depois de um bom tempo, a ilha abre com um aviso e um som.")
+                    }
+                    if store.ilhaAvisoAgentes {
+                        Picker("Tarefa longa é a partir de", selection: $store.ilhaAvisoAgentesMinutos) {
+                            Text("1 minuto").tag(1.0)
+                            Text("3 minutos").tag(3.0)
+                            Text("5 minutos").tag(5.0)
+                            Text("10 minutos").tag(10.0)
+                        }
+                    }
+                } header: {
+                    Text("Agentes de IA")
+                } footer: {
+                    Text("A ilha lê os registros que o Claude Code e o Codex gravam no Mac (~/.claude e ~/.codex): só números de uso, modelos e horários — o texto das conversas nunca é lido para guardar. O valor em dólares é uma estimativa pelos preços públicos da API, e só aparece para modelos com preço conhecido.")
+                }
+
                 Section("Botões dos lados") {
                     lado("Esquerda", $store.ilhaBotoesEsquerda)
                     lado("Direita", $store.ilhaBotoesDireita)

@@ -198,6 +198,8 @@ final class DockaStore: ObservableObject {
         static let ilhaBotoesDireita = "docka.islandRightButtons"
         static let ilhaLetra = "docka.islandLyrics"
         static let ilhaNotificacoes = "docka.islandNotifications"
+        static let ilhaAvisoAgentes = "docka.islandAgentNotice"
+        static let ilhaAvisoAgentesMinutos = "docka.islandAgentNoticeMinutes"
         static let ilhaEqualizadorAoVivo = "docka.islandLiveEqualizer"
         static let previaDoDock = "docka.dockPreview"
         static let previaDoDockMiniaturas = "docka.dockPreviewThumbnails"
@@ -537,6 +539,9 @@ final class DockaStore: ObservableObject {
             NotificacoesModelo.shared.sincronizar()
         }
     }
+    /// Avisar na ilha quando um agente de IA termina uma tarefa longa.
+    @Published var ilhaAvisoAgentes: Bool { didSet { defaults.set(ilhaAvisoAgentes, forKey: Key.ilhaAvisoAgentes) } }
+    @Published var ilhaAvisoAgentesMinutos: Double { didSet { defaults.set(ilhaAvisoAgentesMinutos, forKey: Key.ilhaAvisoAgentesMinutos) } }
     /// Letra sincronizada da música, buscada no lrclib.net.
     @Published var ilhaLetra: Bool { didSet { defaults.set(ilhaLetra, forKey: Key.ilhaLetra) } }
     /// Equalizador medindo o áudio de verdade — pede Gravação de Tela.
@@ -1000,6 +1005,8 @@ final class DockaStore: ObservableObject {
             Key.ilhaSomDoTimer: true,
             Key.ilhaLetra: false,
             Key.ilhaNotificacoes: false,
+            Key.ilhaAvisoAgentes: true,
+            Key.ilhaAvisoAgentesMinutos: 3.0,
             Key.ilhaEqualizadorAoVivo: false,
             Key.previaDoDock: false,
             Key.previaDoDockMiniaturas: true,
@@ -1132,6 +1139,8 @@ final class DockaStore: ObservableObject {
         ilhaOrdem = defaults.stringArray(forKey: Key.ilhaOrdem) ?? []
         ilhaLetra = defaults.bool(forKey: Key.ilhaLetra)
         ilhaNotificacoes = defaults.bool(forKey: Key.ilhaNotificacoes)
+        ilhaAvisoAgentes = defaults.bool(forKey: Key.ilhaAvisoAgentes)
+        ilhaAvisoAgentesMinutos = defaults.double(forKey: Key.ilhaAvisoAgentesMinutos)
         ilhaEqualizadorAoVivo = defaults.bool(forKey: Key.ilhaEqualizadorAoVivo)
         ilhaOcultas = defaults.stringArray(forKey: Key.ilhaOcultas) ?? []
         ilhaBotoesEsquerda = defaults.stringArray(forKey: Key.ilhaBotoesEsquerda)

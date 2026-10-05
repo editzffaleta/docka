@@ -55,6 +55,14 @@ todo o resto por aqui.
   chamada, com a escolha da câmera, o modo "como os outros veem" e um
   espelho flutuante que dá para arrastar pela tela. A câmera só liga com a
   seção à vista ou o espelho aberto. Pede acesso à Câmera.
+- **Agentes de IA na ilha**: o Claude Code e o Codex acompanhados pelos
+  registros que eles gravam no Mac. Do Claude Code, a janela de 5 h do
+  plano (com a hora em que renova), os tokens da janela, do dia e da
+  semana, o valor estimado pelos preços públicos e os modelos; do Codex, o
+  limite real do plano (porcentagem usada e quando renova). Com um agente
+  trabalhando, as asas mostram há quanto tempo; quando uma tarefa longa
+  termina, a ilha abre com um aviso e um som. Só números e horários são
+  lidos — o texto das conversas, nunca.
 
 ## [1.4.0] — 2026-10-05
 

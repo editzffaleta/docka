@@ -42,6 +42,7 @@ final class IlhaController {
         case .mixer:       return 170
         case .notificacoes: return 196
         case .camera:      return 184
+        case .agentes:     return 168
         default:           return 124
         }
     }
@@ -75,6 +76,10 @@ final class IlhaController {
         p.aoEsc = { [weak self] in guard let self else { return }; self.aplicar(self.vigia.fechar()) }
         ArquivosDaIlhaModelo.shared.observarDownloads(!store.ilhaOcultas.contains(Ilha.Secao.downloads.rawValue))
         MusicaModelo.shared.ligar(!store.ilhaOcultas.contains(Ilha.Secao.musica.rawValue))
+        AgentesModelo.shared.aoTerminar = { [weak self] agente, projeto, duracao in
+            self?.avisar("\(agente) terminou em \(projeto) · \(AgentesDaIlha.duracao(duracao))", secao: .agentes)
+        }
+        AgentesModelo.shared.ligar(!store.ilhaOcultas.contains(Ilha.Secao.agentes.rawValue))
         p.setFrame(estado.quadroDoPainel, display: true)
         p.orderFrontRegardless()
 
@@ -94,6 +99,7 @@ final class IlhaController {
         relogio?.invalidate(); relogio = nil
         ArquivosDaIlhaModelo.shared.observarDownloads(false)
         MusicaModelo.shared.ligar(false)
+        AgentesModelo.shared.ligar(false)
         MixerModelo.shared.desfazerTudo()
         if panel?.isKeyWindow == true { panel?.resignKey() }
         if let m = monitorDeClique { NSEvent.removeMonitor(m) }
@@ -252,20 +258,27 @@ final class IlhaController {
         if let a = ArquivosDaIlhaModelo.shared.atividade { lista.append(a) }
         if let a = MusicaModelo.shared.atividade { lista.append(a) }
         if let a = CalendarioModelo.shared.atividade { lista.append(a) }
+        if let a = AgentesModelo.shared.atividade { lista.append(a) }
         let visiveis = Ilha.visiveis(lista, combinar: store.ilhaCombinar, escolhida: estado.escolhida)
         if visiveis != estado.atividades { estado.atividades = visiveis }
     }
 
     private func timerTerminou(_ fase: TimerDaIlha.FaseDoPomodoro) {
-        if store.ilhaSomDoTimer { NSSound(named: "Glass")?.play() }
         let texto: String
         switch estado.timer.modo {
         case .pomodoro: texto = fase == .foco ? "Fim do foco — hora da pausa" : "Fim da pausa — de volta ao foco"
         default:        texto = "O timer terminou"
         }
+        avisar(texto, secao: .timer, som: store.ilhaSomDoTimer)
+    }
+
+    /// A ilha abre com um aviso, toca um som e fecha sozinha depois.
+    func avisar(_ texto: String, secao: Ilha.Secao, som: Bool = true) {
+        guard panel != nil else { return }
+        if som { NSSound(named: "Glass")?.play() }
         estado.aviso = texto
         estado.avisoAte = Date().addingTimeInterval(6)
-        estado.secao = .timer
+        estado.secao = secao
         estado.volumeAberto = false
         aplicar(vigia.abrir())
         atualizarAtividades(Date())
@@ -301,6 +314,7 @@ final class IlhaController {
             case .download: estado.secao = .downloads
             case .musica: estado.secao = .musica
             case .calendario: estado.secao = .calendario
+            case .agente: estado.secao = .agentes
             default: estado.secao = nil
             }
             estado.volumeAberto = false
@@ -323,7 +337,7 @@ final class IlhaController {
             aplicar(vigia.fechar())
             store.secaoDosAjustesPedida = "ilha"
             SettingsWindowController.shared.show()
-        case .agentes: break
+        case .agentes: irPara(.agentes)
         }
     }
 
@@ -538,6 +552,7 @@ struct VistaDaIlha: View {
         case .mixer:     MixerDaIlhaView()
         case .notificacoes: NotificacoesDaIlhaView()
         case .camera:    CameraDaIlhaView()
+        case .agentes:   AgentesDaIlhaView()
         default:         Text("Em breve").foregroundStyle(.secondary)
         }
     }
@@ -631,6 +646,7 @@ private struct AsasDaIlha: View {
         case .download:           return .blue
         case .musica:             return .pink
         case .calendario:         return .red
+        case .agente:             return Color(red: 0.85, green: 0.47, blue: 0.34)
         case .aviso:              return .yellow
         }
     }
