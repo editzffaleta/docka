@@ -4,7 +4,13 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
-## [Não lançado]
+## [1.5.0] — 2026-10-05
+
+A Ilha Dinâmica: uma ilha em volta do recorte da câmera com treze seções —
+timer, controles, sistema, arquivos, rascunho, capturas, downloads, música,
+calendário, mixer de volume, notificações, câmera e agentes de IA — e
+avisos rápidos nas asas. Tudo vem desligado; cada parte pede a sua
+permissão só quando é usada.
 
 ### Novo
 
