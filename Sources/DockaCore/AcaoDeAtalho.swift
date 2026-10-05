@@ -44,6 +44,10 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case textoDaTela
     /// Captura uma área ou janela.
     case capturaArea
+    /// Abre a Ilha Dinâmica na grade; de novo, fecha.
+    case ilha
+    /// Abre a Ilha Dinâmica já numa seção.
+    case secaoDaIlha(Ilha.Secao)
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -67,6 +71,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .contaGotas:        return "contaGotas"
         case .textoDaTela:       return "textoDaTela"
         case .capturaArea:       return "capturaArea"
+        case .ilha:              return "ilha"
+        case .secaoDaIlha(let s): return "ilha:\(s.rawValue)"
         }
     }
 
@@ -87,6 +93,7 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "contaGotas": self = .contaGotas
         case "textoDaTela": self = .textoDaTela
         case "capturaArea": self = .capturaArea
+        case "ilha": self = .ilha
         default:
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {
@@ -97,6 +104,9 @@ public enum AcaoDeAtalho: Hashable, Sendable {
             } else if id.hasPrefix("rapida:"),
                       let a = AcaoRapida(rawValue: String(id.dropFirst("rapida:".count))) {
                 self = .rapida(a)
+            } else if id.hasPrefix("ilha:"),
+                      let s = Ilha.Secao(rawValue: String(id.dropFirst("ilha:".count))) {
+                self = .secaoDaIlha(s)
             } else if id.hasPrefix("anel:"),
                       let uuid = UUID(uuidString: String(id.dropFirst("anel:".count))) {
                 self = .anel(uuid)

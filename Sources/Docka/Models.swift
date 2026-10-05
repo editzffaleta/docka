@@ -188,6 +188,24 @@ final class DockaStore: ObservableObject {
         static let arrastarTeclas = "docka.modifierDragKeys"
         static let arrastarRedimensiona = "docka.modifierDragResize"
         static let cliquesNoDock = "docka.dockClicks"
+        static let ilha = "docka.island"
+        static let ilhaAbrirAoPairar = "docka.islandHoverOpen"
+        static let ilhaCombinar = "docka.islandCombine"
+        static let ilhaSomDoTimer = "docka.islandTimerSound"
+        static let ilhaOrdem = "docka.islandOrder"
+        static let ilhaOcultas = "docka.islandHidden"
+        static let ilhaBotoesEsquerda = "docka.islandLeftButtons"
+        static let ilhaBotoesDireita = "docka.islandRightButtons"
+        static let ilhaLetra = "docka.islandLyrics"
+        static let ilhaNotificacoes = "docka.islandNotifications"
+        static let ilhaAvisoAgentes = "docka.islandAgentNotice"
+        static let ilhaAvisoBateria = "docka.islandNoticeBattery"
+        static let ilhaAvisoFones = "docka.islandNoticeHeadphones"
+        static let ilhaAvisoVolume = "docka.islandNoticeVolume"
+        static let ilhaAvisoBrilho = "docka.islandNoticeBrightness"
+        static let ilhaAvisoCopiado = "docka.islandNoticeCopy"
+        static let ilhaAvisoAgentesMinutos = "docka.islandAgentNoticeMinutes"
+        static let ilhaEqualizadorAoVivo = "docka.islandLiveEqualizer"
         static let previaDoDock = "docka.dockPreview"
         static let previaDoDockMiniaturas = "docka.dockPreviewThumbnails"
         static let previaDoDockAtraso = "docka.dockPreviewDelay"
@@ -510,6 +528,48 @@ final class DockaStore: ObservableObject {
     @Published var cliquesNoDock: Bool {
         didSet { defaults.set(cliquesNoDock, forKey: Key.cliquesNoDock); pedirAcessibilidadeSe(cliquesNoDock); sincronizarJanelasEDock() }
     }
+    /// A Ilha Dinâmica em volta do recorte da câmera.
+    @Published var ilhaControl: Bool {
+        didSet { defaults.set(ilhaControl, forKey: Key.ilha); IlhaController.shared.sincronizar() }
+    }
+    /// Parado tanto tempo sobre a ilha, ela abre; 0 = só no clique.
+    @Published var ilhaAbrirAoPairar: Double { didSet { defaults.set(ilhaAbrirAoPairar, forKey: Key.ilhaAbrirAoPairar) } }
+    @Published var ilhaCombinar: Bool { didSet { defaults.set(ilhaCombinar, forKey: Key.ilhaCombinar) } }
+    @Published var ilhaSomDoTimer: Bool { didSet { defaults.set(ilhaSomDoTimer, forKey: Key.ilhaSomDoTimer) } }
+    /// Notificações recentes na ilha, lidas dos avisos da tela (Acessibilidade).
+    @Published var ilhaNotificacoes: Bool {
+        didSet {
+            defaults.set(ilhaNotificacoes, forKey: Key.ilhaNotificacoes)
+            pedirAcessibilidadeSe(ilhaNotificacoes)
+            NotificacoesModelo.shared.sincronizar()
+        }
+    }
+    /// Avisos rápidos nas asas da ilha.
+    @Published var ilhaAvisoBateria: Bool { didSet { defaults.set(ilhaAvisoBateria, forKey: Key.ilhaAvisoBateria) } }
+    @Published var ilhaAvisoFones: Bool { didSet { defaults.set(ilhaAvisoFones, forKey: Key.ilhaAvisoFones) } }
+    @Published var ilhaAvisoVolume: Bool { didSet { defaults.set(ilhaAvisoVolume, forKey: Key.ilhaAvisoVolume) } }
+    @Published var ilhaAvisoBrilho: Bool { didSet { defaults.set(ilhaAvisoBrilho, forKey: Key.ilhaAvisoBrilho) } }
+    @Published var ilhaAvisoCopiado: Bool { didSet { defaults.set(ilhaAvisoCopiado, forKey: Key.ilhaAvisoCopiado) } }
+    /// Avisar na ilha quando um agente de IA termina uma tarefa longa.
+    @Published var ilhaAvisoAgentes: Bool { didSet { defaults.set(ilhaAvisoAgentes, forKey: Key.ilhaAvisoAgentes) } }
+    @Published var ilhaAvisoAgentesMinutos: Double { didSet { defaults.set(ilhaAvisoAgentesMinutos, forKey: Key.ilhaAvisoAgentesMinutos) } }
+    /// Letra sincronizada da música, buscada no lrclib.net.
+    @Published var ilhaLetra: Bool { didSet { defaults.set(ilhaLetra, forKey: Key.ilhaLetra) } }
+    /// Equalizador medindo o áudio de verdade — pede Gravação de Tela.
+    @Published var ilhaEqualizadorAoVivo: Bool {
+        didSet {
+            defaults.set(ilhaEqualizadorAoVivo, forKey: Key.ilhaEqualizadorAoVivo)
+            if ilhaEqualizadorAoVivo && !CapturaController.permitido { CapturaController.pedirPermissao() }
+        }
+    }
+    /// A ordem das seções na grade (as que faltarem vão para o fim).
+    @Published var ilhaOrdem: [String] { didSet { defaults.set(ilhaOrdem, forKey: Key.ilhaOrdem) } }
+    @Published var ilhaOcultas: [String] { didSet { defaults.set(ilhaOcultas, forKey: Key.ilhaOcultas) } }
+    @Published var ilhaBotoesEsquerda: [String] { didSet { defaults.set(ilhaBotoesEsquerda, forKey: Key.ilhaBotoesEsquerda) } }
+    @Published var ilhaBotoesDireita: [String] { didSet { defaults.set(ilhaBotoesDireita, forKey: Key.ilhaBotoesDireita) } }
+    /// A seção que os ajustes devem abrir (a ilha pede a dela).
+    @Published var secaoDosAjustesPedida: String?
+
     /// Prévia das janelas ao parar o cursor num ícone do Dock.
     @Published var previaDoDock: Bool {
         didSet {
@@ -542,6 +602,8 @@ final class DockaStore: ObservableObject {
         ArrastoDeJanelas.shared.sincronizar()
         ArrastoComTeclaController.shared.sincronizar()
         PreviaDoDockController.shared.sincronizar()
+        IlhaController.shared.sincronizar()
+        NotificacoesModelo.shared.sincronizar()
     }
 
     /// Liga ou desliga os vigias e taps destes recursos conforme os ajustes.
@@ -782,6 +844,8 @@ final class DockaStore: ObservableObject {
         case .contaGotas: return "Conta-gotas"
         case .textoDaTela: return "Texto da tela"
         case .capturaArea: return "Capturar área"
+        case .ilha: return "Ilha Dinâmica"
+        case .secaoDaIlha(let s): return "Ilha — \(s.titulo.lowercased())"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -946,6 +1010,20 @@ final class DockaStore: ObservableObject {
             Key.arrastarTeclas: TeclasDoArrasto.controleOpcao.rawValue,
             Key.arrastarRedimensiona: true,
             Key.cliquesNoDock: false,
+            Key.ilha: false,
+            Key.ilhaAbrirAoPairar: 0.5,
+            Key.ilhaCombinar: true,
+            Key.ilhaSomDoTimer: true,
+            Key.ilhaLetra: false,
+            Key.ilhaNotificacoes: false,
+            Key.ilhaAvisoAgentes: true,
+            Key.ilhaAvisoBateria: true,
+            Key.ilhaAvisoFones: true,
+            Key.ilhaAvisoVolume: true,
+            Key.ilhaAvisoBrilho: true,
+            Key.ilhaAvisoCopiado: false,
+            Key.ilhaAvisoAgentesMinutos: 3.0,
+            Key.ilhaEqualizadorAoVivo: false,
             Key.previaDoDock: false,
             Key.previaDoDockMiniaturas: true,
             Key.previaDoDockAtraso: 0.5,
@@ -1070,6 +1148,26 @@ final class DockaStore: ObservableObject {
         arrastarTeclas = defaults.string(forKey: Key.arrastarTeclas) ?? TeclasDoArrasto.controleOpcao.rawValue
         arrastarRedimensiona = defaults.bool(forKey: Key.arrastarRedimensiona)
         cliquesNoDock = defaults.bool(forKey: Key.cliquesNoDock)
+        ilhaControl = defaults.bool(forKey: Key.ilha)
+        ilhaAbrirAoPairar = defaults.double(forKey: Key.ilhaAbrirAoPairar)
+        ilhaCombinar = defaults.bool(forKey: Key.ilhaCombinar)
+        ilhaSomDoTimer = defaults.bool(forKey: Key.ilhaSomDoTimer)
+        ilhaOrdem = defaults.stringArray(forKey: Key.ilhaOrdem) ?? []
+        ilhaLetra = defaults.bool(forKey: Key.ilhaLetra)
+        ilhaNotificacoes = defaults.bool(forKey: Key.ilhaNotificacoes)
+        ilhaAvisoAgentes = defaults.bool(forKey: Key.ilhaAvisoAgentes)
+        ilhaAvisoBateria = defaults.bool(forKey: Key.ilhaAvisoBateria)
+        ilhaAvisoFones = defaults.bool(forKey: Key.ilhaAvisoFones)
+        ilhaAvisoVolume = defaults.bool(forKey: Key.ilhaAvisoVolume)
+        ilhaAvisoBrilho = defaults.bool(forKey: Key.ilhaAvisoBrilho)
+        ilhaAvisoCopiado = defaults.bool(forKey: Key.ilhaAvisoCopiado)
+        ilhaAvisoAgentesMinutos = defaults.double(forKey: Key.ilhaAvisoAgentesMinutos)
+        ilhaEqualizadorAoVivo = defaults.bool(forKey: Key.ilhaEqualizadorAoVivo)
+        ilhaOcultas = defaults.stringArray(forKey: Key.ilhaOcultas) ?? []
+        ilhaBotoesEsquerda = defaults.stringArray(forKey: Key.ilhaBotoesEsquerda)
+            ?? Ilha.BotaoLateral.esquerdaPadrao.map(\.rawValue)
+        ilhaBotoesDireita = defaults.stringArray(forKey: Key.ilhaBotoesDireita)
+            ?? Ilha.BotaoLateral.direitaPadrao.map(\.rawValue)
         previaDoDock = defaults.bool(forKey: Key.previaDoDock)
         previaDoDockMiniaturas = defaults.bool(forKey: Key.previaDoDockMiniaturas)
         previaDoDockAtraso = defaults.double(forKey: Key.previaDoDockAtraso)

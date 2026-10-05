@@ -10,13 +10,13 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, recursos, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
+    case geral, recursos, ilha, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// A barra lateral em grupos com título — com mais de vinte seções, um
     /// vão entre blocos já não dizia onde procurar cada coisa.
     static let grupos: [(titulo: String, itens: [Secao])] = [
-        ("Essenciais", [.geral, .recursos, .energia, .monitor]),
+        ("Essenciais", [.geral, .recursos, .ilha, .energia, .monitor]),
         ("Controles de janela", [.mouse, .alternador, .janelas, .encerrar, .dock]),
         ("Arquivos", [.clipboard, .prateleira, .captura]),
         ("Bordas", [.bandeja, .apps, .aparencia, .orbita, .notas, .brilho, .volume]),
@@ -31,6 +31,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .alternador: return "Alternador"
         case .encerrar:  return "Ao fechar"
         case .dock:      return "Dock"
+        case .ilha:      return "Ilha Dinâmica"
         case .apps:      return "Apps"
         case .aparencia: return "Aparência"
         case .bandeja:   return "Bandeja"
@@ -74,6 +75,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .alternador: return "rectangle.on.rectangle"
         case .encerrar:   return "xmark.square"
         case .dock:       return "menubar.dock.rectangle"
+        case .ilha:       return "rectangle.topthird.inset.filled"
         case .janelas:    return "rectangle.split.2x1"
         case .clipboard:  return "doc.on.clipboard"
         case .prateleira: return "tray.full"
@@ -99,6 +101,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .alternador: return .blue
         case .encerrar:  return .blue
         case .dock:      return .blue
+        case .ilha:      return .blue
         case .apps:      return .blue
         case .aparencia: return .indigo
         case .bandeja:   return .teal
@@ -156,7 +159,16 @@ struct SettingsWindowView: View {
                 .navigationTitle("Ajustes do Docka")
         }
         .navigationSplitViewStyle(.balanced)
-        .onAppear { store.refreshLaunchAtLogin() }
+        .onAppear { store.refreshLaunchAtLogin(); irParaAPedida() }
+        .onChange(of: store.secaoDosAjustesPedida) { _, _ in irParaAPedida() }
+    }
+
+    /// Outra parte do app (a ilha, por exemplo) pediu uma seção.
+    private func irParaAPedida() {
+        guard let pedida = store.secaoDosAjustesPedida.flatMap(Secao.init(rawValue:)) else { return }
+        secao = pedida
+        busca = ""
+        store.secaoDosAjustesPedida = nil
     }
 
     private var resultados: [Secao] {
@@ -205,6 +217,7 @@ struct SettingsWindowView: View {
         case .alternador: AlternadorSettingsView()
         case .encerrar:  EncerrarSettingsView()
         case .dock:      DockSettingsView()
+        case .ilha:      IlhaSettingsView()
         case .apps:      AppsView()
         case .aparencia: AparenciaView()
         case .bandeja:   BandejaView()
@@ -289,6 +302,10 @@ extension DockaStore {
             RecursoComPermissao(nome: "Prévia do Dock", permissoes: [.acessibilidade], ligado: previaDoDock),
             RecursoComPermissao(nome: "Miniaturas da prévia do Dock", permissoes: [.gravacaoDeTela],
                                 ligado: previaDoDock && previaDoDockMiniaturas),
+            RecursoComPermissao(nome: "Notificações na ilha", permissoes: [.acessibilidade],
+                                ligado: ilhaControl && ilhaNotificacoes),
+            RecursoComPermissao(nome: "Calendário na ilha", permissoes: [.calendarios],
+                                ligado: ilhaControl && !ilhaOcultas.contains(Ilha.Secao.calendario.rawValue)),
             RecursoComPermissao(nome: "Prévias do alternador", permissoes: [.gravacaoDeTela],
                                 ligado: alternadorControl && alternadorPrevias),
         ]
@@ -301,6 +318,7 @@ enum EstadoDaPermissao {
         case .acessibilidade:         return Colagem.permitido
         case .gravacaoDeTela:         return CapturaController.permitido
         case .monitoramentoDeEntrada: return GatilhosController.podeEscutar
+        case .calendarios:            return CalendarioModelo.permitido
         }
     }
 }
@@ -2717,6 +2735,7 @@ enum AjustesAutoteste {
             desenhar(RecursosView(aba: .recursos).frame(width: 600, height: 760), "ajustes-recursos", NSSize(width: 600, height: 760)),
             desenhar(EncerrarSettingsView().frame(width: 600, height: 560), "ajustes-encerrar", NSSize(width: 600, height: 560)),
             desenhar(DockSettingsView().frame(width: 600, height: 300), "ajustes-dock", NSSize(width: 600, height: 300)),
+            desenhar(IlhaSettingsView().frame(width: 600, height: 900), "ajustes-ilha", NSSize(width: 600, height: 900)),
         ].joined(separator: "\n")
     }
 }

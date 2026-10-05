@@ -241,6 +241,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--ilha-selftest") {
+            let pasta = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"] ?? "/tmp"
+            print("ilha:\n\(IlhaAutoteste.rodar(pasta: pasta))")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
         if CommandLine.arguments.contains("--taps-selftest") {
             print("taps:\n\(CliquesDoSistema.autoteste())")
             fflush(stdout)

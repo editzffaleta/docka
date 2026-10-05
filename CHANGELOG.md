@@ -4,6 +4,71 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
+## [Não lançado]
+
+### Novo
+
+- **Ilha Dinâmica**: uma ilha preta em volta do recorte da
+  câmera — ou simulada no meio do topo, em Macs sem recorte. Passar o
+  cursor faz ela crescer; parar (ou clicar) abre uma grade de seções, com
+  botões redondos dos lados. Fechada, mostra o que está correndo nas asas,
+  e duas atividades podem ficar combinadas, uma em cada asa. Seções,
+  ordem, atalhos e botões dos lados são configuráveis. Não pede permissão.
+- **Timer na ilha**: temporizador com régua de 1 a 60 minutos, Pomodoro
+  (foco, pausa e pausa longa a cada quatro focos) e cronômetro com voltas.
+  O tempo aparece nas asas da ilha fechada; ao terminar, a ilha abre com
+  um aviso e um som.
+- **Seis seções novas na ilha**:
+  - **Controles**: manter acordado (30 min, 1 h, 2 h ou sempre) e as ações
+    rápidas.
+  - **Sistema**: CPU, memória e rede com gráfico, bateria e disco.
+  - **Arquivos**: a prateleira dentro da ilha — arraste qualquer coisa até
+    o recorte e ela abre pronta para receber; leve de volta arrastando, um
+    a um ou tudo de uma vez; AirDrop e compactar em .zip.
+  - **Rascunho**: o bloco de notas, com abas, digitando direto na ilha.
+  - **Capturas recentes**: as últimas capturas de tela, com miniatura, da
+    pasta escolhida no Capturar Tela.
+  - **Downloads**: os arquivos recentes e os downloads em andamento, com o
+    progresso nas asas da ilha fechada.
+- **Música na ilha**: o que toca em qualquer app ou aba do navegador que
+  anuncie a música ao sistema (Spotify, Música, YouTube, SoundCloud…), com
+  capa, artista, barra de progresso que dá para clicar, e tocar, pausar,
+  anterior e próxima. Fechada, a ilha mostra a capa numa asa e um
+  equalizador na outra. Opcionais: **letra sincronizada** (do lrclib.net)
+  e **equalizador ao vivo**, que mede o som de verdade (pede Gravação de
+  Tela).
+- **Calendário na ilha**: o mês com marca nos dias com compromisso e a
+  agenda do dia, com a cor de cada calendário e o botão "Entrar" nas
+  reuniões com link (Zoom, Meet, Teams, Webex, FaceTime). Fechada, a ilha
+  avisa nas asas quando um compromisso começa em até 15 minutos. Pede
+  acesso aos Calendários — só leitura.
+- **Mixer de volume na ilha**: o volume de cada app que está tocando, de 0
+  a 150%, com mudo; mais o volume geral e a escolha da saída de som. Um app
+  só passa pelo Docka quando você mexe no volume dele; de volta a 100%, ou
+  com o Docka fechado, o som volta direto. Pede a permissão de áudio do
+  sistema (macOS 14.2 ou mais novo).
+- **Notificações na ilha** (opcional): os avisos que aparecem na tela ficam
+  guardados para rever — título, subtítulo, texto e hora, com o ícone do
+  app. Só na memória: tudo some ao travar a tela, ao limpar ou ao desligar.
+  Pede Acessibilidade.
+- **Espelho da câmera na ilha**: a câmera ao vivo para conferir antes de uma
+  chamada, com a escolha da câmera, o modo "como os outros veem" e um
+  espelho flutuante que dá para arrastar pela tela. A câmera só liga com a
+  seção à vista ou o espelho aberto. Pede acesso à Câmera.
+- **Agentes de IA na ilha**: o Claude Code e o Codex acompanhados pelos
+  registros que eles gravam no Mac. Do Claude Code, a janela de 5 h do
+  plano (com a hora em que renova), os tokens da janela, do dia e da
+  semana, o valor estimado pelos preços públicos e os modelos; do Codex, o
+  limite real do plano (porcentagem usada e quando renova). Com um agente
+  trabalhando, as asas mostram há quanto tempo; quando uma tarefa longa
+  termina, a ilha abre com um aviso e um som. Só números e horários são
+  lidos — o texto das conversas, nunca.
+- **Avisos rápidos nas asas da ilha**, além do que o original tem: ligar e
+  tirar o carregador (com a porcentagem), bateria em 20%, 10% e 5%, fone
+  conectando (com o nome e o ícone dos AirPods), mudança de volume e de
+  brilho (com uma barrinha) e, se quiser, "copiado". Cada um escolhido nos
+  ajustes; nenhum pede permissão.
+
 ## [1.4.0] — 2026-10-05
 
 Janelas e o Dock da Apple: sete recursos novos para mexer em janelas e no

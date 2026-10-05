@@ -29,6 +29,8 @@ rm -rf dist
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp .build/release/Docka "$APP/Contents/MacOS/"
 cp -R .build/release/Docka_Docka.bundle "$APP/Contents/Resources/"
+# o "tocando agora" da ilha: carregada pelo perl do sistema (ver DockaTocando.h)
+cp .build/release/libDockaTocando.dylib "$APP/Contents/Resources/"
 
 echo "▸ gerando AppIcon.icns a partir da logo…"
 ICONSET="dist/AppIcon.iconset"
@@ -60,16 +62,24 @@ cat > "$APP/Contents/Info.plist" << PLIST
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSHumanReadableCopyright</key><string>© 2026 Bruno Zafriel — MIT</string>
+    <key>NSCalendarsFullAccessUsageDescription</key><string>A Ilha Dinâmica mostra os seus compromissos e avisa do próximo. O Docka só lê, e nada sai do Mac.</string>
+    <key>NSCalendarsUsageDescription</key><string>A Ilha Dinâmica mostra os seus compromissos e avisa do próximo. O Docka só lê, e nada sai do Mac.</string>
+    <key>NSCameraUsageDescription</key><string>O espelho da Ilha Dinâmica mostra a sua câmera ao vivo para conferir antes de uma chamada. Nada é gravado.</string>
+    <key>NSAudioCaptureUsageDescription</key><string>O mixer da Ilha Dinâmica ajusta o volume de cada app passando o som dele pelo Docka. Nada é gravado.</string>
 </dict>
 </plist>
 PLIST
 
 if [[ -n "$SIGN_ID" ]]; then
     echo "▸ assinando com Developer ID…"
+    # a biblioteca mora nos Recursos, onde o --deep não entra: a notarização
+    # exige que todo binário venha assinado
+    codesign --force --options runtime --timestamp -s "$SIGN_ID" "$APP/Contents/Resources/libDockaTocando.dylib"
     codesign --force --deep --options runtime --timestamp \
         -s "$SIGN_ID" "$APP"
 else
     echo "▸ assinando (ad-hoc — usuários precisarão de clique-direito → Abrir)…"
+    codesign --force -s - "$APP/Contents/Resources/libDockaTocando.dylib"
     codesign --force --deep -s - "$APP" 2>/dev/null
 fi
 

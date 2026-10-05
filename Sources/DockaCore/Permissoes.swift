@@ -2,7 +2,7 @@ import Foundation
 
 /// As permissões do macOS que algum módulo do Docka pode pedir.
 public enum Permissao: String, CaseIterable, Identifiable, Sendable {
-    case acessibilidade, gravacaoDeTela, monitoramentoDeEntrada
+    case acessibilidade, gravacaoDeTela, monitoramentoDeEntrada, calendarios
 
     public var id: String { rawValue }
 
@@ -11,6 +11,7 @@ public enum Permissao: String, CaseIterable, Identifiable, Sendable {
         case .acessibilidade:         return "Acessibilidade"
         case .gravacaoDeTela:         return "Gravação de Tela"
         case .monitoramentoDeEntrada: return "Monitoramento de Entrada"
+        case .calendarios:            return "Calendários"
         }
     }
 
@@ -23,6 +24,8 @@ public enum Permissao: String, CaseIterable, Identifiable, Sendable {
             return "Deixa os recursos ler o texto de uma área da tela, capturar imagens e mostrar miniaturas das janelas."
         case .monitoramentoDeEntrada:
             return "Deixa os gatilhos de snippets verem as teclas digitadas — só os últimos 32 caracteres, na memória."
+        case .calendarios:
+            return "Deixa a ilha mostrar os seus compromissos e avisar do próximo. Só lê; nada sai do Mac."
         }
     }
 
@@ -31,6 +34,7 @@ public enum Permissao: String, CaseIterable, Identifiable, Sendable {
         case .acessibilidade:         return "accessibility"
         case .gravacaoDeTela:         return "rectangle.dashed.badge.record"
         case .monitoramentoDeEntrada: return "keyboard"
+        case .calendarios:            return "calendar"
         }
     }
 
@@ -41,6 +45,7 @@ public enum Permissao: String, CaseIterable, Identifiable, Sendable {
         case .acessibilidade:         painel = "Privacy_Accessibility"
         case .gravacaoDeTela:         painel = "Privacy_ScreenCapture"
         case .monitoramentoDeEntrada: painel = "Privacy_ListenEvent"
+        case .calendarios:            painel = "Privacy_Calendars"
         }
         return "x-apple.systempreferences:com.apple.preference.security?\(painel)"
     }

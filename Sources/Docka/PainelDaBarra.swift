@@ -385,7 +385,7 @@ private struct AbaSistema: View {
 }
 
 /// Gráfico de linha do histórico, compacto.
-private struct GraficoPequeno: View {
+struct GraficoPequeno: View {
     let historico: Historico
     let teto: Double?
     let cor: Color

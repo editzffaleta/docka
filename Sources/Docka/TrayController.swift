@@ -401,6 +401,8 @@ final class TrayManager {
         case .contaGotas:      if store.capturaControl { CapturaController.contaGotas() }
         case .textoDaTela:     if store.capturaControl { CapturaController.textoDaTela() }
         case .capturaArea:     if store.capturaControl { CapturaController.capturarArea() }
+        case .ilha:            if store.ilhaControl { IlhaController.shared.atalho(nil) }
+        case .secaoDaIlha(let s): if store.ilhaControl { IlhaController.shared.atalho(s) }
         }
     }
 

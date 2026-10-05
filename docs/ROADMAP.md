@@ -75,10 +75,30 @@ registro — acrescentados aqui.
 | Alternador: busca e filtros | — (filtros: Acessibilidade) | ✅ |
 | Arrastar janelas segurando uma tecla, de qualquer ponto | Acessibilidade | ✅ |
 
+## Fase 6 — Ilha Dinâmica
+
+Uma ilha preta em volta do recorte da câmera (ou simulada, em Macs sem
+recorte): passa o cursor e ela cresce; clica e abre uma grade de seções.
+Fechada, mostra atividades ao vivo (timer, download, música), sozinhas ou
+combinadas. Seções e atalhos configuráveis; botões redondos dos lados.
+Escrita do zero — o visual segue a ideia, sem código, textos ou imagens de
+outro projeto.
+
+| Etapa | O que entra | Permissão | Status |
+|---|---|---|---|
+| 1. A ilha | forma em volta do recorte (e simulada), crescer ao passar o cursor, abrir e fechar, grade de seções com atalhos, botões dos lados, atividades ao vivo combináveis, ajustes | — | ✅ |
+| 2. Timer | temporizador com régua, Pomodoro e cronômetro, com atividade ao vivo | — | ✅ |
+| 3. Seções do Docka | Controles, Sistema, Arquivos (soltar arquivos na ilha), Rascunho, Capturas recentes, Downloads com progresso | — (Downloads: pasta escolhida) | ✅ |
+| 4. Música | tocando agora com capa e controles, equalizador ao vivo, letra sincronizada | Automação (Música, Spotify) | ✅ |
+| 5. Calendário e mixer | agenda do dia e do mês; volume por app | Calendários | ✅ |
+| 6. Câmera e notificações | espelho da câmera; notificações recentes na ilha | Câmera; Acessibilidade | ✅ |
+| 7. Agentes de IA | Claude Code e outros: limites, tokens, modelo, projeto e aviso de tarefa longa terminada, lendo os registros locais | — | ✅ |
+| 8. Além do original | bateria e carregamento, fones conectando, área de transferência, avisos de volume e brilho (o Foco ficou de fora: o macOS só o informa a apps com um direito especial da Apple ou com Acesso Total ao Disco) | — | ✅ |
+
 ## Fora do escopo
 
 Coisas do Vorssaint que não combinam com um app de borda leve e sem
 dependências: controle de ventoinha (helper com root), gerenciador do
-Homebrew, atualizador de apps, desinstalador, acompanhamento de agentes de IA,
-Dynamic Island, gravação de tela com editor de vídeo. Podem ser reavaliadas
+Homebrew, atualizador de apps, desinstalador, gravação de tela com editor de
+vídeo. (A Ilha Dinâmica e os agentes de IA saíram daqui: viraram a fase 6.) Podem ser reavaliadas
 depois.
