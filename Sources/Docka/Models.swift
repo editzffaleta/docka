@@ -203,6 +203,12 @@ final class DockaStore: ObservableObject {
         static let recorteNoFinder = "docka.finderCutPaste"
         static let instaladorDeDmg = "docka.dmgInstaller"
         static let dmgParaOLixo = "docka.dmgTrashAfter"
+        static let barraArquivos = "docka.commandBarFiles"
+        static let barraMenus = "docka.commandBarMenus"
+        static let scripts = "docka.commandBarScripts"
+        static let painelRapidoItens = "docka.quickPanelItems"
+        static let limpezaDuracao = "docka.cleaningDuration"
+        static let limpezaVisual = "docka.cleaningVisual"
         static let focoSegueMouse = "docka.focusFollowsMouse"
         static let focoAtraso = "docka.focusFollowsMouseDelay"
         static let focoIgnorados = "docka.focusFollowsMouseIgnored"
@@ -587,6 +593,27 @@ final class DockaStore: ObservableObject {
     @Published var instaladorDeDmg: Bool { didSet { defaults.set(instaladorDeDmg, forKey: Key.instaladorDeDmg) } }
     @Published var dmgParaOLixo: Bool { didSet { defaults.set(dmgParaOLixo, forKey: Key.dmgParaOLixo) } }
 
+    /// A barra de comando busca arquivos pelo Spotlight.
+    @Published var barraArquivos: Bool { didSet { defaults.set(barraArquivos, forKey: Key.barraArquivos) } }
+    /// A barra de comando lista os comandos de menu do app da frente.
+    @Published var barraMenus: Bool {
+        didSet { defaults.set(barraMenus, forKey: Key.barraMenus); pedirAcessibilidadeSe(barraMenus) }
+    }
+    /// Comandos de terminal com nome, para rodar pela barra.
+    @Published var scripts: [ScriptSalvo] {
+        didSet { defaults.set(try? JSONEncoder().encode(scripts), forKey: Key.scripts) }
+    }
+    /// As ferramentas do painel rápido, na ordem; `nil` é o padrão.
+    @Published var painelRapidoItens: [String]? {
+        didSet {
+            if let painelRapidoItens { defaults.set(painelRapidoItens, forKey: Key.painelRapidoItens) }
+            else { defaults.removeObject(forKey: Key.painelRapidoItens) }
+        }
+    }
+    /// Quanto tempo o modo de limpeza segura o teclado, em segundos.
+    @Published var limpezaDuracao: Double { didSet { defaults.set(limpezaDuracao, forKey: Key.limpezaDuracao) } }
+    @Published var limpezaVisual: String { didSet { defaults.set(limpezaVisual, forKey: Key.limpezaVisual) } }
+
     /// Fecha o app Música quando ele abre sozinho (tecla de tocar, fones).
     @Published var bloquearMusica: Bool { didSet { defaults.set(bloquearMusica, forKey: Key.bloquearMusica) } }
     /// Desliga o Bluetooth ao dormir e religa ao acordar.
@@ -906,6 +933,9 @@ final class DockaStore: ObservableObject {
         case .capturaArea: return "Capturar área"
         case .ilha: return "Ilha Dinâmica"
         case .secaoDaIlha(let s): return "Ilha — \(s.titulo.lowercased())"
+        case .barraDeComando: return "Barra de comando"
+        case .painelRapido: return "Painel rápido"
+        case .limpeza: return "Modo de limpeza"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -1081,6 +1111,10 @@ final class DockaStore: ObservableObject {
             Key.recorteNoFinder: false,
             Key.instaladorDeDmg: false,
             Key.dmgParaOLixo: false,
+            Key.barraArquivos: true,
+            Key.barraMenus: true,
+            Key.limpezaDuracao: 60.0,
+            Key.limpezaVisual: ModoDeLimpeza.Visual.telaPreta.rawValue,
             Key.focoSegueMouse: false,
             Key.focoAtraso: 0.3,
             Key.filtroDeClique: false,
@@ -1235,6 +1269,13 @@ final class DockaStore: ObservableObject {
         recorteNoFinder = defaults.bool(forKey: Key.recorteNoFinder)
         instaladorDeDmg = defaults.bool(forKey: Key.instaladorDeDmg)
         dmgParaOLixo = defaults.bool(forKey: Key.dmgParaOLixo)
+        barraArquivos = defaults.bool(forKey: Key.barraArquivos)
+        barraMenus = defaults.bool(forKey: Key.barraMenus)
+        scripts = defaults.data(forKey: Key.scripts)
+            .flatMap { try? JSONDecoder().decode([ScriptSalvo].self, from: $0) } ?? []
+        painelRapidoItens = defaults.stringArray(forKey: Key.painelRapidoItens)
+        limpezaDuracao = defaults.double(forKey: Key.limpezaDuracao)
+        limpezaVisual = defaults.string(forKey: Key.limpezaVisual) ?? ModoDeLimpeza.Visual.telaPreta.rawValue
         focoSegueMouse = defaults.bool(forKey: Key.focoSegueMouse)
         focoAtraso = defaults.double(forKey: Key.focoAtraso)
         focoIgnorados = defaults.stringArray(forKey: Key.focoIgnorados) ?? []

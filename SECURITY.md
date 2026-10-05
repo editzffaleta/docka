@@ -111,6 +111,14 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   `hdiutil info` para saber de que imagem veio o volume, copia o app para
   /Applications só depois do seu clique, e o que é substituído ou apagado vai
   para o Lixo — nada é apagado de vez
+- ℹ️ Painéis: a barra de comando busca arquivos pelo Spotlight só na pasta pessoal
+  e só enquanto está aberta, e lê os menus do app da frente pela Acessibilidade só
+  ao abrir; os scripts salvos rodam no `zsh` do usuário (sem privilégio a mais) só
+  quando escolhidos; o modo de limpeza descarta as teclas por um prazo fixo, sem
+  ler nem guardar nada, e o prazo é conferido a cada tecla — o teclado volta mesmo
+  que a interface trave. As alternâncias usam funções do sistema (claro/escuro pelo
+  SkyLight, Dock automático pelo CoreDock, Night Shift pelo CoreBrightness), e
+  esvaziar o Lixo pede ao Finder por Apple Events, só depois da sua confirmação
 - ℹ️ Ajustes do sistema, cada um só com a opção ligada: "Espaços na ordem" grava
   `mru-spaces` nas preferências do Dock e reinicia o Dock; "Bluetooth no repouso"
   desliga e religa o Bluetooth pelo IOBluetooth (pede a permissão de Bluetooth);

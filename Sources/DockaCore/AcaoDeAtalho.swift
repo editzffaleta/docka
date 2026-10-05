@@ -48,6 +48,12 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case ilha
     /// Abre a Ilha Dinâmica já numa seção.
     case secaoDaIlha(Ilha.Secao)
+    /// Abre a barra de comando; de novo, fecha.
+    case barraDeComando
+    /// Abre a paleta das ferramentas favoritas.
+    case painelRapido
+    /// Começa o modo de limpeza.
+    case limpeza
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -73,6 +79,9 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .capturaArea:       return "capturaArea"
         case .ilha:              return "ilha"
         case .secaoDaIlha(let s): return "ilha:\(s.rawValue)"
+        case .barraDeComando:    return "barraDeComando"
+        case .painelRapido:      return "painelRapido"
+        case .limpeza:           return "limpeza"
         }
     }
 
@@ -94,6 +103,9 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "textoDaTela": self = .textoDaTela
         case "capturaArea": self = .capturaArea
         case "ilha": self = .ilha
+        case "barraDeComando": self = .barraDeComando
+        case "painelRapido": self = .painelRapido
+        case "limpeza": self = .limpeza
         default:
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {

@@ -36,6 +36,21 @@ todo o resto por aqui.
   - **Instalador de imagem de disco**: ao abrir um .dmg que traz um app, o
     Docka oferece copiá-lo para Aplicativos (a versão antiga vai para o
     Lixo), ejeta a imagem e, se quiser, manda o .dmg para o Lixo.
+- **Painéis** (página nova):
+  - **Barra de comando**: um campo só para apps, janelas, arquivos (pelo
+    Spotlight), o que você copiou, snippets, comandos de menu do app da
+    frente e as ferramentas do Docka. Também faz contas ("15% de 80"),
+    converte unidades ("10 km em mi", "100 f para c") e acha emoji pelo nome
+    em português ("joinha"). Roda scripts salvos com nome.
+  - **Painel rápido**: as ferramentas favoritas numa paleta em volta do
+    cursor, com atalho; clique, ↩ ou o número da posição.
+  - **Modo de limpeza**: o teclado para de responder por um tempo, com as
+    telas pretas ou um aviso pequeno; termina sozinho ou segurando o botão.
+    Pede Acessibilidade.
+- **Alternâncias novas nas ações rápidas**: modo escuro, Night Shift, Dock
+  automático e arquivos ocultos — destacadas quando ligadas — e esvaziar o
+  Lixo (depois de confirmar; o macOS pergunta uma vez se o Docka pode
+  controlar o Finder).
 
 ## [1.5.2] — 2026-10-05
 

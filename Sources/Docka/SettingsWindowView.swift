@@ -10,7 +10,7 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, recursos, sistema, ilha, teclado, finder, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
+    case geral, recursos, sistema, ilha, teclado, finder, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, paineis, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// A barra lateral em grupos com título — com mais de vinte seções, um
@@ -20,7 +20,7 @@ enum Secao: String, CaseIterable, Identifiable {
         ("Controles de janela", [.mouse, .teclado, .alternador, .janelas, .encerrar, .dock]),
         ("Arquivos", [.finder, .clipboard, .prateleira, .captura]),
         ("Bordas", [.bandeja, .apps, .aparencia, .orbita, .notas, .brilho, .volume]),
-        ("Utilidades", [.acoes, .atalho]),
+        ("Utilidades", [.paineis, .acoes, .atalho]),
         ("", [.sobre]),
     ]
 
@@ -49,6 +49,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
         case .energia:   return "Energia"
+        case .paineis:   return "Painéis"
         case .acoes:     return "Ações rápidas"
         case .atalho:    return "Atalhos"
         case .sobre:     return "Sobre"
@@ -94,6 +95,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .notas:      return "note.text"
         case .brilho:     return "sun.max"
         case .volume:     return "speaker.wave.2"
+        case .paineis:    return "square.grid.3x3.square"
         case .acoes:      return "rays"
         case .atalho:     return "keyboard"
         case .sobre:      return "info.circle"
@@ -126,6 +128,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .brilho:    return .yellow
         case .volume:    return .pink
         case .energia:   return .brown
+        case .paineis:   return .indigo
         case .acoes:     return .red
         case .atalho:    return .orange
         case .sobre:     return .secondary
@@ -245,6 +248,7 @@ struct SettingsWindowView: View {
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
         case .energia:   EnergiaView()
+        case .paineis:   PaineisSettingsView()
         case .acoes:     AcoesRapidasView()
         case .atalho:    AtalhoView()
         case .sobre:     SobreView()
@@ -309,6 +313,9 @@ extension DockaStore {
             RecursoComPermissao(nome: "Filtro de clique duplo", permissoes: [.acessibilidade], ligado: filtroDeClique),
             RecursoComPermissao(nome: "Clique do meio com três dedos", permissoes: [.acessibilidade], ligado: cliqueDoMeio),
             RecursoComPermissao(nome: "Recortar e colar no Finder", permissoes: [.acessibilidade], ligado: recorteNoFinder),
+            RecursoComPermissao(nome: "Comandos de menu na barra de comando", permissoes: [.acessibilidade],
+                                ligado: barraMenus && atalho(de: .barraDeComando) != nil),
+            RecursoComPermissao(nome: "Modo de limpeza", permissoes: [.acessibilidade], ligado: atalho(de: .limpeza) != nil),
             RecursoComPermissao(nome: "Repique de teclas", permissoes: [.acessibilidade], ligado: repiqueDeTeclas),
             RecursoComPermissao(nome: "Tecla super", permissoes: [.acessibilidade], ligado: teclaSuper),
             RecursoComPermissao(nome: "Sair ao fechar", permissoes: [.acessibilidade], ligado: sairAoFecharControl),
@@ -2567,6 +2574,125 @@ private struct EnergiaView: View {
     }
 }
 
+// MARK: - Painéis
+
+/// Ajustes → Painéis: a barra de comando, o painel rápido e o modo de limpeza.
+private struct PaineisSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+
+    private var ferramentas: [AcaoDeAtalho] {
+        Ferramentas.disponiveis().filter { $0 != .painelRapido }
+    }
+
+    private var favoritos: [String] {
+        let ids = Set(ferramentas.map(\.id))
+        return PainelRapido.favoritos(gravados: store.painelRapidoItens) { ids.contains($0) }
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                atalho(.barraDeComando)
+                Toggle(isOn: $store.barraArquivos) {
+                    Text("Buscar arquivos")
+                    Text("Pelo Spotlight, na sua pasta pessoal; os usados por último primeiro.")
+                }
+                Toggle(isOn: $store.barraMenus) {
+                    Text("Comandos de menu do app da frente")
+                    Text("Ache e execute qualquer item dos menus sem caçar onde ele está. Pede Acessibilidade.")
+                }
+                LabeledContent("Testar") {
+                    Button("Abrir a barra") { BarraDeComandoController.shared.abrir() }
+                }
+            } header: {
+                Text("Barra de comando")
+            } footer: {
+                Text("Um campo só para apps, janelas, arquivos, o que você copiou, snippets, comandos de menu e as ferramentas do Docka. Também faz contas (15% de 80), converte unidades (10 km em mi, 100 f para c) e acha emoji (joinha). ↩ escolhe; num arquivo, ⌘↩ mostra no Finder.")
+            }
+
+            Section {
+                ForEach($store.scripts) { $s in
+                    HStack(spacing: 8) {
+                        TextField("Nome", text: $s.nome)
+                            .frame(width: 150)
+                        TextField("Comando", text: $s.comando)
+                            .font(.system(.body, design: .monospaced))
+                        Button {
+                            store.scripts.removeAll { $0.id == s.id }
+                        } label: {
+                            Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Remover")
+                    }
+                    .labelsHidden()
+                }
+                Button("Adicionar script") {
+                    store.scripts.append(ScriptSalvo(nome: "Novo script", comando: "echo pronto"))
+                }
+            } header: {
+                Text("Scripts da barra")
+            } footer: {
+                Text("Digite o nome na barra para rodar. Roda no zsh de login (com o seu PATH), na pasta pessoal, e a primeira linha da saída aparece num aviso. Cadastre só comandos em que você confia.")
+            }
+
+            Section {
+                atalho(.painelRapido)
+                ForEach(ferramentas, id: \.id) { a in
+                    Toggle(isOn: Binding(
+                        get: { favoritos.contains(a.id) },
+                        set: { _ in store.painelRapidoItens = PainelRapido.alternar(a.id, em: favoritos) }
+                    )) {
+                        Label(Ferramentas.titulo(a), systemImage: Ferramentas.simbolo(a))
+                    }
+                }
+                LabeledContent("Testar") {
+                    HStack {
+                        Button("Voltar ao padrão") { store.painelRapidoItens = nil }
+                            .disabled(store.painelRapidoItens == nil)
+                        Button("Abrir o painel") { PainelRapidoController.shared.abrir() }
+                    }
+                }
+            } header: {
+                Text("Painel rápido")
+            } footer: {
+                Text("Uma paleta com as ferramentas marcadas, aberta em volta do cursor, na ordem em que foram marcadas. Clique, ↩ ou o número da posição escolhe. Recursos desligados não aparecem.")
+            }
+
+            Section {
+                atalho(.limpeza)
+                Picker("Enquanto limpa", selection: $store.limpezaVisual) {
+                    ForEach(ModoDeLimpeza.Visual.allCases) { v in Text(v.titulo).tag(v.rawValue) }
+                }
+                .pickerStyle(.segmented)
+                Picker("Duração", selection: $store.limpezaDuracao) {
+                    ForEach(ModoDeLimpeza.duracoes, id: \.self) { d in
+                        Text(d < 60 ? "\(Int(d)) segundos" : (d == 60 ? "1 minuto" : "\(Int(d / 60)) minutos")).tag(d)
+                    }
+                }
+                LabeledContent("Testar") {
+                    Button("Começar agora") { ModoDeLimpezaController.shared.comecar() }
+                }
+            } header: {
+                Text("Modo de limpeza")
+            } footer: {
+                Text("O teclado inteiro para de responder, inclusive brilho, volume e mídia; o botão de ligar e o Touch ID continuam. Com as telas pretas, os cliques também não chegam aos apps. Termina sozinho no fim do tempo, ou segurando o botão na tela. Pede Acessibilidade.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    @ViewBuilder
+    private func atalho(_ acao: AcaoDeAtalho) -> some View {
+        LabeledContent("Atalho") { ShortcutRecorder(acao: acao) }
+        if let erro = store.erroDoAtalho(acao) {
+            Label(erro, systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .font(.callout)
+        }
+    }
+}
+
 // MARK: - Ações rápidas
 
 private struct AcoesRapidasView: View {
@@ -2592,7 +2718,7 @@ private struct AcoesRapidasView: View {
                     }
                 }
             } footer: {
-                Text("Elas também ficam na aba Rápido do painel da barra de menus, e cada uma pode ter um atalho. Nenhuma pede permissão. Esvaziar o Lixo e trocar claro/escuro ficaram de fora porque exigiriam autorizar o Docka a controlar o Finder e os Eventos do Sistema.")
+                Text("Elas também ficam na aba Rápido do painel da barra de menus, no painel rápido e na barra de comando, e cada uma pode ter um atalho. As alternâncias (claro/escuro, Night Shift, Dock, arquivos ocultos, ícones da mesa) aparecem destacadas quando ligadas. Só esvaziar o Lixo pede permissão: o macOS pergunta uma vez se o Docka pode controlar o Finder.")
             }
         }
         .formStyle(.grouped)
@@ -2781,6 +2907,17 @@ private struct AtalhoView: View {
             }
 
             Section {
+                linha(.barraDeComando, titulo: "Barra de comando",
+                      detalhe: "Apps, janelas, arquivos, comandos de menu, contas e emoji")
+                linha(.painelRapido, titulo: "Painel rápido",
+                      detalhe: "As ferramentas favoritas em volta do cursor")
+                linha(.limpeza, titulo: "Modo de limpeza",
+                      detalhe: "Trava o teclado para limpar; segure o botão na tela para sair")
+            } header: {
+                Text("Painéis")
+            }
+
+            Section {
                 ForEach(AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)) { a in
                     linha(.rapida(a), titulo: a.titulo, detalhe: a.descricao)
                 }
@@ -2878,6 +3015,12 @@ enum AjustesAutoteste {
             desenhar(TecladoSettingsView().frame(width: 600, height: 420), "ajustes-teclado", NSSize(width: 600, height: 420)),
             desenhar(FinderSettingsView().frame(width: 600, height: 380), "ajustes-finder", NSSize(width: 600, height: 380)),
             InstaladorPanel.desenhar(pasta: pasta),
+            desenhar(PaineisSettingsView().frame(width: 600, height: 1500), "ajustes-paineis", NSSize(width: 600, height: 1500)),
+            BarraDeComandoController.desenhar(pasta: pasta, busca: "15% de 80", arquivo: "barra-conta.png"),
+            BarraDeComandoController.desenhar(pasta: pasta, busca: "10 km em mi", arquivo: "barra-conversao.png"),
+            BarraDeComandoController.desenhar(pasta: pasta, busca: "term", arquivo: "barra-busca.png"),
+            BarraDeComandoController.desenhar(pasta: pasta, busca: "joinha", arquivo: "barra-emoji.png"),
+            PainelRapidoController.desenhar(pasta: pasta),
             desenhar(MouseSettingsView().frame(width: 600, height: 1300), "ajustes-mouse", NSSize(width: 600, height: 1300)),
             {
                 // o DDC responde (ou não) em segundo plano: espera a resposta antes de desenhar
