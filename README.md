@@ -5,7 +5,7 @@
 <h1 align="center">Docka</h1>
 
 <p align="center">
-  <strong>Bandejas de apps, réguas de brilho e volume e uma órbita de lançamento — tudo escondido nas bordas da tela, a um empurrão de cursor de distância.</strong><br>
+  <strong>Bandejas de apps, réguas de brilho e volume e uma órbita de lançamento nas bordas da tela — e, em volta delas, os utilitários que se costuma comprar um a um.</strong><br>
   Leve, 100% SwiftUI, com um núcleo que não pede nenhuma permissão — e módulos opcionais que só pedem quando você liga.
 </p>
 
@@ -33,7 +33,25 @@ O **Docka** é um conjunto de superfícies de borda **gratuito e de código aber
 
 Perfeito para quem mantém o Dock enxuto mas quer um segundo escalão de apps, sites e pastas sempre à mão — sem poluir a tela, sem apps de barra de menus pesados.
 
+Em volta das bordas cresceu o resto: uma **Ilha Dinâmica** no recorte da câmera, uma **barra de comando**, histórico da área de transferência, encaixe de janelas, alternador de apps, som por app, gravação de tela, ferramentas de mídia e uma janela de **manutenção**. Tudo opcional, tudo desligado até você ligar.
+
 **Sem dependências. Sem telemetria. Núcleo sem permissões. Só um empurrão de cursor.**
+
+## Novidades da 1.6
+
+| Recurso | O que faz |
+|---|---|
+| **Barra de comando** | Um campo só para apps, janelas, arquivos, o que você copiou, snippets, comandos de menu e as ferramentas do Docka — e para contas, unidades, emoji e scripts |
+| **Painel rápido** | As ferramentas favoritas numa paleta em volta do cursor |
+| **Som** | A saída de cada app, trocar de saída num atalho, baixar o volume quando o fone sai, microfone preferido e silenciar todos os microfones |
+| **Gravação de tela** | Área ou tela inteira, com o som do Mac e o microfone em faixas separadas |
+| **Ferramentas de mídia** | Comprimir, GIF, áudio, converter e marcar imagens, tirar o texto |
+| **Manutenção** | Atualizações, limpeza, mensageiros, desinstalador, Homebrew e portas abertas |
+| **Finder e sistema** | ⌘X/⌘V movem arquivos, instalador de .dmg, Espaços na ordem, Bluetooth no repouso, aceleração do mouse |
+| **Mouse e teclado** | Foco segue o mouse, clique do meio com três dedos, ações dos botões, repique de teclas e tecla super |
+| **Alternâncias e limpeza** | Modo escuro, Night Shift, Dock automático, arquivos ocultos e esvaziar o Lixo; o modo de limpeza trava o teclado para passar um pano |
+
+O [registro de mudanças](CHANGELOG.md) tem todos os detalhes.
 
 ## Recursos
 
@@ -73,7 +91,7 @@ Um anel com seus itens em volta do cursor. Aponte na direção de um e clique �
 | **Zona morta no centro** | O buraco do anel não seleciona nada, então ele nunca nasce com um app já escolhido debaixo do cursor |
 | **Seis tipos de item** | App, site, arquivo e pasta — cada um abre do jeito próprio: app lança, site vai ao navegador, arquivo abre no app padrão, pasta abre no Finder. Mais **submenu**, que abre outro anel no mesmo lugar, e **ação rápida** (travar a tela, ejetar discos…) |
 | **Submenus** | Um item pode abrir outro anel sem trocar o ativo; o miolo mostra "‹ nome" e clicar nele (ou Esc) volta um nível |
-| **Logo do site** | Ao adicionar um site, a logo vem do próprio site (favicon/apple-touch-icon), com prévia na hora — é a única conexão de saída do app, e nunca passa por serviço de terceiros |
+| **Logo do site** | Ao adicionar um site, a logo vem do próprio site (favicon/apple-touch-icon), com prévia na hora — nunca passa por serviço de terceiros (ver [E a rede?](#e-a-rede)) |
 | **Até 8 anéis** | Anéis nomeados (Trabalho, Design, Estudo…), cada um com seus itens. Com a órbita aberta, a rolagem do mouse troca de anel — o nome do ativo aparece no miolo; cada anel pode ter o próprio atalho global, que abre direto nele |
 | **Reordenar no editor** | Selecione a zona e mova o item de casa em casa, no sentido horário ou anti-horário |
 | **Editor visual** | Nos ajustes o anel aparece como ele é: clique num item para ver e editar a zona dele |
@@ -150,14 +168,82 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Arrastar até a borda** | Leve a janela até a borda: laterais dão metades, cantos dão quartos, o topo maximiza — com prévia de onde ela vai parar |
 | **Botão verde maximiza** *(Acessibilidade)* | Preenche a tela sem criar outro Espaço; de novo, volta ao tamanho de antes; com ⌥, o de sempre |
 | **Sair ao fechar** *(Acessibilidade)* | Os apps escolhidos encerram quando a última janela fecha |
-| **Ilha Dinâmica** | Uma ilha preta em volta do recorte da câmera (ou simulada): cresce com o cursor, abre numa grade de seções e mostra nas asas o que está correndo. Já com Timer (temporizador, Pomodoro e cronômetro), Controles, Sistema, Arquivos (solte arquivos na ilha), Rascunho, Capturas recentes, Downloads com progresso Tocando agora (qualquer app ou aba do navegador, com capa, controles, letra sincronizada e equalizador), Calendário (mês, agenda e "Entrar" nas reuniões), Mixer (volume de cada app), Notificações recentes, Espelho da câmera e Agentes de IA (Claude Code e Codex: uso, janela do plano e aviso de tarefa longa terminada). Fechada, avisos rápidos nas asas: carregador, bateria baixa, fones, volume, brilho e copiado |
 | **Prévia do Dock** *(Acessibilidade; miniaturas com Gravação de Tela)* | Pare o cursor num ícone do Dock para ver as janelas do app; clique para trazer uma (minimizada volta do Dock), × para fechar |
 | **Arrastar segurando teclas** *(Acessibilidade)* | Com ⌃⌥ apertado, arraste de qualquer ponto para mover a janela; com o botão direito, redimensione pelo canto mais perto |
 | **Proteção do ⌘Q e ⌘W** *(Acessibilidade)* | Segurar, apertar duas vezes ou usar ⌥ para confirmar — só esses dois atalhos são interceptados |
 | **Cliques no Dock** *(Acessibilidade)* | Clicar no ícone do app ativo minimiza, oculta ou passa para a próxima janela |
 | **Alternador de apps** | Num atalho próprio (sugestão ⌥Tab): apps na ordem de uso, segure e aperte para avançar, solte para trocar; digite para buscar pelo nome ou título. Sem permissão; com Acessibilidade, uma entrada por janela; com Gravação de Tela, miniaturas das janelas. Não substitui o ⌘Tab |
 
-### Mouse *(módulo opcional, Acessibilidade)*
+### Ilha Dinâmica *(módulo opcional)*
+
+Uma ilha preta em volta do recorte da câmera — ou simulada no meio do topo, em Macs sem recorte. Cresce com o cursor, abre numa grade de seções e mostra nas asas o que está correndo.
+
+| Seção | O que faz |
+|---|---|
+| **Timer** | Temporizador com régua, Pomodoro e cronômetro; o tempo nas asas e um aviso no fim |
+| **Controles e Sistema** | Manter acordado e as ações rápidas; CPU, memória, rede, bateria e disco |
+| **Arquivos** | Solte qualquer coisa no recorte e leve de volta arrastando, mande por AirDrop ou compacte |
+| **Rascunho** | O bloco de notas, com abas, digitando direto na ilha |
+| **Capturas e Downloads** | Os arquivos recentes com miniatura; o download em andamento com a porcentagem nas asas |
+| **Tocando agora** | Qualquer app ou aba do navegador, com capa, controles, letra sincronizada e equalizador |
+| **Calendário** | O mês, a agenda do dia e o "Entrar" nas reuniões; avisa do próximo compromisso |
+| **Mixer** | O volume de cada app (até 150%), o volume geral, a saída de som e a saída de cada app |
+| **Notificações e câmera** | Os avisos recentes, só na memória, e a câmera ao vivo antes de uma chamada |
+| **Agentes de IA** | Claude Code e Codex: uso, janela do plano e aviso de tarefa longa terminada |
+
+Fechada, avisos rápidos nas asas: carregador, bateria baixa, fones, volume, brilho e copiado.
+
+### Barra de comando e painéis
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Barra de comando** | Um campo só para apps, janelas, arquivos (Spotlight, na sua pasta), o que você copiou, snippets, comandos de menu do app da frente *(Acessibilidade)* e as ferramentas do Docka. Também faz contas ("15% de 80"), converte unidades ("10 km em mi", "100 f para c"), acha emoji pelo nome em português ("joinha") e roda scripts salvos com nome |
+| **Painel rápido** | As ferramentas favoritas numa paleta em volta do cursor; clique, ↩ ou o número da posição |
+| **Alternâncias** | Modo escuro, Night Shift, Dock automático e arquivos ocultos — destacados quando ligados — e esvaziar o Lixo, depois de confirmar |
+| **Modo de limpeza** *(Acessibilidade)* | Trava o teclado por um tempo, com as telas pretas ou um aviso pequeno; termina sozinho ou segurando o botão na tela |
+
+### Som
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Saída de cada app** | A música nos alto-falantes e a chamada no fone: o som do app passa pelo Docka até a saída escolhida, só enquanto ele toca; desconectada, ele toca na padrão |
+| **Trocar de saída** | Num atalho, com o nome da nova num aviso |
+| **Fone desconectado** | Tirou o fone (Bluetooth ou de fio): o volume desce até o limite escolhido, para não tocar alto na sala |
+| **Microfone preferido** | Volta a ser o do sistema sempre que conectado — os AirPods não tomam o lugar do microfone do Mac |
+| **Microfones** | O nível do microfone atual e silenciar todos num atalho; religar devolve cada um como estava, e fechar o Docka também |
+
+### Mídia
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Gravação de tela** *(Gravação de Tela, macOS 15)* | Arraste uma área ou clique para a tela inteira; o som do Mac e o microfone em faixas separadas, os cliques à mostra e um controle pequeno com o tempo e o parar. As janelas do Docka não aparecem no vídeo |
+| **Ferramentas de mídia** | Solte vídeos e imagens: comprimir (nunca entrega um arquivo maior), fazer GIF, tirar o áudio; converter, redimensionar e pôr marca d'água em lote, ou tirar o texto. Tudo no Mac, ao lado do original, sem sobrescrever |
+
+### Finder e sistema
+
+| Recurso | Descrição |
+|---------|-----------|
+| **⌘X e ⌘V movem arquivos** *(Acessibilidade)* | No Finder, ⌘X marca e o ⌘V em outra pasta move; renomeando, continua recortando o texto |
+| **Instalador de .dmg** | Ao abrir uma imagem de disco com um app, oferece copiá-lo para Aplicativos e ejetar; a versão antiga vai para o Lixo |
+| **Espaços na ordem** | O macOS para de reorganizar os Espaços pelo uso recente |
+| **Música que abre sozinho** | Fecha o app Música quando ele abre pelas costas (tecla de tocar, fones); aberto de propósito, fica |
+| **Bluetooth no repouso** *(Bluetooth)* | Desliga ao dormir e religa ao acordar, só se estava ligado |
+| **Aceleração do mouse** | Sem aceleração ou com a curva escolhida; ao desligar, volta a de antes |
+
+### Manutenção
+
+Uma janela com seis seções. Nada roda sozinho, e o que sai vai para o Lixo — nada é apagado de vez.
+
+| Seção | O que faz |
+|---|---|
+| **Atualizações** | Confere os apps no feed do próprio desenvolvedor, na App Store e no Homebrew — só quando você clica em Procurar |
+| **Limpeza** | Caches, registros e restos de apps já removidos, com o tamanho de cada um; os do macOS, o de app aberto e os restos vêm desmarcados |
+| **Mensageiros** | Os arquivos do WhatsApp, do Telegram e de pastas suas mais velhos que o prazo vão para o Lixo ou são juntados por mês |
+| **Desinstalador** | O app e os arquivos dele na Biblioteca, revisados antes; apps do macOS não são removidos |
+| **Homebrew** | Procurar, instalar e remover fórmulas e casks sem abrir o Terminal |
+| **Portas abertas** | Quem espera conexões, só neste Mac ou na rede, com o botão para encerrar |
+
+### Mouse e teclado *(módulo opcional, Acessibilidade)*
 
 | Recurso | Descrição |
 |---------|-----------|
@@ -204,25 +290,16 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 
 | Recurso | Descrição |
 |---------|-----------|
-| **Ajustes do sistema** | Espaços em ordem fixa, impedir o Música de abrir sozinho, Bluetooth desligado no repouso (pede a permissão de Bluetooth) e aceleração do mouse — cada um desfeito ao desligar |
-| **Finder** | ⌘X e ⌘V movem arquivos (Acessibilidade); ao abrir um .dmg com um app, oferece instalar em Aplicativos e ejetar a imagem |
-| **Barra de comando** | Um campo só para apps, janelas, arquivos, o que você copiou, snippets, comandos de menu do app da frente (Acessibilidade) e as ferramentas do Docka — e para contas, conversão de unidades, emoji e scripts salvos |
-| **Manutenção** | Atualizações (feed do desenvolvedor, App Store e Homebrew, só quando você pede), limpeza de caches, registros e restos de apps, downloads dos mensageiros, desinstalador que leva os arquivos do app junto, Homebrew sem Terminal e portas abertas — tudo vai para o Lixo, nada é apagado de vez |
-| **Gravação de tela** | Uma área ou a tela inteira, com o som do Mac e o microfone em faixas separadas e um controle pequeno com o tempo e o parar; as janelas do Docka não aparecem no vídeo (Gravação de Tela, macOS 15) |
-| **Ferramentas de mídia** | Solte vídeos e imagens para comprimir, fazer GIF, tirar o áudio, converter e redimensionar em lote, pôr marca d'água ou tirar o texto — tudo no Mac, sem sobrescrever o original |
-| **Som** | A saída de cada app (música nos alto-falantes, chamada no fone), trocar de saída num atalho, baixar o volume quando o fone sai, microfone preferido, nível do microfone e silenciar todos os microfones num atalho |
-| **Painel rápido** | As ferramentas favoritas numa paleta em volta do cursor, com atalho |
-| **Modo de limpeza** | Trava o teclado por um tempo para passar um pano, com as telas pretas ou um aviso pequeno; termina sozinho ou segurando o botão (Acessibilidade) |
 | **Abrir no login** | O Docka sobe sozinho quando você entra no Mac, via `SMAppService` — sem helper, sem permissão, e você pode desligar direto nas Configurações do Sistema |
 | **Vive na barra de menus** | Sem ícone no Dock e fora do ⌘Tab; a janela de configurações aparece só quando você pede |
 | **Pressure Zone** | Modo opcional que só revela a bandeja quando você empurra o cursor contra o canto de propósito — evita aberturas acidentais em apps de tela cheia |
 | **Calibração ao vivo** | Tamanho dos ícones, ampliação, alcance, Tom e material do vidro por slider — com efeito imediato na bandeja, sem reiniciar |
 | **Manter acordado** | Impede o Mac de dormir por um tempo escolhido (15 min a 5 h) ou até desligar, com ou sem tela acesa. No menu da barra, na seção Energia e num atalho próprio; a xícara na barra avisa que está ligado |
 | **Ações rápidas** | Travar a tela, apagar as telas, proteção de tela, repouso, ejetar todos os discos, ocultar os ícones da mesa, modo escuro, Night Shift, Dock automático, arquivos ocultos e esvaziar o Lixo — no painel da barra, no painel rápido, na barra de comando e com atalho próprio cada uma |
-| **Atalhos por ação** | Grave as combinações na aba Atalhos — uma por bandeja, brilho, volume, órbita, cada anel, prateleira, bloco de notas, o Manter acordado e cada ação rápida; conflito entre ações do Docka é apontado pelo nome |
+| **Atalhos por ação** | Grave as combinações na aba Atalhos — uma por bandeja, brilho, volume, órbita, cada anel, prateleira, bloco de notas, ilha, barra de comando, painel rápido, limpeza, saída de som, microfones, gravação, mídia, manutenção, o Manter acordado e cada ação rápida; conflito entre ações do Docka é apontado pelo nome |
 | **Acessibilidade** | Respeita **Reduzir Movimento** do sistema (sem partículas, sem deslize, sem quique) e rotula a bandeja para o VoiceOver |
 | **Onboarding em 3 passos** | Boas-vindas → escolha de apps (grade com busca) → modo de revelação |
-| **Painel da barra de menus** | O ícone abre um painel com abas: **Rápido** (manter acordado, ações rápidas, sons, Pressure Zone, abrir no login), **Sistema** (CPU, memória e rede ao vivo), **Controles** (um interruptor por recurso, agrupados por área) e **Utilidades** (histórico, snippets, captura, encaixe — com o atalho de cada um) |
+| **Painel da barra de menus** | O ícone abre um painel com abas: **Rápido** (manter acordado, ações rápidas, sons, Pressure Zone, abrir no login), **Sistema** (CPU, memória e rede ao vivo), **Controles** (um interruptor por recurso, agrupados por área) e **Utilidades** (barra de comando, painel rápido, gravação, mídia, manutenção, limpeza, histórico, snippets, captura e encaixe — com o atalho de cada um) |
 
 ### O gerenciador
 
@@ -264,7 +341,17 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 ├── Ilha.swift               — a Ilha Dinâmica: medidas, quando crescer e abrir, atividades
 ├── TimerDaIlha.swift        — temporizador, Pomodoro e cronômetro, contados por datas
 ├── ArquivosDaIlha.swift     — capturas e downloads recentes: o que mostrar e em que ordem
+├── AgentesDaIlha.swift, CalendarioDaIlha.swift, MusicaDaIlha.swift, MixerDaIlha.swift,
+│   NotificacoesDaIlha.swift, AvisosDaIlha.swift — as regras das outras seções da ilha
 ├── Alternador.swift         — ordem de uso, seleção e soltar do modificador
+├── AjustesDoSistema.swift   — Espaços, Música, Bluetooth no repouso e a curva de aceleração
+├── MouseETeclado.swift      — foco segue o mouse, filtro de clique, repique e tecla super
+├── FinderEArquivos.swift    — recortar e colar no Finder e o que oferecer num .dmg
+├── BarraDeComando.swift     — busca aproximada, contas, conversões, emoji e scripts
+├── Paineis.swift            — modo de limpeza e os favoritos do painel rápido
+├── Som.swift                — saída de cada app, próxima saída, fones e microfones
+├── Midia.swift              — nomes de saída, tamanhos, quadros do GIF, marca d'água, gravação
+├── Manutencao.swift         — versões, feed do Sparkle, portas, restos de apps, retenção
 ├── Rolagem.swift            — inverter, linear, de lado, deslize suave, botões laterais
 ├── Captura.swift            — formatos de cor, ordem de leitura do OCR, nome do arquivo
 ├── Anotacao.swift           — marcas do editor, cabeça da seta, encaixe, recorte, borrão
@@ -301,7 +388,20 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── IlhaController.swift     — a Ilha Dinâmica: painel, forma, grade, asas e botões dos lados
 ├── TimerDaIlhaView.swift    — a seção Timer da ilha
 ├── SecoesDaIlha.swift       — Controles, Sistema, Arquivos, Rascunho, Capturas e Downloads
+├── AgentesDaIlhaView.swift, CalendarioDaIlhaView.swift, MusicaDaIlha.swift, MixerDaIlha.swift,
+│   NotificacoesECameraDaIlha.swift, AvisosRapidosDaIlha.swift — as outras seções da ilha
 ├── AlternadorController.swift — o alternador: histórico de uso, painel e ativação
+├── AjustesDoSistemaController.swift — Espaços, Música, Bluetooth e aceleração do mouse
+├── MouseETecladoController.swift — foco segue o mouse, cliques, repique e tecla super
+├── FinderEArquivosController.swift — ⌘X/⌘V no Finder e o instalador de .dmg
+├── BarraDeComandoController.swift — a barra de comando: fontes, menus e a vista
+├── PainelRapidoController.swift — a paleta das ferramentas favoritas
+├── Ferramentas.swift        — o catálogo de ferramentas da barra e do painel rápido
+├── ModoDeLimpezaController.swift — o tap que segura o teclado e as telas pretas
+├── SomController.swift      — microfones, troca de saída e fones (CoreAudio)
+├── GravacaoController.swift — gravação de tela pelo ScreenCaptureKit
+├── MidiaController.swift    — comprimir, GIF, áudio, imagens e texto
+├── ManutencaoController.swift, ManutencaoModelos.swift — a janela de manutenção
 ├── MouseController.swift    — módulo do mouse: o event tap e a rolagem suave
 ├── CapturaController.swift  — conta-gotas, OCR/QR pelo Vision e captura de área
 ├── EditorDeAnotacao.swift   — o editor: desenho único para prévia e exportação
@@ -332,7 +432,12 @@ moram no `DockaCore`, onde `swift test` alcança.
 | Atalhos globais | `RegisterEventHotKey` (Carbon), um registro por ação — sem permissões; gravação por monitor **local** de eventos |
 | Brilho | `DisplayServices` (privado, resolvido em runtime): a única forma de LER o brilho em Apple Silicon sem Acessibilidade — na tela sob o cursor |
 | Volume | CoreAudio (API pública): volume virtual e mudo da saída padrão, acompanhando troca de fone |
-| Logo de site | `URLSession` efêmera contra o próprio site (favicon/apple-touch-icon) — a única conexão de saída do app |
+| Logo de site | `URLSession` efêmera contra o próprio site (favicon/apple-touch-icon) |
+| Atualizações | `URLSession` efêmera contra o feed que cada app declara e a busca pública da App Store — só ao clicar em Procurar |
+| Som por app | Toques de processo do Core Audio (`CATapDescription`, macOS 14.2) e dispositivos agregados privados |
+| Gravação de tela | ScreenCaptureKit (`SCStream` + `SCRecordingOutput`, macOS 15), HEVC num .mov |
+| Mídia | AVFoundation (exportação e quadros), ImageIO (imagens e GIF) e Vision (texto) |
+| Barra de comando | Spotlight (`NSMetadataQuery`) para arquivos e a Acessibilidade para os menus |
 | Acessibilidade | `accessibilityReduceMotion` do sistema + rótulos e valores de VoiceOver |
 | Arrastar e soltar | `Transferable` (`.draggable`/`.dropDestination`) com payload de URL |
 | Persistência | `UserDefaults` publicado via `@Published` (caminhos dos apps e preferências) |
@@ -356,7 +461,11 @@ sem ela continuam funcionando no modo sem permissão.
 | Alternador — filtros | Acessibilidade | Saber em que tela estão as janelas e quais apps não têm nenhuma | Os filtros ficam desligados |
 | Alternador — prévias | Gravação de Tela | Miniaturas das janelas enquanto o alternador está aberto; nada é gravado | Ícones no lugar das miniaturas |
 | Captura | Gravação de Tela | Capturar a área que você seleciona, para OCR, QR ou imagem — reconhecimento no próprio Mac | Só o conta-gotas funciona |
-| Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse — nunca o teclado | O mouse segue como o sistema manda |
+| Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse | O mouse segue como o sistema manda |
+| Repique de teclas e tecla super | Acessibilidade | Ver só o código e o momento de cada tecla, para descartar a repetição ou somar ⌃⌥⇧⌘ — nada é guardado | O teclado segue como o sistema manda |
+| Foco segue o mouse, filtro de clique, clique do meio | Acessibilidade | Saber a janela sob o cursor e os cliques; contar os dedos no trackpad | Nada muda |
+| Recortar e colar no Finder | Acessibilidade | Ver ⌘X e ⌘V só com o Finder na frente | O ⌘X e o ⌘V ficam como o Finder faz |
+| Bluetooth no repouso | Bluetooth | Desligar o Bluetooth ao dormir e religar ao acordar | A opção não age |
 | Ilha — notificações | Acessibilidade | Ler os avisos que aparecem na tela (app, título e texto), só com a opção ligada; ficam na memória e somem ao travar a tela | A seção não guarda nada |
 | Ilha — espelho da câmera | Câmera | Mostrar a câmera ao vivo na ilha ou no espelho flutuante; nada é gravado | A seção pede o acesso |
 | Ilha — calendário | Calendários | Ler os compromissos para a agenda e o aviso do próximo; só leitura | A seção pede o acesso e não mostra nada |
@@ -410,7 +519,7 @@ Requisitos: macOS 14+ e as Command Line Tools do Xcode.
 ```bash
 git clone https://github.com/editzffaleta/docka.git
 cd docka
-swift test   # opcional: 160+ testes do DockaCore
+swift test   # opcional: 400+ testes do DockaCore
 swift run
 ```
 
