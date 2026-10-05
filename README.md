@@ -201,7 +201,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 | **Atalhos por ação** | Grave as combinações na aba Atalhos — uma por bandeja, brilho, volume, órbita, cada anel, prateleira, bloco de notas, o Manter acordado e cada ação rápida; conflito entre ações do Docka é apontado pelo nome |
 | **Acessibilidade** | Respeita **Reduzir Movimento** do sistema (sem partículas, sem deslize, sem quique) e rotula a bandeja para o VoiceOver |
 | **Onboarding em 3 passos** | Boas-vindas → escolha de apps (grade com busca) → modo de revelação |
-| **Barra de menus** | Ícone com atalhos rápidos: sons, Pressure Zone, abrir no login, configurações e encerrar |
+| **Painel da barra de menus** | O ícone abre um painel com abas: **Rápido** (manter acordado, ações rápidas, sons, Pressure Zone, abrir no login), **Sistema** (CPU, memória e rede ao vivo), **Controles** (um interruptor por recurso, agrupados por área) e **Utilidades** (histórico, snippets, captura, encaixe — com o atalho de cada um) |
 
 ### O gerenciador
 
@@ -246,6 +246,7 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 
 Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── DockaApp.swift           — @main, MenuBarExtra, janela de ajustes, abrir no login
+├── PainelDaBarra.swift      — o painel com abas que abre no ícone da barra de menus
 ├── Models.swift             — DockaStore (estado + preferências) e migrações
 ├── TrayController.swift     — NSPanels das bandejas, polling do cursor, despacho de atalhos
 ├── OrbitaController.swift   — o anel no cursor: seleção por direção, rolagem entre anéis

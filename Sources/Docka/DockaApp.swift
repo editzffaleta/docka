@@ -195,6 +195,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--painel-selftest") {
+            let pasta = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"] ?? "/tmp"
+            print("painel:\n\(PainelDaBarra.autoteste(pasta: pasta))")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
         if CommandLine.arguments.contains("--demo") {
             TrayManager.shared.startDemo()
         }
@@ -226,7 +234,7 @@ struct DockaApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBarContent().environmentObject(store).environmentObject(acordado)
+            PainelDaBarra().environmentObject(store)
         } label: {
             // a xícara avisa que o Mac está sendo segurado acordado — sem ela,
             // é fácil esquecer ligado e estranhar a bateria no fim do dia
@@ -239,94 +247,7 @@ struct DockaApp: App {
                 icone
             }
         }
-    }
-}
-
-struct MenuBarContent: View {
-    @EnvironmentObject var store: DockaStore
-    @EnvironmentObject var acordado: AcordadoSessao
-    @ObservedObject private var historico = HistoricoModelo.shared
-
-    var body: some View {
-        Button("Abrir Configurações") { SettingsWindowController.shared.show() }
-        Divider()
-        menuAcordado
-        if store.historicoControl {
-            Menu("Área de transferência") {
-                Button("Abrir o histórico…") { HistoricoController.shared.abrir() }
-                Divider()
-                ForEach(HistoricoDeCopias.ordenados(historico.itens).prefix(10)) { item in
-                    Button(HistoricoDeCopias.encurtar(item.resumo, ate: 50)) {
-                        historico.copiar(item)
-                    }
-                }
-                Divider()
-                Button("Deixar o copiado sem formatação") { HistoricoModelo.shared.soTexto() }
-                Button("Limpar rastreadores do link copiado") { HistoricoModelo.shared.limparLinkCopiado() }
-            }
-        }
-        if store.capturaControl {
-            Menu("Captura") {
-                Button("Conta-gotas") { CapturaController.contaGotas() }
-                Button("Copiar texto da tela") { CapturaController.textoDaTela() }
-                Button(store.capturaEditar ? "Capturar e anotar"
-                       : (store.capturaNaMesa ? "Capturar área para a Mesa" : "Capturar área para copiar")) {
-                    CapturaController.capturarArea()
-                }
-            }
-        }
-        if store.janelasControl {
-            Menu("Janelas") {
-                ForEach(LayoutDeJanela.grupos.indices, id: \.self) { g in
-                    if g > 0 { Divider() }
-                    ForEach(LayoutDeJanela.grupos[g]) { l in
-                        Button {
-                            JanelasBackend.executar(l)
-                        } label: {
-                            Label(l.titulo, systemImage: l.simbolo)
-                        }
-                    }
-                }
-            }
-        }
-        if store.acoesRapidas {
-            Menu("Ações rápidas") {
-                ForEach(AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)) { a in
-                    Button {
-                        AcoesRapidasBackend.executar(a)
-                    } label: {
-                        Label(AcoesRapidasBackend.titulo(a), systemImage: a.simbolo)
-                    }
-                }
-            }
-        }
-        Divider()
-        Toggle("Sons", isOn: $store.soundsEnabled)
-        Toggle("Pressure Zone", isOn: $store.pressureZone)
-        Toggle("Abrir no login", isOn: Binding(get: { store.launchAtLogin },
-                                               set: { store.setLaunchAtLogin($0) }))
-        Divider()
-        Button("Encerrar o Docka") { NSApp.terminate(nil) }
-    }
-
-    @ViewBuilder
-    private var menuAcordado: some View {
-        if acordado.ativo {
-            Menu("Acordado — \(acordado.restante)") {
-                Button("Desligar") { acordado.desligar() }
-                Divider()
-                duracoes(titulo: "Recomeçar com")
-            }
-        } else {
-            Menu("Manter acordado") { duracoes(titulo: nil) }
-        }
-    }
-
-    @ViewBuilder
-    private func duracoes(titulo: String?) -> some View {
-        if let titulo { Text(titulo) }
-        ForEach(DuracaoAcordado.allCases) { d in
-            Button(d.titulo) { acordado.ligar(d, telaAcesa: store.acordadoTelaAcesa) }
-        }
+        // janela, e não menu: abas, cartões e interruptores não cabem num NSMenu
+        .menuBarExtraStyle(.window)
     }
 }

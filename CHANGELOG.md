@@ -4,6 +4,18 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
+## [Não lançado]
+
+### Mudou
+
+- **O ícone da barra de menus abre um painel**, e não mais um menu: abas
+  com ícones (Rápido, Sistema, Controles, Utilidades), cartões com
+  interruptores e descrições, e Ajustes/Encerrar no rodapé. Rápido traz o
+  Manter acordado e as ações rápidas em grade; Sistema mostra CPU, memória
+  e rede ao vivo (medindo só com a aba aberta); Controles liga e desliga
+  cada recurso, agrupado por área, com quantos estão ligados; Utilidades
+  executa as ações com o atalho gravado ao lado.
+
 ## [1.3.0] — 2026-10-04
 
 ### Novo (experimental)
