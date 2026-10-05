@@ -4,7 +4,7 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
-## [Não lançado]
+## [1.5.2] — 2026-10-05
 
 ### Mudou
 
