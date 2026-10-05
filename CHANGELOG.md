@@ -4,7 +4,12 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
-## [Não lançado]
+## [1.4.0] — 2026-10-05
+
+Janelas e o Dock da Apple: sete recursos novos para mexer em janelas e no
+Dock, um painel com abas no lugar do menu da barra e ajustes reorganizados,
+com uma página que mostra cada permissão e quem a usa. Tudo o que é novo vem
+desligado e pede a permissão só quando é ligado.
 
 ### Novo
 
@@ -52,6 +57,8 @@ todo o resto por aqui.
   um atalho para os Ajustes do Sistema — e um aviso quando ela foi
   concedida mas nada ligado precisa dela, ou quando algo ligado precisa e
   ela falta).
+- **Permissões concedidas com o Docka aberto** passam a valer na hora: os
+  recursos que dependem delas religam sozinhos, sem precisar reabrir o app.
 
 ## [1.3.0] — 2026-10-04
 
