@@ -189,6 +189,8 @@ final class DockaStore: ObservableObject {
         static let alternador = "docka.switcher"
         static let alternadorJanelas = "docka.switcherWindows"
         static let alternadorPrevias = "docka.switcherPreviews"
+        static let alternadorSoTela = "docka.switcherCurrentScreen"
+        static let alternadorSemJanela = "docka.switcherHideWindowless"
         static let mouse = "docka.mouse"
         static let mouseInverterV = "docka.mouseInvertVertical"
         static let mouseInverterH = "docka.mouseInvertHorizontal"
@@ -580,6 +582,15 @@ final class DockaStore: ObservableObject {
     /// Abre a captura de área no editor de anotação.
     @Published var capturaEditar: Bool { didSet { defaults.set(capturaEditar, forKey: Key.capturaEditar) } }
 
+    /// Alternador: só o que está na tela do cursor.
+    @Published var alternadorSoTela: Bool {
+        didSet { defaults.set(alternadorSoTela, forKey: Key.alternadorSoTela); if alternadorSoTela && !Colagem.permitido { Colagem.pedirPermissao() } }
+    }
+    /// Alternador: esconder apps abertos sem nenhuma janela.
+    @Published var alternadorSemJanela: Bool {
+        didSet { defaults.set(alternadorSemJanela, forKey: Key.alternadorSemJanela); if alternadorSemJanela && !Colagem.permitido { Colagem.pedirPermissao() } }
+    }
+
     /// Miniaturas das janelas no alternador — pede Gravação de Tela.
     @Published var alternadorPrevias: Bool {
         didSet {
@@ -900,6 +911,8 @@ final class DockaStore: ObservableObject {
             Key.alternador: false,
             Key.alternadorJanelas: false,
             Key.alternadorPrevias: false,
+            Key.alternadorSoTela: false,
+            Key.alternadorSemJanela: false,
             Key.mouse: false,
             Key.mouseInverterV: false,
             Key.mouseInverterH: false,
@@ -1016,6 +1029,8 @@ final class DockaStore: ObservableObject {
         alternadorControl = defaults.bool(forKey: Key.alternador)
         alternadorJanelas = defaults.bool(forKey: Key.alternadorJanelas)
         alternadorPrevias = defaults.bool(forKey: Key.alternadorPrevias)
+        alternadorSoTela = defaults.bool(forKey: Key.alternadorSoTela)
+        alternadorSemJanela = defaults.bool(forKey: Key.alternadorSemJanela)
         mouseControl = defaults.bool(forKey: Key.mouse)
         mouseInverterVertical = defaults.bool(forKey: Key.mouseInverterV)
         mouseInverterHorizontal = defaults.bool(forKey: Key.mouseInverterH)

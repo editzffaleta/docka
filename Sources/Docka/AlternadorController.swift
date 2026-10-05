@@ -73,19 +73,33 @@ final class AlternadorController {
     // MARK: destinos
 
     private func destinos() -> [DestinoDoAlternador] {
+        let store = DockaStore.shared
         let apps = NSWorkspace.shared.runningApplications.filter {
             $0.activationPolicy == .regular && !$0.isTerminated
         }
         let porPid = Dictionary(apps.map { ($0.processIdentifier, $0) }, uniquingKeysWith: { a, _ in a })
         let ordem = Alternador.porUso(apps.map(\.processIdentifier), historico: historico)
-        let comJanelas = DockaStore.shared.alternadorJanelas && Colagem.permitido
+        let comJanelas = store.alternadorJanelas && Colagem.permitido
+        let filtros = store.alternadorSoTela || store.alternadorSemJanela
+        let lerJanelas = (comJanelas || filtros) && Colagem.permitido
+        // a tela do cursor, na convenção da Acessibilidade (origem no topo)
+        let tela: CGRect? = store.alternadorSoTela ? {
+            let loc = NSEvent.mouseLocation
+            guard let f = NSScreen.screens.first(where: { NSMouseInRect(loc, $0.frame, false) })?.frame else { return nil }
+            return Encaixe.paraAcessibilidade(f, alturaDaPrincipal: NSScreen.screens.first?.frame.height ?? 0)
+        }() : nil
 
         return ordem.compactMap { porPid[$0] }.flatMap { app -> [DestinoDoAlternador] in
             let base = "\(app.processIdentifier)"
-            guard comJanelas else { return [DestinoDoAlternador(id: base, app: app, janela: nil, elemento: nil)] }
-            let janelas = Self.janelas(de: app)
-            if janelas.isEmpty { return [DestinoDoAlternador(id: base, app: app, janela: nil, elemento: nil)] }
-            return janelas.enumerated().map { i, j in
+            let janelas = lerJanelas ? Self.janelas(de: app) : nil
+            guard Alternador.passa(janelas: janelas?.compactMap(\.quadro),
+                                   semJanelaEsconde: store.alternadorSemJanela, soTela: tela) else { return [] }
+            guard comJanelas, var js = janelas, !js.isEmpty else {
+                return [DestinoDoAlternador(id: base, app: app, janela: nil, elemento: nil)]
+            }
+            // só a tela do cursor: as janelas do app que estão nas outras saem
+            if let tela { js = js.filter { $0.quadro.map { Alternador.naTela($0, tela: tela) } ?? true } }
+            return js.enumerated().map { i, j in
                 DestinoDoAlternador(id: "\(base):\(i)", app: app, janela: j.titulo, elemento: j.elemento,
                                     quadro: j.quadro)
             }
@@ -127,6 +141,8 @@ final class AlternadorController {
     func abrir() {
         let lista = destinos()
         guard !lista.isEmpty else { NSSound.beep(); return }
+        estado.todos = lista
+        estado.busca = ""
         estado.destinos = lista
         estado.previas = [:]
         if Self.comPrevias { PreviasDoAlternador.carregar(lista, em: estado) }
@@ -138,7 +154,7 @@ final class AlternadorController {
         let colunas = min(lista.count, Self.colunas)
         let linhas = Int((Double(lista.count) / Double(Self.colunas)).rounded(.up))
         let largura = CGFloat(colunas) * Self.lado + 40
-        let altura = CGFloat(min(linhas, 4)) * (Self.comPrevias ? Self.caixaDaPrevia.height + 70 : Self.lado + 18) + 70
+        let altura = CGFloat(min(linhas, 4)) * (Self.comPrevias ? Self.caixaDaPrevia.height + 70 : Self.lado + 18) + 100
         let loc = NSEvent.mouseLocation
         if let v = (NSScreen.screens.first { NSMouseInRect(loc, $0.frame, false) } ?? NSScreen.main)?.visibleFrame {
             p.setFrame(NSRect(x: v.midX - largura / 2, y: v.midY - altura / 2,
@@ -208,7 +224,14 @@ final class AlternadorController {
                 case 126: self.mover(-Self.colunas)                               // ↑
                 case 125: self.mover(Self.colunas)                                // ↓
                 case 36, 76: self.escolher()                                      // ↩
-                default: return e
+                case 51:  self.buscar(String(self.estado.busca.dropLast()))        // ⌫
+                default:
+                    // letra, número ou espaço vai para a busca (com ⌥ apertado
+                    // o caractere sai trocado — vale o da tecla sem modificador)
+                    guard !e.modifierFlags.contains(.command), !e.modifierFlags.contains(.control),
+                          let c = e.charactersIgnoringModifiers?.first,
+                          c.isLetter || c.isNumber || c == " " || c.isPunctuation else { return e }
+                    self.buscar(self.estado.busca + String(c))
                 }
                 return nil
             }
@@ -216,6 +239,16 @@ final class AlternadorController {
     }
 
     /// Estado atual do teclado, lido sem permissão.
+    /// Refaz a lista com a busca. Começou a digitar: soltar o modificador
+    /// deixa de confirmar — ninguém digita segurando ⌥; aí ↩ ou o clique
+    /// escolhem.
+    private func buscar(_ texto: String) {
+        estado.busca = texto
+        estado.destinos = estado.todos.filter { Alternador.combina(texto, nome: $0.nome, titulo: $0.janela) }
+        estado.selecao = 0
+        if !texto.isEmpty { relogio?.invalidate(); relogio = nil }
+    }
+
     private func conferirModificadores() {
         let f = CGEventSource.flagsState(.combinedSessionState)
         var agora: Shortcut.Modifiers = []
@@ -240,7 +273,11 @@ final class AlternadorController {
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
         p.isFloatingPanel = true
         p.level = .mainMenu
-        p.aoEsc = { [weak self] in self?.fechar() }
+        // Esc com busca digitada limpa a busca; sem busca, fecha
+        p.aoEsc = { [weak self] in
+            guard let self else { return }
+            if self.estado.busca.isEmpty { self.fechar() } else { self.buscar("") }
+        }
         p.contentView = NSHostingView(
             rootView: AlternadorView(escolher: { [weak self] in self?.escolher($0) })
                 .environmentObject(estado)
@@ -251,6 +288,9 @@ final class AlternadorController {
 
 final class AlternadorEstado: ObservableObject {
     @Published var visivel = false
+    /// Todos os destinos ao abrir; `destinos` é o que sobra da busca.
+    var todos: [DestinoDoAlternador] = []
+    @Published var busca = ""
     @Published var destinos: [DestinoDoAlternador] = []
     @Published var selecao = 0
     /// Miniaturas por destino, chegando aos poucos.
@@ -295,6 +335,19 @@ struct AlternadorView: View {
 
     var body: some View {
         VStack(spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                Text(estado.busca.isEmpty ? "Digite para buscar" : estado.busca)
+                    .foregroundStyle(estado.busca.isEmpty ? .tertiary : .primary)
+                Spacer()
+                if !estado.busca.isEmpty {
+                    Text("\(estado.destinos.count) de \(estado.todos.count)")
+                        .font(.system(size: 11)).foregroundStyle(.secondary).monospacedDigit()
+                }
+            }
+            .font(.system(size: 13))
+            .padding(.horizontal, 10)
+            .padding(.top, 12)
             ScrollView {
                 LazyVGrid(columns: grade, spacing: 18) {
                     ForEach(Array(estado.destinos.enumerated()), id: \.element.id) { i, d in
@@ -316,6 +369,11 @@ struct AlternadorView: View {
                     }
                 }
                 .padding(.top, 14)
+            }
+            .overlay {
+                if estado.destinos.isEmpty {
+                    Text("Nada com “\(estado.busca)”").foregroundStyle(.secondary)
+                }
             }
             if estado.destinos.indices.contains(estado.selecao) {
                 let d = estado.destinos[estado.selecao]

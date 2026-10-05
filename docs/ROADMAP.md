@@ -72,7 +72,7 @@ registro — acrescentados aqui.
 | Botão verde maximiza sem criar outro Espaço | Acessibilidade | ✅ |
 | Cliques no Dock: minimizar, ocultar ou alternar janelas | Acessibilidade | ✅ |
 | Prévia do Dock: janelas do app ao passar o mouse no ícone | Acessibilidade + Gravação de Tela | ⏳ |
-| Alternador: busca e filtros | — | ⏳ |
+| Alternador: busca e filtros | — (filtros: Acessibilidade) | ✅ |
 | Arrastar janelas segurando uma tecla, de qualquer ponto | Acessibilidade | ⏳ |
 
 ## Fora do escopo

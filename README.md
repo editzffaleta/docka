@@ -152,7 +152,7 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Sair ao fechar** *(Acessibilidade)* | Os apps escolhidos encerram quando a última janela fecha |
 | **Proteção do ⌘Q e ⌘W** *(Acessibilidade)* | Segurar, apertar duas vezes ou usar ⌥ para confirmar — só esses dois atalhos são interceptados |
 | **Cliques no Dock** *(Acessibilidade)* | Clicar no ícone do app ativo minimiza, oculta ou passa para a próxima janela |
-| **Alternador de apps** | Num atalho próprio (sugestão ⌥Tab): apps na ordem de uso, segure e aperte para avançar, solte para trocar. Sem permissão; com Acessibilidade, uma entrada por janela; com Gravação de Tela, miniaturas das janelas. Não substitui o ⌘Tab |
+| **Alternador de apps** | Num atalho próprio (sugestão ⌥Tab): apps na ordem de uso, segure e aperte para avançar, solte para trocar; digite para buscar pelo nome ou título. Sem permissão; com Acessibilidade, uma entrada por janela; com Gravação de Tela, miniaturas das janelas. Não substitui o ⌘Tab |
 
 ### Mouse *(módulo opcional, Acessibilidade)*
 
@@ -327,6 +327,7 @@ sem ela continuam funcionando no modo sem permissão.
 | Expandir gatilhos | Monitoramento de Entrada + Acessibilidade | Ver as teclas para achar o gatilho (só os últimos 32 caracteres, na memória), apagá-lo e colar o snippet | Os snippets continuam pelo painel |
 | Colar sozinho | Acessibilidade | Enviar ⌘V ao app da frente ao escolher no histórico ou num snippet | O item só fica copiado, pronto para o seu ⌘V |
 | Alternador — cada janela | Acessibilidade | Listar janelas pelo título e trazer a escolhida para a frente | O alternador troca de app, sem listar janelas |
+| Alternador — filtros | Acessibilidade | Saber em que tela estão as janelas e quais apps não têm nenhuma | Os filtros ficam desligados |
 | Alternador — prévias | Gravação de Tela | Miniaturas das janelas enquanto o alternador está aberto; nada é gravado | Ícones no lugar das miniaturas |
 | Captura | Gravação de Tela | Capturar a área que você seleciona, para OCR, QR ou imagem — reconhecimento no próprio Mac | Só o conta-gotas funciona |
 | Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse — nunca o teclado | O mouse segue como o sistema manda |

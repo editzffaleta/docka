@@ -76,4 +76,34 @@ public enum Alternador {
         let e = min(caixa.width / janela.width, caixa.height / janela.height)
         return CGSize(width: (janela.width * e).rounded(), height: (janela.height * e).rounded())
     }
+
+    // MARK: busca e filtros
+
+    /// O destino combina com a busca? Cada palavra digitada precisa aparecer
+    /// no nome do app ou no título da janela, sem diferenciar maiúscula nem
+    /// acento — "safari git" acha a janela do Safari com o GitHub aberto.
+    public static func combina(_ busca: String, nome: String, titulo: String?) -> Bool {
+        let palavras = busca.split(whereSeparator: \.isWhitespace)
+        guard !palavras.isEmpty else { return true }
+        let alvo = nome + " " + (titulo ?? "")
+        return palavras.allSatisfy {
+            alvo.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil
+        }
+    }
+
+    /// A janela está nesta tela? Pelo centro dela — uma janela meio a meio
+    /// entre dois monitores fica na tela onde está a maior parte.
+    public static func naTela(_ quadro: CGRect, tela: CGRect) -> Bool {
+        tela.contains(CGPoint(x: quadro.midX, y: quadro.midY))
+    }
+
+    /// Um app passa pelos filtros? `janelas` são os quadros das janelas dele
+    /// (na mesma convenção de `tela`); `nil` = não deu para saber (sem
+    /// permissão), e aí o filtro não esconde nada.
+    public static func passa(janelas: [CGRect]?, semJanelaEsconde: Bool, soTela: CGRect?) -> Bool {
+        guard let janelas else { return true }
+        if semJanelaEsconde && janelas.isEmpty { return false }
+        if let tela = soTela, !janelas.contains(where: { naTela($0, tela: tela) }) { return false }
+        return true
+    }
 }

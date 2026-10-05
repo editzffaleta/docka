@@ -20,6 +20,10 @@ todo o resto por aqui.
   ícone dele minimiza as janelas, oculta o app ou passa para a próxima
   janela. Nos outros casos o Dock faz o de sempre.
 - Os quatro pedem Acessibilidade e aparecem na lista de Permissões.
+- **Busca no alternador**: com ele aberto, digitar filtra pelo nome do app
+  ou pelo título da janela (sem ligar para acentos e maiúsculas); ⌫ apaga,
+  Esc limpa e ↩ escolhe. Filtros opcionais: só a tela do cursor e esconder
+  apps sem janela (pedem Acessibilidade).
 
 ### Mudou
 

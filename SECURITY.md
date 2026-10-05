@@ -71,6 +71,7 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   | Expandir gatilhos | Monitoramento de Entrada + Acessibilidade | Ver as teclas digitadas para achar o gatilho de um snippet (guarda só os últimos 32 caracteres, na memória; campos de senha nunca chegam) e então apagar o gatilho e colar o texto |
   | Colar sozinho | Acessibilidade | Enviar um ⌘V ao app da frente depois que você escolhe um item do histórico ou um snippet |
   | Alternador — mostrar cada janela | Acessibilidade | Listar as janelas abertas pelo título e trazer a escolhida para a frente |
+  | Alternador — filtros | Acessibilidade | Ler a posição das janelas para filtrar por tela e esconder apps sem janela |
   | Alternador — prévias | Gravação de Tela | Capturar miniaturas das janelas só enquanto o alternador está aberto; ficam na memória e somem ao fechar |
   | Captura | Gravação de Tela | Capturar a área que você seleciona (pelo seletor do próprio macOS) para copiar o texto, ler um QR ou salvar a imagem. O reconhecimento roda no Mac, pelo Vision; nada é enviado |
   | Ajustes do mouse | Acessibilidade | Interceptar rolagem e botões extras do mouse (nunca o teclado) para inverter, deixar linear, suavizar e voltar/avançar |

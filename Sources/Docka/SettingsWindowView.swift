@@ -275,8 +275,8 @@ extension DockaStore {
             RecursoComPermissao(nome: "Encaixar janelas", permissoes: [.acessibilidade], ligado: janelasControl),
             RecursoComPermissao(nome: "Arrastar até a borda", permissoes: [.acessibilidade],
                                 ligado: janelasControl && janelasArrastar),
-            RecursoComPermissao(nome: "Alternador com janelas", permissoes: [.acessibilidade],
-                                ligado: alternadorControl && alternadorJanelas),
+            RecursoComPermissao(nome: "Alternador com janelas e filtros", permissoes: [.acessibilidade],
+                                ligado: alternadorControl && (alternadorJanelas || alternadorSoTela || alternadorSemJanela)),
             RecursoComPermissao(nome: "Ajustes do mouse", permissoes: [.acessibilidade], ligado: mouseControl),
             RecursoComPermissao(nome: "Sair ao fechar", permissoes: [.acessibilidade], ligado: sairAoFecharControl),
             RecursoComPermissao(nome: "Proteção do ⌘Q e ⌘W", permissoes: [.acessibilidade], ligado: protecaoQ || protecaoW),
@@ -2050,7 +2050,7 @@ private struct SecaoDoAlternador: View {
         Section {
             Toggle(isOn: $store.alternadorControl) {
                 Text("Alternador de apps")
-                Text("Segure o modificador do atalho, aperte de novo para avançar (⇧ volta) e solte para trocar. Os apps vêm na ordem em que você os usou.")
+                Text("Segure o modificador do atalho, aperte de novo para avançar (⇧ volta) e solte para trocar. Os apps vêm na ordem em que você os usou. Digite para buscar pelo nome ou pelo título — aí ↩ escolhe.")
             }
             if store.alternadorControl {
                 LabeledContent {
@@ -2071,6 +2071,14 @@ private struct SecaoDoAlternador: View {
                 Toggle(isOn: $store.alternadorJanelas) {
                     Text("Mostrar cada janela")
                     Text("Uma entrada por janela, com o título, e a escolhida vem para a frente. Pede Acessibilidade; sem ela, o alternador troca de app.")
+                }
+                Toggle(isOn: $store.alternadorSoTela) {
+                    Text("Só a tela do cursor")
+                    Text("Mostra apenas o que está no monitor onde o cursor está. Pede Acessibilidade.")
+                }
+                Toggle(isOn: $store.alternadorSemJanela) {
+                    Text("Esconder apps sem janela")
+                    Text("Apps abertos sem nenhuma janela ficam de fora. Pede Acessibilidade.")
                 }
                 Toggle(isOn: $store.alternadorPrevias) {
                     Text("Prévias das janelas")
