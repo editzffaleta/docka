@@ -59,6 +59,57 @@ public enum DDC {
         return (atual, maximo)
     }
 
+    // MARK: diagnóstico
+
+    /// Por que um monitor não respondeu — para o autoteste dizer o motivo, e
+    /// não só "sem resposta". Tirado do que um monitor de verdade devolveu
+    /// (um LG atrás de um adaptador USB-C → HDMI).
+    public enum Diagnostico: Equatable, Sendable {
+        case respondeu(atual: UInt16, maximo: UInt16)
+        /// O pedido nem saiu: o Mac recusou a escrita no barramento.
+        case escritaRecusada(codigo: Int32)
+        /// O caminho entrega o EDID (a "identidade" do monitor), mas não o
+        /// DDC/CI: típico de adaptador ou hub que não repassa os comandos.
+        case soEDID
+        /// O monitor fala DDC, mas não deixa mexer no brilho por ele.
+        case brilhoNaoSuportado
+        /// Silêncio: só zeros ou só 0xFF.
+        case silencio
+        /// Veio algo, mas fora do formato ou com checksum errado.
+        case respostaEstranha
+
+        public var explicacao: String {
+            switch self {
+            case .respondeu(let a, let m):
+                return "respondeu: brilho \(a) de \(m)"
+            case .escritaRecusada(let c):
+                return String(format: "o Mac recusou enviar o pedido (código 0x%08X): o caminho até o monitor não aceita DDC/CI", UInt32(bitPattern: c))
+            case .soEDID:
+                return "o caminho entrega só o EDID do monitor, não o DDC/CI — adaptador, hub ou dock que não repassa os comandos, ou a opção DDC/CI desligada no menu do monitor"
+            case .brilhoNaoSuportado:
+                return "o monitor fala DDC/CI, mas não aceita ajustar o brilho por ele"
+            case .silencio:
+                return "nenhuma resposta — confira a opção DDC/CI no menu do monitor e o cabo ou adaptador"
+            case .respostaEstranha:
+                return "resposta fora do formato — o barramento pode estar com ruído; tente outra porta ou cabo"
+            }
+        }
+    }
+
+    /// O cabeçalho fixo de todo EDID.
+    static let cabecalhoDoEDID: [UInt8] = [0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00]
+
+    /// O diagnóstico de uma tentativa: o código da escrita (0 = deu certo) e
+    /// os bytes lidos depois.
+    public static func diagnostico(escrita: Int32, resposta r: [UInt8], codigo: UInt8 = brilho) -> Diagnostico {
+        if let v = ler(r, codigo: codigo) { return .respondeu(atual: v.atual, maximo: v.maximo) }
+        if r.count >= cabecalhoDoEDID.count, Array(r.prefix(cabecalhoDoEDID.count)) == cabecalhoDoEDID { return .soEDID }
+        if escrita != 0 { return .escritaRecusada(codigo: escrita) }
+        if r.allSatisfy({ $0 == 0 }) || r.allSatisfy({ $0 == 0xFF }) { return .silencio }
+        if r.count >= 5, r[1] == 0x88, r[2] == 0x02, r[4] == codigo, r[3] != 0 { return .brilhoNaoSuportado }
+        return .respostaEstranha
+    }
+
     /// Nível da régua (0…1) → valor do monitor, dentro do máximo dele.
     public static func valor(nivel: Double, maximo: UInt16) -> UInt16 {
         UInt16((min(max(nivel, 0), 1) * Double(maximo)).rounded())

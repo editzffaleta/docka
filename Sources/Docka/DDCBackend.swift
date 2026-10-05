@@ -210,6 +210,18 @@ final class DDCBackend {
         return nil
     }
 
+    /// Uma tentativa só de LEITURA, sem conferir nada: o código da escrita
+    /// do pedido e os bytes que voltaram — a matéria-prima do diagnóstico.
+    static func tentativaCrua(_ servico: CFTypeRef) -> (escrita: Int32, lido: [UInt8]) {
+        guard let escreverI2C, let lerI2C else { return (-1, []) }
+        var p = DDC.pedir(DDC.brilho)
+        let w = escreverI2C(servico, UInt32(DDC.enderecoDoMonitor), UInt32(DDC.origem), &p, UInt32(p.count))
+        usleep(60_000)
+        var r = [UInt8](repeating: 0, count: DDC.tamanhoDaResposta)
+        _ = lerI2C(servico, UInt32(DDC.enderecoDoMonitor), 0, &r, UInt32(r.count))
+        return (w, r)
+    }
+
     // MARK: autoteste
 
     /// Só LÊ: mostra os canais encontrados, a que tela cada um casou e o
@@ -233,8 +245,16 @@ final class DDCBackend {
             if let v = lerBrilho(c.servico) {
                 r.append("OK — \(c.nome) (tela \(t)) respondeu: brilho \(v.atual) de \(v.maximo)")
             } else {
-                r.append("SEM RESPOSTA — \(c.nome) (tela \(t)) não respondeu ao DDC; fica o escurecimento por software")
+                let (escrita, lido) = tentativaCrua(c.servico)
+                let d = DDC.diagnostico(escrita: escrita, resposta: lido)
+                r.append("SEM RESPOSTA — \(c.nome) (tela \(t)): \(d.explicacao)")
+                r.append(String(format: "  detalhes: escrita 0x%08X, lido %@", UInt32(bitPattern: escrita),
+                                lido.map { String(format: "%02X", $0) }.joined(separator: " ")))
+                r.append("  fica o escurecimento por software, que funciona com qualquer monitor")
             }
+        }
+        if !canais.isEmpty, pares.isEmpty {
+            r.append("os canais encontrados não casaram com nenhuma tela externa ativa")
         }
         if telas.allSatisfy({ CGDisplayIsBuiltin($0) != 0 }) {
             r.append("nenhum monitor externo conectado — conecte um e rode de novo")
