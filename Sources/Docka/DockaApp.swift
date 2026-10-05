@@ -108,6 +108,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         TrayManager.shared.start()
         VigiaDePermissoes.shared.comecar()
+        AjustesDoSistemaController.shared.comecar()
         HotKeyManager.shared.onPress = { acao in
             guard let acao = AcaoDeAtalho(id: acao) else { return }
             TrayManager.shared.executar(acao)

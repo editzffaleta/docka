@@ -95,6 +95,25 @@ outro projeto.
 | 7. Agentes de IA | Claude Code e outros: limites, tokens, modelo, projeto e aviso de tarefa longa terminada, lendo os registros locais | — | ✅ |
 | 8. Além do original | bateria e carregamento, fones conectando, área de transferência, avisos de volume e brilho (o Foco ficou de fora: o macOS só o informa a apps com um direito especial da Apple ou com Acesso Total ao Disco) | — | ✅ |
 
+## Fase 7 — O resto da lista do Vorssaint
+
+O que ainda falta da lista de recursos do Vorssaint, do mais simples ao mais
+pesado. Cada um escrito do zero, opcional e desligado por padrão.
+
+| Grupo | Recursos | Permissão | Status |
+|---|---|---|---|
+| 1. Ajustes do sistema | Espaços em ordem fixa; impedir o app Música de abrir sozinho; Bluetooth desligado no repouso; aceleração do ponteiro | — | ✅ |
+| 2. Mouse e teclado | foco segue o mouse; filtro de clique duplo acidental; repique de teclas; tecla super; atalhos nos botões do mouse; clique do meio | Acessibilidade | ⏳ |
+| 3. Finder e arquivos | recortar e colar no Finder (⌘X/⌘V); instalador de imagem de disco (.dmg) | Acessibilidade (Finder) | ⏳ |
+| 4. Painéis | barra de comando (apps, janelas, arquivos, histórico, snippets, comandos de menu, contas, conversões, emojis); painel rápido; alternâncias rápidas; modo de limpeza | Acessibilidade (partes) | ⏳ |
+| 5. Áudio | ferramentas do microfone; saída de som por app | áudio do sistema | ⏳ |
+| 6. Mídia | gravação de tela; converter e comprimir vídeo e imagem | Gravação de Tela | ⏳ |
+| 7. Manutenção | atualizações de apps; limpeza de caches; downloads dos mensageiros; desinstalador; Homebrew; portas abertas | — (partes: Acesso Total ao Disco) | ⏳ |
+
+Ficam de fora: controle de ventoinha (o MacBook Air não tem ventoinha, e
+exigiria um ajudante com privilégio de root) e brilho extra (só em telas
+XDR).
+
 ## Fora do escopo
 
 Coisas do Vorssaint que não combinam com um app de borda leve e sem

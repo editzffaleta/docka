@@ -4,6 +4,21 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
+## [Não lançado]
+
+### Novo
+
+- **Ajustes do sistema** (página nova nos ajustes):
+  - **Manter os Espaços na ordem**: o macOS para de reorganizar os
+    Espaços pelo uso recente (o Dock reinicia por um instante para valer).
+  - **Impedir o app Música de abrir sozinho**: quando ele abre pelas
+    costas — tecla de tocar, fones conectando —, o Docka o fecha; aberto
+    de propósito, ele fica.
+  - **Desligar o Bluetooth no repouso** e religar ao acordar, só se estava
+    ligado antes. Pede a permissão de Bluetooth.
+  - **Aceleração do mouse**: sem aceleração ou com a curva escolhida, na
+    hora; ao desligar a opção, volta o que estava antes.
+
 ## [1.5.2] — 2026-10-05
 
 ### Mudou

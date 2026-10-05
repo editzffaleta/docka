@@ -199,6 +199,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 
 | Recurso | Descrição |
 |---------|-----------|
+| **Ajustes do sistema** | Espaços em ordem fixa, impedir o Música de abrir sozinho, Bluetooth desligado no repouso (pede a permissão de Bluetooth) e aceleração do mouse — cada um desfeito ao desligar |
 | **Abrir no login** | O Docka sobe sozinho quando você entra no Mac, via `SMAppService` — sem helper, sem permissão, e você pode desligar direto nas Configurações do Sistema |
 | **Vive na barra de menus** | Sem ícone no Dock e fora do ⌘Tab; a janela de configurações aparece só quando você pede |
 | **Pressure Zone** | Modo opcional que só revela a bandeja quando você empurra o cursor contra o canto de propósito — evita aberturas acidentais em apps de tela cheia |

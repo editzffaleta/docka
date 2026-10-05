@@ -199,6 +199,10 @@ final class DockaStore: ObservableObject {
         static let ilhaLetra = "docka.islandLyrics"
         static let ilhaNotificacoes = "docka.islandNotifications"
         static let ilhaAvisoAgentes = "docka.islandAgentNotice"
+        static let bloquearMusica = "docka.blockMusicApp"
+        static let bluetoothNoRepouso = "docka.bluetoothOffOnSleep"
+        static let aceleracaoControl = "docka.pointerAccelerationControl"
+        static let aceleracao = "docka.pointerAcceleration"
         static let ilhaAvisoBateria = "docka.islandNoticeBattery"
         static let ilhaAvisoFones = "docka.islandNoticeHeadphones"
         static let ilhaAvisoVolume = "docka.islandNoticeVolume"
@@ -543,6 +547,22 @@ final class DockaStore: ObservableObject {
             pedirAcessibilidadeSe(ilhaNotificacoes)
             NotificacoesModelo.shared.sincronizar()
         }
+    }
+    /// Fecha o app Música quando ele abre sozinho (tecla de tocar, fones).
+    @Published var bloquearMusica: Bool { didSet { defaults.set(bloquearMusica, forKey: Key.bloquearMusica) } }
+    /// Desliga o Bluetooth ao dormir e religa ao acordar.
+    @Published var bluetoothNoRepouso: Bool {
+        didSet {
+            defaults.set(bluetoothNoRepouso, forKey: Key.bluetoothNoRepouso)
+            if bluetoothNoRepouso { AjustesDoSistemaController.shared.pedirPermissaoDeBluetooth() }
+        }
+    }
+    /// Aceleração do mouse escolhida pelo Docka (-1 = sem aceleração).
+    @Published var aceleracaoControl: Bool {
+        didSet { defaults.set(aceleracaoControl, forKey: Key.aceleracaoControl); AjustesDoSistemaController.shared.aplicarAceleracao() }
+    }
+    @Published var aceleracao: Double {
+        didSet { defaults.set(aceleracao, forKey: Key.aceleracao); if aceleracaoControl { AjustesDoSistemaController.shared.aplicarAceleracao() } }
     }
     /// Avisos rápidos nas asas da ilha.
     @Published var ilhaAvisoBateria: Bool { didSet { defaults.set(ilhaAvisoBateria, forKey: Key.ilhaAvisoBateria) } }
@@ -1017,6 +1037,10 @@ final class DockaStore: ObservableObject {
             Key.ilhaLetra: false,
             Key.ilhaNotificacoes: false,
             Key.ilhaAvisoAgentes: true,
+            Key.bloquearMusica: false,
+            Key.bluetoothNoRepouso: false,
+            Key.aceleracaoControl: false,
+            Key.aceleracao: -1.0,
             Key.ilhaAvisoBateria: true,
             Key.ilhaAvisoFones: true,
             Key.ilhaAvisoVolume: true,
@@ -1156,6 +1180,10 @@ final class DockaStore: ObservableObject {
         ilhaLetra = defaults.bool(forKey: Key.ilhaLetra)
         ilhaNotificacoes = defaults.bool(forKey: Key.ilhaNotificacoes)
         ilhaAvisoAgentes = defaults.bool(forKey: Key.ilhaAvisoAgentes)
+        bloquearMusica = defaults.bool(forKey: Key.bloquearMusica)
+        bluetoothNoRepouso = defaults.bool(forKey: Key.bluetoothNoRepouso)
+        aceleracaoControl = defaults.bool(forKey: Key.aceleracaoControl)
+        aceleracao = defaults.double(forKey: Key.aceleracao)
         ilhaAvisoBateria = defaults.bool(forKey: Key.ilhaAvisoBateria)
         ilhaAvisoFones = defaults.bool(forKey: Key.ilhaAvisoFones)
         ilhaAvisoVolume = defaults.bool(forKey: Key.ilhaAvisoVolume)

@@ -100,6 +100,11 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   ou atualização automática
 - ❌ Não lê conteúdo de arquivos do usuário (arrastar-e-soltar apenas repassa URLs ao app de destino via `NSWorkspace`)
 - ❌ Não roda com privilégios elevados nem instala helpers/daemons
+- ℹ️ Ajustes do sistema, cada um só com a opção ligada: "Espaços na ordem" grava
+  `mru-spaces` nas preferências do Dock e reinicia o Dock; "Bluetooth no repouso"
+  desliga e religa o Bluetooth pelo IOBluetooth (pede a permissão de Bluetooth);
+  "aceleração do mouse" muda a propriedade `HIDMouseAcceleration` do sistema de
+  eventos e guarda o valor de antes para devolvê-lo ao desligar
 - ℹ️ A seção Agentes de IA da ilha lê os registros que o Claude Code (`~/.claude/projects`)
   e o Codex (`~/.codex/sessions`) gravam no Mac — só dos últimos 7 dias, e de cada linha
   só modelo, tokens, horário, projeto e motivo da parada; o texto das conversas não é

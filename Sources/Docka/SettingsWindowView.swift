@@ -10,13 +10,13 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, recursos, ilha, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
+    case geral, recursos, sistema, ilha, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// A barra lateral em grupos com título — com mais de vinte seções, um
     /// vão entre blocos já não dizia onde procurar cada coisa.
     static let grupos: [(titulo: String, itens: [Secao])] = [
-        ("Essenciais", [.geral, .recursos, .ilha, .energia, .monitor]),
+        ("Essenciais", [.geral, .recursos, .sistema, .ilha, .energia, .monitor]),
         ("Controles de janela", [.mouse, .alternador, .janelas, .encerrar, .dock]),
         ("Arquivos", [.clipboard, .prateleira, .captura]),
         ("Bordas", [.bandeja, .apps, .aparencia, .orbita, .notas, .brilho, .volume]),
@@ -32,6 +32,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .encerrar:  return "Ao fechar"
         case .dock:      return "Dock"
         case .ilha:      return "Ilha Dinâmica"
+        case .sistema:   return "Ajustes do sistema"
         case .apps:      return "Apps"
         case .aparencia: return "Aparência"
         case .bandeja:   return "Bandeja"
@@ -57,6 +58,7 @@ enum Secao: String, CaseIterable, Identifiable {
     var rotulo: String {
         switch self {
         case .notas:     return "Notas"
+        case .sistema:   return "Sistema"
         case .clipboard: return "Copiar e colar"
         case .janelas:   return "Janelas"
         default:         return titulo
@@ -76,6 +78,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .encerrar:   return "xmark.square"
         case .dock:       return "menubar.dock.rectangle"
         case .ilha:       return "rectangle.topthird.inset.filled"
+        case .sistema:    return "gearshape.2"
         case .janelas:    return "rectangle.split.2x1"
         case .clipboard:  return "doc.on.clipboard"
         case .prateleira: return "tray.full"
@@ -102,6 +105,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .encerrar:  return .blue
         case .dock:      return .blue
         case .ilha:      return .blue
+        case .sistema:   return .gray
         case .apps:      return .blue
         case .aparencia: return .indigo
         case .bandeja:   return .teal
@@ -218,6 +222,7 @@ struct SettingsWindowView: View {
         case .encerrar:  EncerrarSettingsView()
         case .dock:      DockSettingsView()
         case .ilha:      IlhaSettingsView()
+        case .sistema:   AjustesDoSistemaView()
         case .apps:      AppsView()
         case .aparencia: AparenciaView()
         case .bandeja:   BandejaView()
@@ -2744,6 +2749,7 @@ enum AjustesAutoteste {
             desenhar(EncerrarSettingsView().frame(width: 600, height: 560), "ajustes-encerrar", NSSize(width: 600, height: 560)),
             desenhar(DockSettingsView().frame(width: 600, height: 300), "ajustes-dock", NSSize(width: 600, height: 300)),
             desenhar(IlhaSettingsView().frame(width: 600, height: 900), "ajustes-ilha", NSSize(width: 600, height: 900)),
+            desenhar(AjustesDoSistemaView().frame(width: 600, height: 720), "ajustes-sistema", NSSize(width: 600, height: 720)),
             {
                 // o DDC responde (ou não) em segundo plano: espera a resposta antes de desenhar
                 TelasDeBrilho.shared.atualizarTelas()
