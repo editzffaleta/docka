@@ -150,6 +150,7 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Arrastar até a borda** | Leve a janela até a borda: laterais dão metades, cantos dão quartos, o topo maximiza — com prévia de onde ela vai parar |
 | **Botão verde maximiza** *(Acessibilidade)* | Preenche a tela sem criar outro Espaço; de novo, volta ao tamanho de antes; com ⌥, o de sempre |
 | **Sair ao fechar** *(Acessibilidade)* | Os apps escolhidos encerram quando a última janela fecha |
+| **Ilha Dinâmica** *(em construção)* | Uma ilha preta em volta do recorte da câmera (ou simulada): cresce com o cursor, abre numa grade de seções e mostra nas asas o que está correndo. Por enquanto com o Timer (temporizador, Pomodoro e cronômetro) e o volume |
 | **Prévia do Dock** *(Acessibilidade; miniaturas com Gravação de Tela)* | Pare o cursor num ícone do Dock para ver as janelas do app; clique para trazer uma (minimizada volta do Dock), × para fechar |
 | **Arrastar segurando teclas** *(Acessibilidade)* | Com ⌃⌥ apertado, arraste de qualquer ponto para mover a janela; com o botão direito, redimensione pelo canto mais perto |
 | **Proteção do ⌘Q e ⌘W** *(Acessibilidade)* | Segurar, apertar duas vezes ou usar ⌥ para confirmar — só esses dois atalhos são interceptados |
@@ -246,6 +247,8 @@ Sources/DockaCore/           — lógica pura, sem SwiftUI e sem AppKit (é o qu
 ├── Encaixe.swift            — layouts de janela, ciclo de larguras, coordenadas
 ├── JanelasEDock.swift       — sair ao fechar, proteção de atalho, botão verde, cliques no Dock, arrastar com tecla
 ├── PreviaDoDock.swift       — quando mostrar e esconder a prévia do Dock, e onde
+├── Ilha.swift               — a Ilha Dinâmica: medidas, quando crescer e abrir, atividades
+├── TimerDaIlha.swift        — temporizador, Pomodoro e cronômetro, contados por datas
 ├── Alternador.swift         — ordem de uso, seleção e soltar do modificador
 ├── Rolagem.swift            — inverter, linear, de lado, deslize suave, botões laterais
 ├── Captura.swift            — formatos de cor, ordem de leitura do OCR, nome do arquivo
@@ -280,6 +283,8 @@ Sources/Docka/               — a casca: SwiftUI, AppKit e o ciclo de vida
 ├── CliquesDoSistema.swift   — botão verde e cliques no Dock: um tap de clique só
 ├── ArrastoComTecla.swift    — mover e redimensionar segurando teclas
 ├── PreviaDoDockController.swift — a prévia das janelas sobre os ícones do Dock
+├── IlhaController.swift     — a Ilha Dinâmica: painel, forma, grade, asas e botões dos lados
+├── TimerDaIlhaView.swift    — a seção Timer da ilha
 ├── AlternadorController.swift — o alternador: histórico de uso, painel e ativação
 ├── MouseController.swift    — módulo do mouse: o event tap e a rolagem suave
 ├── CapturaController.swift  — conta-gotas, OCR/QR pelo Vision e captura de área

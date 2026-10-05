@@ -4,6 +4,21 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
+## [Não lançado]
+
+### Novo
+
+- **Ilha Dinâmica** (em construção): uma ilha preta em volta do recorte da
+  câmera — ou simulada no meio do topo, em Macs sem recorte. Passar o
+  cursor faz ela crescer; parar (ou clicar) abre uma grade de seções, com
+  botões redondos dos lados. Fechada, mostra o que está correndo nas asas,
+  e duas atividades podem ficar combinadas, uma em cada asa. Seções,
+  ordem, atalhos e botões dos lados são configuráveis. Não pede permissão.
+- **Timer na ilha**: temporizador com régua de 1 a 60 minutos, Pomodoro
+  (foco, pausa e pausa longa a cada quatro focos) e cronômetro com voltas.
+  O tempo aparece nas asas da ilha fechada; ao terminar, a ilha abre com
+  um aviso e um som.
+
 ## [1.4.0] — 2026-10-05
 
 Janelas e o Dock da Apple: sete recursos novos para mexer em janelas e no
