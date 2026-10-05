@@ -406,6 +406,8 @@ final class TrayManager {
         case .barraDeComando:  BarraDeComandoController.shared.alternar()
         case .painelRapido:    PainelRapidoController.shared.alternar()
         case .limpeza:         ModoDeLimpezaController.shared.alternar()
+        case .proximaSaida:    SomController.shared.proximaSaida()
+        case .mudoMicrofones:  SomController.shared.alternarMudo()
         }
     }
 

@@ -204,6 +204,10 @@ final class DockaStore: ObservableObject {
         static let instaladorDeDmg = "docka.dmgInstaller"
         static let dmgParaOLixo = "docka.dmgTrashAfter"
         static let barraArquivos = "docka.commandBarFiles"
+        static let saidaPorApp = "docka.outputPerApp"
+        static let entradaPreferida = "docka.preferredInput"
+        static let baixarAoTirarFone = "docka.lowerOnHeadphonesOut"
+        static let volumeSemFone = "docka.volumeWithoutHeadphones"
         static let barraMenus = "docka.commandBarMenus"
         static let scripts = "docka.commandBarScripts"
         static let painelRapidoItens = "docka.quickPanelItems"
@@ -593,6 +597,18 @@ final class DockaStore: ObservableObject {
     @Published var instaladorDeDmg: Bool { didSet { defaults.set(instaladorDeDmg, forKey: Key.instaladorDeDmg) } }
     @Published var dmgParaOLixo: Bool { didSet { defaults.set(dmgParaOLixo, forKey: Key.dmgParaOLixo) } }
 
+    /// A saída de som de cada app (bundle → UID do dispositivo).
+    @Published var saidaPorApp: [String: String] {
+        didSet { defaults.set(saidaPorApp, forKey: Key.saidaPorApp); MixerModelo.shared.sincronizarRegras() }
+    }
+    /// O microfone que volta a ser o do sistema sempre que estiver conectado.
+    @Published var entradaPreferida: String {
+        didSet { defaults.set(entradaPreferida, forKey: Key.entradaPreferida); SomController.shared.aplicarEntradaPreferida() }
+    }
+    @Published var baixarAoTirarFone: Bool { didSet { defaults.set(baixarAoTirarFone, forKey: Key.baixarAoTirarFone) } }
+    /// O volume máximo depois que o fone sai (0…1).
+    @Published var volumeSemFone: Double { didSet { defaults.set(volumeSemFone, forKey: Key.volumeSemFone) } }
+
     /// A barra de comando busca arquivos pelo Spotlight.
     @Published var barraArquivos: Bool { didSet { defaults.set(barraArquivos, forKey: Key.barraArquivos) } }
     /// A barra de comando lista os comandos de menu do app da frente.
@@ -936,6 +952,8 @@ final class DockaStore: ObservableObject {
         case .barraDeComando: return "Barra de comando"
         case .painelRapido: return "Painel rápido"
         case .limpeza: return "Modo de limpeza"
+        case .proximaSaida: return "Próxima saída de som"
+        case .mudoMicrofones: return "Silenciar os microfones"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -1112,6 +1130,8 @@ final class DockaStore: ObservableObject {
             Key.instaladorDeDmg: false,
             Key.dmgParaOLixo: false,
             Key.barraArquivos: true,
+            Key.baixarAoTirarFone: false,
+            Key.volumeSemFone: 0.25,
             Key.barraMenus: true,
             Key.limpezaDuracao: 60.0,
             Key.limpezaVisual: ModoDeLimpeza.Visual.telaPreta.rawValue,
@@ -1270,6 +1290,10 @@ final class DockaStore: ObservableObject {
         instaladorDeDmg = defaults.bool(forKey: Key.instaladorDeDmg)
         dmgParaOLixo = defaults.bool(forKey: Key.dmgParaOLixo)
         barraArquivos = defaults.bool(forKey: Key.barraArquivos)
+        saidaPorApp = defaults.dictionary(forKey: Key.saidaPorApp) as? [String: String] ?? [:]
+        entradaPreferida = defaults.string(forKey: Key.entradaPreferida) ?? ""
+        baixarAoTirarFone = defaults.bool(forKey: Key.baixarAoTirarFone)
+        volumeSemFone = defaults.double(forKey: Key.volumeSemFone)
         barraMenus = defaults.bool(forKey: Key.barraMenus)
         scripts = defaults.data(forKey: Key.scripts)
             .flatMap { try? JSONDecoder().decode([ScriptSalvo].self, from: $0) } ?? []

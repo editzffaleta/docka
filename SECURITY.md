@@ -111,6 +111,11 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   `hdiutil info` para saber de que imagem veio o volume, copia o app para
   /Applications só depois do seu clique, e o que é substituído ou apagado vai
   para o Lixo — nada é apagado de vez
+- ℹ️ Som: a saída de cada app usa o mesmo toque de processo do mixer (o som passa
+  pelo Docka até a saída escolhida, só enquanto o app toca, e nada é gravado); o
+  microfone preferido, o nível, o mudo e a troca de saída são propriedades de
+  dispositivo do Core Audio, sem permissão — e os microfones silenciados voltam
+  como estavam ao religar ou ao fechar o Docka
 - ℹ️ Painéis: a barra de comando busca arquivos pelo Spotlight só na pasta pessoal
   e só enquanto está aberta, e lê os menus do app da frente pela Acessibilidade só
   ao abrir; os scripts salvos rodam no `zsh` do usuário (sem privilégio a mais) só

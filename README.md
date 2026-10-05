@@ -207,6 +207,7 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 | **Ajustes do sistema** | Espaços em ordem fixa, impedir o Música de abrir sozinho, Bluetooth desligado no repouso (pede a permissão de Bluetooth) e aceleração do mouse — cada um desfeito ao desligar |
 | **Finder** | ⌘X e ⌘V movem arquivos (Acessibilidade); ao abrir um .dmg com um app, oferece instalar em Aplicativos e ejetar a imagem |
 | **Barra de comando** | Um campo só para apps, janelas, arquivos, o que você copiou, snippets, comandos de menu do app da frente (Acessibilidade) e as ferramentas do Docka — e para contas, conversão de unidades, emoji e scripts salvos |
+| **Som** | A saída de cada app (música nos alto-falantes, chamada no fone), trocar de saída num atalho, baixar o volume quando o fone sai, microfone preferido, nível do microfone e silenciar todos os microfones num atalho |
 | **Painel rápido** | As ferramentas favoritas numa paleta em volta do cursor, com atalho |
 | **Modo de limpeza** | Trava o teclado por um tempo para passar um pano, com as telas pretas ou um aviso pequeno; termina sozinho ou segurando o botão (Acessibilidade) |
 | **Abrir no login** | O Docka sobe sozinho quando você entra no Mac, via `SMAppService` — sem helper, sem permissão, e você pode desligar direto nas Configurações do Sistema |
@@ -362,6 +363,7 @@ sem ela continuam funcionando no modo sem permissão.
 | Prévia do Dock | Acessibilidade | Saber sobre qual ícone do Dock o cursor está e listar, trazer ou fechar as janelas do app | Nenhuma prévia aparece |
 | Prévia do Dock — miniaturas | Gravação de Tela | Capturar as janelas do app só enquanto a prévia está aberta; nada é gravado | Ícone do app e título no lugar da miniatura |
 | Arrastar segurando teclas | Acessibilidade | Interceptar cliques com as teclas escolhidas apertadas e mover a janela sob o cursor | Arrastar só pela barra de título, como sempre |
+| Saída de cada app | Gravação de áudio do sistema | Passar o som do app pelo Docka até a saída escolhida, só enquanto ele toca; nada é gravado | O app toca na saída padrão |
 | Barra de comando — menus | Acessibilidade | Ler os itens dos menus do app da frente só com a barra aberta, e clicar no escolhido | A barra busca todo o resto, sem os menus |
 | Modo de limpeza | Acessibilidade | Descartar as teclas enquanto ele dura — nada é lido nem guardado | O modo não começa |
 | Esvaziar o Lixo | Automação do Finder (o macOS pergunta na primeira vez) | Pedir ao Finder que esvazie o Lixo, depois da sua confirmação | A ação avisa que falta a permissão |

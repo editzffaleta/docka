@@ -47,6 +47,17 @@ todo o resto por aqui.
   - **Modo de limpeza**: o teclado para de responder por um tempo, com as
     telas pretas ou um aviso pequeno; termina sozinho ou segurando o botão.
     Pede Acessibilidade.
+- **Som** (página nova):
+  - **Saída de cada app**: a música nos alto-falantes e a chamada no fone.
+    Também no mixer da ilha, num menu em cada app. Pede a permissão de
+    gravação de áudio do sistema, como o mixer; nada é gravado.
+  - **Trocar de saída num atalho**, com o nome da nova num aviso.
+  - **Baixar o volume quando o fone sai** (Bluetooth ou de fio), até o
+    limite escolhido.
+  - **Microfone preferido**: volta a ser o do sistema sempre que conectado
+    — os AirPods não tomam o lugar do microfone do Mac.
+  - **Nível do microfone** e **silenciar todos os microfones** num atalho;
+    religar devolve cada um como estava, e fechar o Docka também.
 - **Alternâncias novas nas ações rápidas**: modo escuro, Night Shift, Dock
   automático e arquivos ocultos — destacadas quando ligadas — e esvaziar o
   Lixo (depois de confirmar; o macOS pergunta uma vez se o Docka pode

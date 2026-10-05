@@ -21,7 +21,7 @@ enum Ferramentas {
         if s.ilhaControl { lista.append(.ilha) }
         if s.orbitaControl { lista.append(.orbita) }
         if s.alternadorControl { lista.append(.alternador) }
-        lista.append(.acordado)
+        lista += [.acordado, .mudoMicrofones, .proximaSaida]
         lista += AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel).map { .rapida($0) }
         if s.janelasControl { lista += LayoutDeJanela.allCases.map { .janela($0) } }
         lista.append(.ajustes)
@@ -60,6 +60,8 @@ enum Ferramentas {
         case .brilho:         return "sun.max"
         case .volume:         return "speaker.wave.2"
         case .bandeja:        return "dock.rectangle"
+        case .proximaSaida:   return "hifispeaker.and.homepod"
+        case .mudoMicrofones: return "mic.slash"
         }
     }
 
@@ -67,6 +69,7 @@ enum Ferramentas {
     static func ligada(_ a: AcaoDeAtalho) -> Bool? {
         switch a {
         case .acordado:      return AcordadoSessao.shared.ativo
+        case .mudoMicrofones: return SomController.shared.microfonesMudos
         case .rapida(let r): return AcoesRapidasBackend.ligada(r)
         default:             return nil
         }

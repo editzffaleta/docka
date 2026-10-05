@@ -110,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         VigiaDePermissoes.shared.comecar()
         AjustesDoSistemaController.shared.comecar()
         FinderEArquivosController.shared.comecar()
+        SomController.shared.comecar()
         HotKeyManager.shared.onPress = { acao in
             guard let acao = AcaoDeAtalho(id: acao) else { return }
             TrayManager.shared.executar(acao)
@@ -235,6 +236,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if CommandLine.arguments.contains("--som-selftest") {
+            print("som:\n\(SomController.autoteste())")
+            fflush(stdout)
+            NSApp.terminate(nil)
+            return
+        }
+
         if CommandLine.arguments.contains("--ajustes-selftest") {
             let pasta = ProcessInfo.processInfo.environment["DOCKA_SELFTEST_OUT"] ?? "/tmp"
             print("ajustes:\n\(AjustesAutoteste.rodar(pasta: pasta))")
@@ -270,6 +278,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         HistoricoModelo.shared.gravarAgora()
         // o Caps Lock volta a ser Caps Lock com o Docka fechado
         MouseETecladoController.shared.encerrar()
+        // e os microfones voltam como estavam
+        SomController.shared.encerrar()
     }
 
     // a bandeja continua viva com a janela fechada — é o ponto do app

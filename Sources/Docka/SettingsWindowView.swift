@@ -1,5 +1,6 @@
 import SwiftUI
 import DockaCore
+import CoreAudio
 
 // Gerenciador do Docka.
 //
@@ -10,13 +11,13 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, recursos, sistema, ilha, teclado, finder, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, paineis, acoes, atalho, sobre
+    case geral, recursos, sistema, ilha, teclado, finder, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, som, paineis, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// A barra lateral em grupos com título — com mais de vinte seções, um
     /// vão entre blocos já não dizia onde procurar cada coisa.
     static let grupos: [(titulo: String, itens: [Secao])] = [
-        ("Essenciais", [.geral, .recursos, .sistema, .ilha, .energia, .monitor]),
+        ("Essenciais", [.geral, .recursos, .sistema, .ilha, .energia, .som, .monitor]),
         ("Controles de janela", [.mouse, .teclado, .alternador, .janelas, .encerrar, .dock]),
         ("Arquivos", [.finder, .clipboard, .prateleira, .captura]),
         ("Bordas", [.bandeja, .apps, .aparencia, .orbita, .notas, .brilho, .volume]),
@@ -50,6 +51,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .volume:    return "Volume"
         case .energia:   return "Energia"
         case .paineis:   return "Painéis"
+        case .som:       return "Som"
         case .acoes:     return "Ações rápidas"
         case .atalho:    return "Atalhos"
         case .sobre:     return "Sobre"
@@ -96,6 +98,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .brilho:     return "sun.max"
         case .volume:     return "speaker.wave.2"
         case .paineis:    return "square.grid.3x3.square"
+        case .som:        return "speaker.wave.2"
         case .acoes:      return "rays"
         case .atalho:     return "keyboard"
         case .sobre:      return "info.circle"
@@ -129,6 +132,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .volume:    return .pink
         case .energia:   return .brown
         case .paineis:   return .indigo
+        case .som:       return .pink
         case .acoes:     return .red
         case .atalho:    return .orange
         case .sobre:     return .secondary
@@ -249,6 +253,7 @@ struct SettingsWindowView: View {
         case .volume:    DeslizadorView(deslizador: .volume)
         case .energia:   EnergiaView()
         case .paineis:   PaineisSettingsView()
+        case .som:       SomSettingsView()
         case .acoes:     AcoesRapidasView()
         case .atalho:    AtalhoView()
         case .sobre:     SobreView()
@@ -2574,6 +2579,160 @@ private struct EnergiaView: View {
     }
 }
 
+// MARK: - Som
+
+/// O que a página de som mostra, relido quando um dispositivo muda.
+private final class SomEstado: ObservableObject {
+    @Published var saidas: [SaidasDeAudio.Saida] = []
+    @Published var entradas: [SomController.Entrada] = []
+    @Published var entradaAtual: AudioObjectID?
+    @Published var nivel: Double = 0
+    @Published var nivelAjustavel = false
+    @Published var mudos = false
+    private var observador: NSObjectProtocol?
+
+    init() {
+        reler()
+        observador = NotificationCenter.default.addObserver(forName: .somMudou, object: nil, queue: .main) { [weak self] _ in
+            self?.reler()
+        }
+    }
+
+    func reler() {
+        saidas = SaidasDeAudio.lista()
+        entradas = SomController.entradas()
+        entradaAtual = SomController.entradaPadrao
+        nivelAjustavel = entradaAtual.map(SomController.nivelAjustavel) ?? false
+        nivel = Double(entradaAtual.flatMap(SomController.nivel) ?? 0)
+        mudos = SomController.shared.microfonesMudos
+    }
+}
+
+/// Ajustes → Som: a saída de cada app, a troca de saída, os fones e os microfones.
+private struct SomSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @StateObject private var som = SomEstado()
+
+    private var appsComRegra: [String] { store.saidaPorApp.keys.sorted { nome($0) < nome($1) } }
+
+    var body: some View {
+        Form {
+            Section {
+                ForEach(appsComRegra, id: \.self) { bundle in
+                    LabeledContent {
+                        HStack {
+                            Picker("Saída", selection: Binding(
+                                get: { store.saidaPorApp[bundle] ?? "" },
+                                set: { store.saidaPorApp[bundle] = $0 })) {
+                                ForEach(som.saidas) { s in Text(s.nome).tag(s.uid) }
+                                if let uid = store.saidaPorApp[bundle], !som.saidas.contains(where: { $0.uid == uid }) {
+                                    Text("Desconectada").tag(uid)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(width: 220)
+                            Button {
+                                store.saidaPorApp[bundle] = nil
+                            } label: {
+                                Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Remover")
+                        }
+                    } label: {
+                        Label {
+                            Text(nome(bundle))
+                        } icon: {
+                            Image(nsImage: icone(bundle)).resizable().frame(width: 18, height: 18)
+                        }
+                    }
+                }
+                Menu("Adicionar app") {
+                    ForEach(appsAbertos(), id: \.self) { bundle in
+                        Button(nome(bundle)) {
+                            store.saidaPorApp[bundle] = SaidasDeAudio.padrao.flatMap(SaidasDeAudio.uid) ?? som.saidas.first?.uid ?? ""
+                        }
+                    }
+                }
+                .fixedSize()
+            } header: {
+                Text("Saída de cada app")
+            } footer: {
+                Text("A música nos alto-falantes e a chamada no fone, por exemplo. Enquanto o app toca, o som dele passa pelo Docka até a saída escolhida — nada é gravado; o macOS pede a permissão de gravação de áudio do sistema na primeira vez. Com a saída desconectada, o app toca na saída padrão.")
+            }
+
+            Section {
+                LabeledContent("Atalho") { ShortcutRecorder(acao: .proximaSaida) }
+                Toggle(isOn: $store.baixarAoTirarFone) {
+                    Text("Baixar o volume quando o fone sair")
+                    Text("Tirou o fone (Bluetooth ou de fio) e o som foi para o alto-falante: o volume desce até o limite, para não tocar alto na sala.")
+                }
+                if store.baixarAoTirarFone {
+                    LabeledContent("No máximo") {
+                        Slider(value: $store.volumeSemFone, in: 0...0.5, step: 0.05).frame(width: 200)
+                        Text(Som.porcentagem(Float(store.volumeSemFone))).monospacedDigit().frame(width: 44)
+                    }
+                }
+            } header: {
+                Text("Saída")
+            } footer: {
+                Text("O atalho passa o som para a próxima saída conectada e mostra o nome dela.")
+            }
+
+            Section {
+                Picker("Microfone preferido", selection: $store.entradaPreferida) {
+                    Text("Nenhum — o sistema escolhe").tag("")
+                    ForEach(som.entradas) { e in Text(e.nome).tag(e.uid) }
+                    if !store.entradaPreferida.isEmpty, !som.entradas.contains(where: { $0.uid == store.entradaPreferida }) {
+                        Text("Desconectado").tag(store.entradaPreferida)
+                    }
+                }
+                LabeledContent("Nível do microfone atual") {
+                    Slider(value: Binding(get: { som.nivel }, set: { v in
+                        som.nivel = v
+                        if let d = som.entradaAtual { SomController.definirNivel(d, Float(v)) }
+                    }), in: 0...1).frame(width: 200)
+                    .disabled(!som.nivelAjustavel)
+                    Text(som.nivelAjustavel ? Som.porcentagem(Float(som.nivel)) : "fixo").monospacedDigit().frame(width: 44)
+                }
+                LabeledContent("Atalho para silenciar") { ShortcutRecorder(acao: .mudoMicrofones) }
+                LabeledContent(som.mudos ? "Todos os microfones estão mudos" : "Testar") {
+                    Button(som.mudos ? "Religar" : "Silenciar todos") { SomController.shared.alternarMudo() }
+                }
+            } header: {
+                Text("Microfone")
+            } footer: {
+                Text("Com um preferido, ele volta a ser o microfone do sistema sempre que estiver conectado — os AirPods não tomam o lugar do microfone do Mac. Silenciar vale para todos, inclusive os que conectarem depois, e religar devolve cada um como estava; ao fechar o Docka, eles voltam sozinhos. Alguns microfones não deixam mudar o nível.")
+            }
+        }
+        .formStyle(.grouped)
+        .onAppear { som.reler() }
+    }
+
+    private func appsAbertos() -> [String] {
+        let comRegra = Set(store.saidaPorApp.keys)
+        let bundles = NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular }
+            .compactMap(\.bundleIdentifier)
+            .filter { !comRegra.contains($0) && $0 != Bundle.main.bundleIdentifier }
+        return Array(Set(bundles)).sorted { nome($0).localizedCaseInsensitiveCompare(nome($1)) == .orderedAscending }
+    }
+
+    private func nome(_ bundle: String) -> String {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundle) else { return bundle }
+        var n = FileManager.default.displayName(atPath: url.path)
+        if n.hasSuffix(".app") { n.removeLast(4) }
+        return n
+    }
+
+    private func icone(_ bundle: String) -> NSImage {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundle) else {
+            return NSImage(systemSymbolName: "app.dashed", accessibilityDescription: nil) ?? NSImage()
+        }
+        return NSWorkspace.shared.icon(forFile: url.path)
+    }
+}
+
 // MARK: - Painéis
 
 /// Ajustes → Painéis: a barra de comando, o painel rápido e o modo de limpeza.
@@ -2918,6 +3077,15 @@ private struct AtalhoView: View {
             }
 
             Section {
+                linha(.proximaSaida, titulo: "Próxima saída de som",
+                      detalhe: "Passa o som para a próxima saída conectada")
+                linha(.mudoMicrofones, titulo: "Silenciar os microfones",
+                      detalhe: "Todos de uma vez; o segundo toque religa")
+            } header: {
+                Text("Som")
+            }
+
+            Section {
                 ForEach(AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)) { a in
                     linha(.rapida(a), titulo: a.titulo, detalhe: a.descricao)
                 }
@@ -3016,6 +3184,7 @@ enum AjustesAutoteste {
             desenhar(FinderSettingsView().frame(width: 600, height: 380), "ajustes-finder", NSSize(width: 600, height: 380)),
             InstaladorPanel.desenhar(pasta: pasta),
             desenhar(PaineisSettingsView().frame(width: 600, height: 1500), "ajustes-paineis", NSSize(width: 600, height: 1500)),
+            desenhar(SomSettingsView().frame(width: 600, height: 760), "ajustes-som", NSSize(width: 600, height: 760)),
             BarraDeComandoController.desenhar(pasta: pasta, busca: "15% de 80", arquivo: "barra-conta.png"),
             BarraDeComandoController.desenhar(pasta: pasta, busca: "10 km em mi", arquivo: "barra-conversao.png"),
             BarraDeComandoController.desenhar(pasta: pasta, busca: "term", arquivo: "barra-busca.png"),

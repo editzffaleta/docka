@@ -54,6 +54,10 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case painelRapido
     /// Começa o modo de limpeza.
     case limpeza
+    /// Passa o som para a próxima saída conectada.
+    case proximaSaida
+    /// Silencia todos os microfones; de novo, religa.
+    case mudoMicrofones
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -82,6 +86,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .barraDeComando:    return "barraDeComando"
         case .painelRapido:      return "painelRapido"
         case .limpeza:           return "limpeza"
+        case .proximaSaida:      return "proximaSaida"
+        case .mudoMicrofones:    return "mudoMicrofones"
         }
     }
 
@@ -106,6 +112,8 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "barraDeComando": self = .barraDeComando
         case "painelRapido": self = .painelRapido
         case "limpeza": self = .limpeza
+        case "proximaSaida": self = .proximaSaida
+        case "mudoMicrofones": self = .mudoMicrofones
         default:
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {
