@@ -82,4 +82,18 @@ struct DDCTests {
         #expect(DDC.diagnostico(escrita: 0, resposta: [0x6E, 0x12, 0x34, 0, 0, 0, 0, 0, 0, 0, 0]) == .respostaEstranha)
         #expect(DDC.Diagnostico.escritaRecusada(codigo: Int32(bitPattern: 0xE011_4102)).explicacao.contains("0xE0114102"))
     }
+
+    @Test("Caminho com conversor DisplayPort → HDMI vira o motivo")
+    func caminho() {
+        let lg = DDC.Caminho(de: "DP", para: "HDMI")      // o que o macOS registrou para o LG
+        #expect(lg.conversor && lg.descricao == "DisplayPort → HDMI")
+        #expect(DDC.motivo(.soEDID, caminho: lg).contains("conversor DisplayPort → HDMI"))
+        #expect(DDC.motivo(nil, caminho: lg).contains("USB-C → DisplayPort"))
+        // sem conversor, fica o diagnóstico de sempre
+        let direto = DDC.Caminho(de: "DP", para: "DP")
+        #expect(!direto.conversor && direto.descricao == "DisplayPort")
+        #expect(DDC.motivo(.soEDID, caminho: direto) == DDC.Diagnostico.soEDID.explicacao)
+        // monitor que respondeu: o conversor não importa
+        #expect(DDC.motivo(.respondeu(atual: 50, maximo: 100), caminho: lg).hasPrefix("respondeu"))
+    }
 }

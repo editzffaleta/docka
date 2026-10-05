@@ -2490,6 +2490,14 @@ private struct TelasDeBrilhoSection: View {
                         LinhaDeBrilho(tela: tela)
                     } else if tela.ddc {
                         LinhaDeBrilhoDDC(tela: tela)
+                    } else if let motivo = tela.semDDC {
+                        Label {
+                            Text("Sem brilho de hardware: " + motivo)
+                        } icon: {
+                            Image(systemName: "info.circle")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     }
                     LabeledContent {
                         HStack {
@@ -2736,6 +2744,13 @@ enum AjustesAutoteste {
             desenhar(EncerrarSettingsView().frame(width: 600, height: 560), "ajustes-encerrar", NSSize(width: 600, height: 560)),
             desenhar(DockSettingsView().frame(width: 600, height: 300), "ajustes-dock", NSSize(width: 600, height: 300)),
             desenhar(IlhaSettingsView().frame(width: 600, height: 900), "ajustes-ilha", NSSize(width: 600, height: 900)),
+            {
+                // o DDC responde (ou não) em segundo plano: espera a resposta antes de desenhar
+                TelasDeBrilho.shared.atualizarTelas()
+                RunLoop.current.run(until: Date().addingTimeInterval(1.5))
+                return desenhar(Form { TelasDeBrilhoSection() }.formStyle(.grouped).frame(width: 600, height: 420),
+                                "ajustes-brilho", NSSize(width: 600, height: 420))
+            }(),
         ].joined(separator: "\n")
     }
 }

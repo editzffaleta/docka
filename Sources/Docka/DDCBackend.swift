@@ -28,6 +28,8 @@ final class DDCBackend {
 
     /// Monitores com DDC funcionando, por tela do CoreGraphics.
     private(set) var monitores: [CGDirectDisplayID: Monitor] = [:]
+    /// Por que os outros monitores externos ficaram no escurecimento.
+    private(set) var motivos: [CGDirectDisplayID: String] = [:]
     private let fila = DispatchQueue(label: "docka.ddc", qos: .userInitiated)
     /// O último valor pedido por tela, enquanto a régua é arrastada — só ele
     /// vai para o cabo.
@@ -61,6 +63,8 @@ final class DDCBackend {
         let produto: UInt64?
         let serie: UInt64?
         let nome: String
+        /// Por onde o sinal chega ao monitor (com conversor, ou direto).
+        var caminho: DDC.Caminho? = nil
     }
 
     /// Percorre o registro como o MonitorControl: cada framebuffer com tela
@@ -76,6 +80,7 @@ final class DDCBackend {
 
         var resultado: [Canal] = []
         var atributos: [String: Any]?
+        var caminho: DDC.Caminho?
         while case let e = IOIteratorNext(it), e != 0 {
             defer { IOObjectRelease(e) }
             var nome = [CChar](repeating: 0, count: 128)
@@ -86,6 +91,12 @@ final class DDCBackend {
                     .takeRetainedValue() as? [String: Any],
                    let p = a["ProductAttributes"] as? [String: Any] {
                     atributos = p
+                    // "Transport" = {Upstream = DP; Downstream = HDMI}: o caminho do sinal
+                    let t = IORegistryEntryCreateCFProperty(e, "Transport" as CFString, kCFAllocatorDefault, 0)?
+                        .takeRetainedValue() as? [String: Any]
+                    caminho = (t?["Upstream"] as? String).flatMap { de in
+                        (t?["Downstream"] as? String).map { DDC.Caminho(de: de, para: $0) }
+                    }
                 }
             } else if classe == "DCPAVServiceProxy", let p = atributos,
                       (IORegistryEntryCreateCFProperty(e, "Location" as CFString, kCFAllocatorDefault, 0)?
@@ -97,8 +108,10 @@ final class DDCBackend {
                 resultado.append(Canal(servico: servico, fabricante: fab,
                                        produto: (p["ProductID"] as? NSNumber)?.uint64Value,
                                        serie: (p["SerialNumber"] as? NSNumber)?.uint64Value,
-                                       nome: p["ProductName"] as? String ?? "Monitor externo"))
+                                       nome: p["ProductName"] as? String ?? "Monitor externo",
+                                       caminho: caminho))
                 atributos = nil
+                caminho = nil
             }
         }
         return resultado
@@ -133,13 +146,17 @@ final class DDCBackend {
         fila.async { [weak self] in
             guard let self else { return }
             var achados: [CGDirectDisplayID: Monitor] = [:]
+            var motivos: [CGDirectDisplayID: String] = [:]
             for (tela, canal) in Self.casar(Self.canais(), telas: telas) {
                 if let r = Self.lerBrilho(canal.servico) {
                     achados[tela] = Monitor(servico: canal.servico, atual: r.atual, maximo: r.maximo, nome: canal.nome)
+                } else {
+                    motivos[tela] = DDC.motivo(nil, caminho: canal.caminho)
                 }
             }
             DispatchQueue.main.async {
                 self.monitores = achados
+                self.motivos = motivos
                 pronto()
             }
         }
@@ -232,6 +249,9 @@ final class DDCBackend {
         r.append("canais de vídeo externos com tela ligada: \(canais.count)")
         for c in canais {
             r.append("  • \(c.nome): fabricante \(c.fabricante.map(String.init) ?? "?"), produto \(c.produto.map(String.init) ?? "?"), série \(c.serie.map(String.init) ?? "?")")
+            if let cam = c.caminho {
+                r.append("    caminho do sinal: \(cam.descricao)\(cam.conversor ? " (com conversor)" : "")")
+            }
         }
         var ids = [CGDirectDisplayID](repeating: 0, count: 16)
         var n: UInt32 = 0
@@ -247,7 +267,7 @@ final class DDCBackend {
             } else {
                 let (escrita, lido) = tentativaCrua(c.servico)
                 let d = DDC.diagnostico(escrita: escrita, resposta: lido)
-                r.append("SEM RESPOSTA — \(c.nome) (tela \(t)): \(d.explicacao)")
+                r.append("SEM RESPOSTA — \(c.nome) (tela \(t)): \(DDC.motivo(d, caminho: c.caminho))")
                 r.append(String(format: "  detalhes: escrita 0x%08X, lido %@", UInt32(bitPattern: escrita),
                                 lido.map { String(format: "%02X", $0) }.joined(separator: " ")))
                 r.append("  fica o escurecimento por software, que funciona com qualquer monitor")
