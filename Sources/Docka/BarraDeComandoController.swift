@@ -82,20 +82,7 @@ final class BarraDeComandoController {
         p.makeKey()
         withAnimation(.spring(duration: 0.28, bounce: 0.15)) { estado.visivel = true }
         estado.pedidoDeFoco += 1
-        // o foco do SwiftUI não chega sozinho num painel que não ativa o
-        // Docka (na primeira abertura o onChange nem dispara): entrega o
-        // campo ao painel pelo AppKit, depois do layout
-        DispatchQueue.main.async { [weak p] in
-            guard let p, let campo = Self.campo(em: p.contentView) else { return }
-            p.makeFirstResponder(campo)
-        }
-    }
-
-    private static func campo(em v: NSView?) -> NSTextField? {
-        guard let v else { return nil }
-        if let t = v as? NSTextField, t.isEditable { return t }
-        for f in v.subviews { if let t = campo(em: f) { return t } }
-        return nil
+        p.focarCampo()
     }
 
     func fechar() {

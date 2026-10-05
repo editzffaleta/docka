@@ -245,6 +245,25 @@ final class MidiaModelo: ObservableObject {
 
     func limpar() { if !trabalhando { itens = []; aviso = nil } }
 
+    /// O que chega soltando arquivos na janela: cada um vem como um provedor
+    /// que entrega a URL depois, fora da main thread.
+    func receber(_ provedores: [NSItemProvider], pronto: (() -> Void)? = nil) {
+        let grupo = DispatchGroup()
+        var urls: [URL] = []
+        let trava = NSLock()
+        for p in provedores where p.canLoadObject(ofClass: URL.self) {
+            grupo.enter()
+            _ = p.loadObject(ofClass: URL.self) { url, _ in
+                if let url { trava.lock(); urls.append(url); trava.unlock() }
+                grupo.leave()
+            }
+        }
+        grupo.notify(queue: .main) { [weak self] in
+            self?.adicionar(urls.sorted { $0.path < $1.path })
+            pronto?()
+        }
+    }
+
     func comecar() {
         guard !trabalhando else { return }
         trabalhando = true
@@ -355,11 +374,7 @@ struct MidiaView: View {
         }
         .frame(minWidth: 520, minHeight: 300)
         .onDrop(of: [.fileURL], isTargeted: $alvo) { provedores in
-            for p in provedores {
-                _ = p.loadObject(ofClass: URL.self) { url, _ in
-                    if let url { DispatchQueue.main.async { m.adicionar([url]) } }
-                }
-            }
+            m.receber(provedores)
             return true
         }
     }
@@ -543,6 +558,20 @@ extension ProcessadorDeMidia {
             let t = try ProcessadorDeMidia.texto(texto)
             conferir("texto: \"\(t)\"", t.contains("Docka"))
         } catch { conferir("texto: \(error.localizedDescription)", false) }
+
+        // soltar arquivos: o mesmo caminho que o arrasto do Finder usa (um
+        // texto junto, que deve ficar de fora)
+        try? "nota".write(to: dir.appendingPathComponent("nota.txt"), atomically: true, encoding: .utf8)
+        let modelo = await MainActor.run { MidiaModelo() }
+        await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+            DispatchQueue.main.async {
+                modelo.receber([video, foto, dir.appendingPathComponent("nota.txt")].map { NSItemProvider(contentsOf: $0) ?? NSItemProvider() }) {
+                    c.resume()
+                }
+            }
+        }
+        let (recebidos, aviso) = await MainActor.run { (modelo.itens.map { $0.url.lastPathComponent }, modelo.aviso ?? "") }
+        conferir("soltar: \(recebidos) — \(aviso)", Set(recebidos) == ["video.mov", "foto.heic"])
 
         // nunca sobrescreve
         let primeiro = Midia.nomeDeSaida(original: video.path, sufixo: "comprimido", extensao: "mp4") { fm.fileExists(atPath: $0) }
