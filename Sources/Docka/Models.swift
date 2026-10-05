@@ -199,6 +199,39 @@ final class DockaStore: ObservableObject {
         static let ilhaLetra = "docka.islandLyrics"
         static let ilhaNotificacoes = "docka.islandNotifications"
         static let ilhaAvisoAgentes = "docka.islandAgentNotice"
+        static let bloquearMusica = "docka.blockMusicApp"
+        static let recorteNoFinder = "docka.finderCutPaste"
+        static let instaladorDeDmg = "docka.dmgInstaller"
+        static let dmgParaOLixo = "docka.dmgTrashAfter"
+        static let barraArquivos = "docka.commandBarFiles"
+        static let saidaPorApp = "docka.outputPerApp"
+        static let pastasDeMensageiros = "docka.messengerFolders"
+        static let gravacaoSomDoSistema = "docka.recordSystemAudio"
+        static let gravacaoMicrofone = "docka.recordMicrophone"
+        static let gravacaoCliques = "docka.recordClicks"
+        static let gravacaoQuadros = "docka.recordFPS"
+        static let gravacaoDepois = "docka.recordAfter"
+        static let entradaPreferida = "docka.preferredInput"
+        static let baixarAoTirarFone = "docka.lowerOnHeadphonesOut"
+        static let volumeSemFone = "docka.volumeWithoutHeadphones"
+        static let barraMenus = "docka.commandBarMenus"
+        static let scripts = "docka.commandBarScripts"
+        static let painelRapidoItens = "docka.quickPanelItems"
+        static let limpezaDuracao = "docka.cleaningDuration"
+        static let limpezaVisual = "docka.cleaningVisual"
+        static let focoSegueMouse = "docka.focusFollowsMouse"
+        static let focoAtraso = "docka.focusFollowsMouseDelay"
+        static let focoIgnorados = "docka.focusFollowsMouseIgnored"
+        static let filtroDeClique = "docka.doubleClickFilter"
+        static let filtroDeCliqueMs = "docka.doubleClickFilterMs"
+        static let repiqueDeTeclas = "docka.keyDebounce"
+        static let repiqueMs = "docka.keyDebounceMs"
+        static let cliqueDoMeio = "docka.trackpadMiddleClick"
+        static let teclaSuper = "docka.hyperKey"
+        static let mouseAcoesDosBotoes = "docka.mouseButtonActions"
+        static let bluetoothNoRepouso = "docka.bluetoothOffOnSleep"
+        static let aceleracaoControl = "docka.pointerAccelerationControl"
+        static let aceleracao = "docka.pointerAcceleration"
         static let ilhaAvisoBateria = "docka.islandNoticeBattery"
         static let ilhaAvisoFones = "docka.islandNoticeHeadphones"
         static let ilhaAvisoVolume = "docka.islandNoticeVolume"
@@ -544,6 +577,93 @@ final class DockaStore: ObservableObject {
             NotificacoesModelo.shared.sincronizar()
         }
     }
+    // Mouse e teclado (grupo 2 da fase 7): cada um liga o seu tap só quando ligado.
+    @Published var focoSegueMouse: Bool { didSet { defaults.set(focoSegueMouse, forKey: Key.focoSegueMouse); mudouEntrada(focoSegueMouse) } }
+    @Published var focoAtraso: Double { didSet { defaults.set(focoAtraso, forKey: Key.focoAtraso) } }
+    @Published var focoIgnorados: [String] { didSet { defaults.set(focoIgnorados, forKey: Key.focoIgnorados) } }
+    @Published var filtroDeClique: Bool { didSet { defaults.set(filtroDeClique, forKey: Key.filtroDeClique); mudouEntrada(filtroDeClique) } }
+    @Published var filtroDeCliqueMs: Double { didSet { defaults.set(filtroDeCliqueMs, forKey: Key.filtroDeCliqueMs) } }
+    @Published var repiqueDeTeclas: Bool { didSet { defaults.set(repiqueDeTeclas, forKey: Key.repiqueDeTeclas); mudouEntrada(repiqueDeTeclas) } }
+    @Published var repiqueMs: Double { didSet { defaults.set(repiqueMs, forKey: Key.repiqueMs) } }
+    @Published var cliqueDoMeio: Bool { didSet { defaults.set(cliqueDoMeio, forKey: Key.cliqueDoMeio); mudouEntrada(cliqueDoMeio) } }
+    @Published var teclaSuper: Bool { didSet { defaults.set(teclaSuper, forKey: Key.teclaSuper); mudouEntrada(teclaSuper) } }
+    @Published var mouseAcoesDosBotoes: [String: String] { didSet { defaults.set(mouseAcoesDosBotoes, forKey: Key.mouseAcoesDosBotoes) } }
+
+    private func mudouEntrada(_ ligou: Bool) {
+        pedirAcessibilidadeSe(ligou)
+        MouseETecladoController.shared.sincronizar()
+        FinderEArquivosController.shared.sincronizar()
+    }
+
+    /// ⌘X e ⌘V movem arquivos no Finder.
+    @Published var recorteNoFinder: Bool {
+        didSet { defaults.set(recorteNoFinder, forKey: Key.recorteNoFinder); pedirAcessibilidadeSe(recorteNoFinder); FinderEArquivosController.shared.sincronizar() }
+    }
+    /// Ao abrir um .dmg com um app, oferece instalar em Aplicativos.
+    @Published var instaladorDeDmg: Bool { didSet { defaults.set(instaladorDeDmg, forKey: Key.instaladorDeDmg) } }
+    @Published var dmgParaOLixo: Bool { didSet { defaults.set(dmgParaOLixo, forKey: Key.dmgParaOLixo) } }
+
+    /// Gravação de tela: o que entra no vídeo e o que fazer no fim.
+    @Published var gravacaoSomDoSistema: Bool { didSet { defaults.set(gravacaoSomDoSistema, forKey: Key.gravacaoSomDoSistema) } }
+    @Published var gravacaoMicrofone: Bool { didSet { defaults.set(gravacaoMicrofone, forKey: Key.gravacaoMicrofone) } }
+    @Published var gravacaoCliques: Bool { didSet { defaults.set(gravacaoCliques, forKey: Key.gravacaoCliques) } }
+    @Published var gravacaoQuadros: Int { didSet { defaults.set(gravacaoQuadros, forKey: Key.gravacaoQuadros) } }
+    @Published var gravacaoDepois: String { didSet { defaults.set(gravacaoDepois, forKey: Key.gravacaoDepois) } }
+
+    /// Pastas de downloads que a manutenção trata como de mensageiro.
+    @Published var pastasDeMensageiros: [String] {
+        didSet { defaults.set(pastasDeMensageiros, forKey: Key.pastasDeMensageiros) }
+    }
+
+    /// A saída de som de cada app (bundle → UID do dispositivo).
+    @Published var saidaPorApp: [String: String] {
+        didSet { defaults.set(saidaPorApp, forKey: Key.saidaPorApp); MixerModelo.shared.sincronizarRegras() }
+    }
+    /// O microfone que volta a ser o do sistema sempre que estiver conectado.
+    @Published var entradaPreferida: String {
+        didSet { defaults.set(entradaPreferida, forKey: Key.entradaPreferida); SomController.shared.aplicarEntradaPreferida() }
+    }
+    @Published var baixarAoTirarFone: Bool { didSet { defaults.set(baixarAoTirarFone, forKey: Key.baixarAoTirarFone) } }
+    /// O volume máximo depois que o fone sai (0…1).
+    @Published var volumeSemFone: Double { didSet { defaults.set(volumeSemFone, forKey: Key.volumeSemFone) } }
+
+    /// A barra de comando busca arquivos pelo Spotlight.
+    @Published var barraArquivos: Bool { didSet { defaults.set(barraArquivos, forKey: Key.barraArquivos) } }
+    /// A barra de comando lista os comandos de menu do app da frente.
+    @Published var barraMenus: Bool {
+        didSet { defaults.set(barraMenus, forKey: Key.barraMenus); pedirAcessibilidadeSe(barraMenus) }
+    }
+    /// Comandos de terminal com nome, para rodar pela barra.
+    @Published var scripts: [ScriptSalvo] {
+        didSet { defaults.set(try? JSONEncoder().encode(scripts), forKey: Key.scripts) }
+    }
+    /// As ferramentas do painel rápido, na ordem; `nil` é o padrão.
+    @Published var painelRapidoItens: [String]? {
+        didSet {
+            if let painelRapidoItens { defaults.set(painelRapidoItens, forKey: Key.painelRapidoItens) }
+            else { defaults.removeObject(forKey: Key.painelRapidoItens) }
+        }
+    }
+    /// Quanto tempo o modo de limpeza segura o teclado, em segundos.
+    @Published var limpezaDuracao: Double { didSet { defaults.set(limpezaDuracao, forKey: Key.limpezaDuracao) } }
+    @Published var limpezaVisual: String { didSet { defaults.set(limpezaVisual, forKey: Key.limpezaVisual) } }
+
+    /// Fecha o app Música quando ele abre sozinho (tecla de tocar, fones).
+    @Published var bloquearMusica: Bool { didSet { defaults.set(bloquearMusica, forKey: Key.bloquearMusica) } }
+    /// Desliga o Bluetooth ao dormir e religa ao acordar.
+    @Published var bluetoothNoRepouso: Bool {
+        didSet {
+            defaults.set(bluetoothNoRepouso, forKey: Key.bluetoothNoRepouso)
+            if bluetoothNoRepouso { AjustesDoSistemaController.shared.pedirPermissaoDeBluetooth() }
+        }
+    }
+    /// Aceleração do mouse escolhida pelo Docka (-1 = sem aceleração).
+    @Published var aceleracaoControl: Bool {
+        didSet { defaults.set(aceleracaoControl, forKey: Key.aceleracaoControl); AjustesDoSistemaController.shared.aplicarAceleracao() }
+    }
+    @Published var aceleracao: Double {
+        didSet { defaults.set(aceleracao, forKey: Key.aceleracao); if aceleracaoControl { AjustesDoSistemaController.shared.aplicarAceleracao() } }
+    }
     /// Avisos rápidos nas asas da ilha.
     @Published var ilhaAvisoBateria: Bool { didSet { defaults.set(ilhaAvisoBateria, forKey: Key.ilhaAvisoBateria) } }
     @Published var ilhaAvisoFones: Bool { didSet { defaults.set(ilhaAvisoFones, forKey: Key.ilhaAvisoFones) } }
@@ -603,6 +723,7 @@ final class DockaStore: ObservableObject {
         ArrastoComTeclaController.shared.sincronizar()
         PreviaDoDockController.shared.sincronizar()
         IlhaController.shared.sincronizar()
+        MouseETecladoController.shared.sincronizar()
         NotificacoesModelo.shared.sincronizar()
     }
 
@@ -846,6 +967,14 @@ final class DockaStore: ObservableObject {
         case .capturaArea: return "Capturar área"
         case .ilha: return "Ilha Dinâmica"
         case .secaoDaIlha(let s): return "Ilha — \(s.titulo.lowercased())"
+        case .barraDeComando: return "Barra de comando"
+        case .painelRapido: return "Painel rápido"
+        case .limpeza: return "Modo de limpeza"
+        case .proximaSaida: return "Próxima saída de som"
+        case .mudoMicrofones: return "Silenciar os microfones"
+        case .gravarTela: return "Gravar a tela"
+        case .midia: return "Ferramentas de mídia"
+        case .manutencao: return "Manutenção"
         case .anel(let uuid):
             let nome = aneis.first { $0.id == uuid }?.nome ?? "?"
             return "Órbita — \(nome)"
@@ -1017,6 +1146,32 @@ final class DockaStore: ObservableObject {
             Key.ilhaLetra: false,
             Key.ilhaNotificacoes: false,
             Key.ilhaAvisoAgentes: true,
+            Key.bloquearMusica: false,
+            Key.recorteNoFinder: false,
+            Key.instaladorDeDmg: false,
+            Key.dmgParaOLixo: false,
+            Key.barraArquivos: true,
+            Key.baixarAoTirarFone: false,
+            Key.gravacaoSomDoSistema: true,
+            Key.gravacaoMicrofone: false,
+            Key.gravacaoCliques: true,
+            Key.gravacaoQuadros: 30,
+            Key.gravacaoDepois: "finder",
+            Key.volumeSemFone: 0.25,
+            Key.barraMenus: true,
+            Key.limpezaDuracao: 60.0,
+            Key.limpezaVisual: ModoDeLimpeza.Visual.telaPreta.rawValue,
+            Key.focoSegueMouse: false,
+            Key.focoAtraso: 0.3,
+            Key.filtroDeClique: false,
+            Key.filtroDeCliqueMs: 60.0,
+            Key.repiqueDeTeclas: false,
+            Key.repiqueMs: 40.0,
+            Key.cliqueDoMeio: false,
+            Key.teclaSuper: false,
+            Key.bluetoothNoRepouso: false,
+            Key.aceleracaoControl: false,
+            Key.aceleracao: -1.0,
             Key.ilhaAvisoBateria: true,
             Key.ilhaAvisoFones: true,
             Key.ilhaAvisoVolume: true,
@@ -1156,6 +1311,40 @@ final class DockaStore: ObservableObject {
         ilhaLetra = defaults.bool(forKey: Key.ilhaLetra)
         ilhaNotificacoes = defaults.bool(forKey: Key.ilhaNotificacoes)
         ilhaAvisoAgentes = defaults.bool(forKey: Key.ilhaAvisoAgentes)
+        bloquearMusica = defaults.bool(forKey: Key.bloquearMusica)
+        recorteNoFinder = defaults.bool(forKey: Key.recorteNoFinder)
+        instaladorDeDmg = defaults.bool(forKey: Key.instaladorDeDmg)
+        dmgParaOLixo = defaults.bool(forKey: Key.dmgParaOLixo)
+        barraArquivos = defaults.bool(forKey: Key.barraArquivos)
+        saidaPorApp = defaults.dictionary(forKey: Key.saidaPorApp) as? [String: String] ?? [:]
+        pastasDeMensageiros = defaults.stringArray(forKey: Key.pastasDeMensageiros) ?? []
+        gravacaoSomDoSistema = defaults.bool(forKey: Key.gravacaoSomDoSistema)
+        gravacaoMicrofone = defaults.bool(forKey: Key.gravacaoMicrofone)
+        gravacaoCliques = defaults.bool(forKey: Key.gravacaoCliques)
+        gravacaoQuadros = defaults.integer(forKey: Key.gravacaoQuadros)
+        gravacaoDepois = defaults.string(forKey: Key.gravacaoDepois) ?? "finder"
+        entradaPreferida = defaults.string(forKey: Key.entradaPreferida) ?? ""
+        baixarAoTirarFone = defaults.bool(forKey: Key.baixarAoTirarFone)
+        volumeSemFone = defaults.double(forKey: Key.volumeSemFone)
+        barraMenus = defaults.bool(forKey: Key.barraMenus)
+        scripts = defaults.data(forKey: Key.scripts)
+            .flatMap { try? JSONDecoder().decode([ScriptSalvo].self, from: $0) } ?? []
+        painelRapidoItens = defaults.stringArray(forKey: Key.painelRapidoItens)
+        limpezaDuracao = defaults.double(forKey: Key.limpezaDuracao)
+        limpezaVisual = defaults.string(forKey: Key.limpezaVisual) ?? ModoDeLimpeza.Visual.telaPreta.rawValue
+        focoSegueMouse = defaults.bool(forKey: Key.focoSegueMouse)
+        focoAtraso = defaults.double(forKey: Key.focoAtraso)
+        focoIgnorados = defaults.stringArray(forKey: Key.focoIgnorados) ?? []
+        filtroDeClique = defaults.bool(forKey: Key.filtroDeClique)
+        filtroDeCliqueMs = defaults.double(forKey: Key.filtroDeCliqueMs)
+        repiqueDeTeclas = defaults.bool(forKey: Key.repiqueDeTeclas)
+        repiqueMs = defaults.double(forKey: Key.repiqueMs)
+        cliqueDoMeio = defaults.bool(forKey: Key.cliqueDoMeio)
+        teclaSuper = defaults.bool(forKey: Key.teclaSuper)
+        mouseAcoesDosBotoes = (defaults.dictionary(forKey: Key.mouseAcoesDosBotoes) as? [String: String]) ?? [:]
+        bluetoothNoRepouso = defaults.bool(forKey: Key.bluetoothNoRepouso)
+        aceleracaoControl = defaults.bool(forKey: Key.aceleracaoControl)
+        aceleracao = defaults.double(forKey: Key.aceleracao)
         ilhaAvisoBateria = defaults.bool(forKey: Key.ilhaAvisoBateria)
         ilhaAvisoFones = defaults.bool(forKey: Key.ilhaAvisoFones)
         ilhaAvisoVolume = defaults.bool(forKey: Key.ilhaAvisoVolume)

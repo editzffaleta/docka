@@ -48,6 +48,22 @@ public enum AcaoDeAtalho: Hashable, Sendable {
     case ilha
     /// Abre a Ilha Dinâmica já numa seção.
     case secaoDaIlha(Ilha.Secao)
+    /// Abre a barra de comando; de novo, fecha.
+    case barraDeComando
+    /// Abre a paleta das ferramentas favoritas.
+    case painelRapido
+    /// Começa o modo de limpeza.
+    case limpeza
+    /// Passa o som para a próxima saída conectada.
+    case proximaSaida
+    /// Silencia todos os microfones; de novo, religa.
+    case mudoMicrofones
+    /// Escolhe a área e grava a tela; de novo, para.
+    case gravarTela
+    /// Abre as ferramentas de mídia.
+    case midia
+    /// Abre a janela de manutenção.
+    case manutencao
 
     /// Chave estável usada no disco e no registro do Carbon.
     public var id: String {
@@ -73,6 +89,14 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case .capturaArea:       return "capturaArea"
         case .ilha:              return "ilha"
         case .secaoDaIlha(let s): return "ilha:\(s.rawValue)"
+        case .barraDeComando:    return "barraDeComando"
+        case .painelRapido:      return "painelRapido"
+        case .limpeza:           return "limpeza"
+        case .proximaSaida:      return "proximaSaida"
+        case .mudoMicrofones:    return "mudoMicrofones"
+        case .gravarTela:        return "gravarTela"
+        case .midia:             return "midia"
+        case .manutencao:        return "manutencao"
         }
     }
 
@@ -94,6 +118,14 @@ public enum AcaoDeAtalho: Hashable, Sendable {
         case "textoDaTela": self = .textoDaTela
         case "capturaArea": self = .capturaArea
         case "ilha": self = .ilha
+        case "barraDeComando": self = .barraDeComando
+        case "painelRapido": self = .painelRapido
+        case "limpeza": self = .limpeza
+        case "proximaSaida": self = .proximaSaida
+        case "mudoMicrofones": self = .mudoMicrofones
+        case "gravarTela": self = .gravarTela
+        case "midia": self = .midia
+        case "manutencao": self = .manutencao
         default:
             if id.hasPrefix("bandeja:"),
                let uuid = UUID(uuidString: String(id.dropFirst("bandeja:".count))) {

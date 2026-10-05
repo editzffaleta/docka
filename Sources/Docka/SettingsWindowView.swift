@@ -1,5 +1,6 @@
 import SwiftUI
 import DockaCore
+import CoreAudio
 
 // Gerenciador do Docka.
 //
@@ -10,17 +11,17 @@ import DockaCore
 // acompanhem o sistema sozinhos.
 
 enum Secao: String, CaseIterable, Identifiable {
-    case geral, recursos, ilha, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, acoes, atalho, sobre
+    case geral, recursos, sistema, ilha, teclado, finder, alternador, encerrar, dock, apps, aparencia, bandeja, orbita, prateleira, notas, monitor, clipboard, janelas, mouse, captura, brilho, volume, energia, som, paineis, acoes, atalho, sobre
     var id: String { rawValue }
 
     /// A barra lateral em grupos com título — com mais de vinte seções, um
     /// vão entre blocos já não dizia onde procurar cada coisa.
     static let grupos: [(titulo: String, itens: [Secao])] = [
-        ("Essenciais", [.geral, .recursos, .ilha, .energia, .monitor]),
-        ("Controles de janela", [.mouse, .alternador, .janelas, .encerrar, .dock]),
-        ("Arquivos", [.clipboard, .prateleira, .captura]),
+        ("Essenciais", [.geral, .recursos, .sistema, .ilha, .energia, .som, .monitor]),
+        ("Controles de janela", [.mouse, .teclado, .alternador, .janelas, .encerrar, .dock]),
+        ("Arquivos", [.finder, .clipboard, .prateleira, .captura]),
         ("Bordas", [.bandeja, .apps, .aparencia, .orbita, .notas, .brilho, .volume]),
-        ("Utilidades", [.acoes, .atalho]),
+        ("Utilidades", [.paineis, .acoes, .atalho]),
         ("", [.sobre]),
     ]
 
@@ -32,6 +33,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .encerrar:  return "Ao fechar"
         case .dock:      return "Dock"
         case .ilha:      return "Ilha Dinâmica"
+        case .sistema:   return "Ajustes do sistema"
         case .apps:      return "Apps"
         case .aparencia: return "Aparência"
         case .bandeja:   return "Bandeja"
@@ -42,10 +44,14 @@ enum Secao: String, CaseIterable, Identifiable {
         case .clipboard: return "Área de transferência"
         case .janelas:   return "Encaixe de janelas"
         case .mouse:     return "Mouse"
+        case .teclado:   return "Teclado"
+        case .finder:    return "Finder"
         case .captura:   return "Captura"
         case .brilho:    return "Brilho"
         case .volume:    return "Volume"
         case .energia:   return "Energia"
+        case .paineis:   return "Painéis"
+        case .som:       return "Som"
         case .acoes:     return "Ações rápidas"
         case .atalho:    return "Atalhos"
         case .sobre:     return "Sobre"
@@ -57,6 +63,7 @@ enum Secao: String, CaseIterable, Identifiable {
     var rotulo: String {
         switch self {
         case .notas:     return "Notas"
+        case .sistema:   return "Sistema"
         case .clipboard: return "Copiar e colar"
         case .janelas:   return "Janelas"
         default:         return titulo
@@ -72,10 +79,13 @@ enum Secao: String, CaseIterable, Identifiable {
         case .energia:    return "bolt"
         case .monitor:    return "chart.xyaxis.line"
         case .mouse:      return "computermouse"
+        case .teclado:    return "keyboard"
+        case .finder:     return "folder"
         case .alternador: return "rectangle.on.rectangle"
         case .encerrar:   return "xmark.square"
         case .dock:       return "menubar.dock.rectangle"
         case .ilha:       return "rectangle.topthird.inset.filled"
+        case .sistema:    return "gearshape.2"
         case .janelas:    return "rectangle.split.2x1"
         case .clipboard:  return "doc.on.clipboard"
         case .prateleira: return "tray.full"
@@ -87,6 +97,8 @@ enum Secao: String, CaseIterable, Identifiable {
         case .notas:      return "note.text"
         case .brilho:     return "sun.max"
         case .volume:     return "speaker.wave.2"
+        case .paineis:    return "square.grid.3x3.square"
+        case .som:        return "speaker.wave.2"
         case .acoes:      return "rays"
         case .atalho:     return "keyboard"
         case .sobre:      return "info.circle"
@@ -102,6 +114,7 @@ enum Secao: String, CaseIterable, Identifiable {
         case .encerrar:  return .blue
         case .dock:      return .blue
         case .ilha:      return .blue
+        case .sistema:   return .gray
         case .apps:      return .blue
         case .aparencia: return .indigo
         case .bandeja:   return .teal
@@ -112,10 +125,14 @@ enum Secao: String, CaseIterable, Identifiable {
         case .clipboard: return .cyan
         case .janelas:   return .blue
         case .mouse:     return .gray
+        case .teclado:   return .gray
+        case .finder:    return .blue
         case .captura:   return .purple
         case .brilho:    return .yellow
         case .volume:    return .pink
         case .energia:   return .brown
+        case .paineis:   return .indigo
+        case .som:       return .pink
         case .acoes:     return .red
         case .atalho:    return .orange
         case .sobre:     return .secondary
@@ -218,6 +235,7 @@ struct SettingsWindowView: View {
         case .encerrar:  EncerrarSettingsView()
         case .dock:      DockSettingsView()
         case .ilha:      IlhaSettingsView()
+        case .sistema:   AjustesDoSistemaView()
         case .apps:      AppsView()
         case .aparencia: AparenciaView()
         case .bandeja:   BandejaView()
@@ -228,10 +246,14 @@ struct SettingsWindowView: View {
         case .clipboard: ClipboardSettingsView()
         case .janelas:   JanelasSettingsView()
         case .mouse:     MouseSettingsView()
+        case .teclado:   TecladoSettingsView()
+        case .finder:    FinderSettingsView()
         case .captura:   CapturaSettingsView()
         case .brilho:    DeslizadorView(deslizador: .brilho)
         case .volume:    DeslizadorView(deslizador: .volume)
         case .energia:   EnergiaView()
+        case .paineis:   PaineisSettingsView()
+        case .som:       SomSettingsView()
         case .acoes:     AcoesRapidasView()
         case .atalho:    AtalhoView()
         case .sobre:     SobreView()
@@ -292,6 +314,15 @@ extension DockaStore {
             RecursoComPermissao(nome: "Alternador com janelas e filtros", permissoes: [.acessibilidade],
                                 ligado: alternadorControl && (alternadorJanelas || alternadorSoTela || alternadorSemJanela)),
             RecursoComPermissao(nome: "Ajustes do mouse", permissoes: [.acessibilidade], ligado: mouseControl),
+            RecursoComPermissao(nome: "Foco segue o mouse", permissoes: [.acessibilidade], ligado: focoSegueMouse),
+            RecursoComPermissao(nome: "Filtro de clique duplo", permissoes: [.acessibilidade], ligado: filtroDeClique),
+            RecursoComPermissao(nome: "Clique do meio com três dedos", permissoes: [.acessibilidade], ligado: cliqueDoMeio),
+            RecursoComPermissao(nome: "Recortar e colar no Finder", permissoes: [.acessibilidade], ligado: recorteNoFinder),
+            RecursoComPermissao(nome: "Comandos de menu na barra de comando", permissoes: [.acessibilidade],
+                                ligado: barraMenus && atalho(de: .barraDeComando) != nil),
+            RecursoComPermissao(nome: "Modo de limpeza", permissoes: [.acessibilidade], ligado: atalho(de: .limpeza) != nil),
+            RecursoComPermissao(nome: "Repique de teclas", permissoes: [.acessibilidade], ligado: repiqueDeTeclas),
+            RecursoComPermissao(nome: "Tecla super", permissoes: [.acessibilidade], ligado: teclaSuper),
             RecursoComPermissao(nome: "Sair ao fechar", permissoes: [.acessibilidade], ligado: sairAoFecharControl),
             RecursoComPermissao(nome: "Proteção do ⌘Q e ⌘W", permissoes: [.acessibilidade], ligado: protecaoQ || protecaoW),
             RecursoComPermissao(nome: "Botão verde maximiza", permissoes: [.acessibilidade], ligado: botaoVerdeMaximiza),
@@ -1823,6 +1854,34 @@ private struct CapturaSettingsView: View {
                     }
                     linha(.capturaArea, "Atalho")
                 }
+                Section {
+                    Toggle(isOn: $store.gravacaoSomDoSistema) {
+                        Text("Gravar o som do Mac")
+                        Text("O que os apps tocam, numa faixa própria; o som do Docka fica de fora.")
+                    }
+                    Toggle(isOn: $store.gravacaoMicrofone) {
+                        Text("Gravar o microfone")
+                        Text("Numa faixa separada do som do Mac. O macOS pede o acesso ao microfone na primeira vez.")
+                    }
+                    Toggle("Mostrar os cliques", isOn: $store.gravacaoCliques)
+                    Picker("Quadros por segundo", selection: $store.gravacaoQuadros) {
+                        Text("30").tag(30)
+                        Text("60").tag(60)
+                    }
+                    Picker("Ao terminar", selection: $store.gravacaoDepois) {
+                        Text("Mostrar no Finder").tag("finder")
+                        Text("Abrir o vídeo").tag("abrir")
+                        Text("Só avisar").tag("nada")
+                    }
+                    linha(.gravarTela, "Atalho (de novo para parar)")
+                    LabeledContent("Testar") {
+                        Button("Gravar agora…") { GravacaoController.shared.escolherArea() }
+                    }
+                } header: {
+                    Text("Gravação de tela")
+                } footer: {
+                    Text("Arraste para gravar uma área ou clique para gravar a tela inteira; um controle pequeno no topo mostra o tempo e para. O vídeo (.mov, HEVC) vai para a pasta das capturas do macOS. As janelas do Docka não aparecem na gravação. Pede o macOS 15 ou mais novo.")
+                }
             }
         }
         .formStyle(.grouped)
@@ -1911,7 +1970,118 @@ private struct MouseSettingsView: View {
                         Text("O \(BotaoDoMouse.nome(store.orbitaBotao).lowercased()) abre a Órbita e continua com ela.")
                     }
                 }
+                Section {
+                    ForEach(MouseETeclado.botoesConfiguraveis.prefix(4), id: \.self) { b in
+                        Picker(MouseETeclado.nomeDoBotao(b), selection: Binding(
+                            get: { store.mouseAcoesDosBotoes[String(b)] ?? MouseETeclado.AcaoDoBotao.nada.rawValue },
+                            set: { store.mouseAcoesDosBotoes[String(b)] = $0 })) {
+                            ForEach(MouseETeclado.AcaoDoBotao.allCases) { Text($0.titulo).tag($0.rawValue) }
+                        }
+                    }
+                } header: {
+                    Text("O que cada botão faz")
+                } footer: {
+                    Text("\"O de sempre\" deixa o botão como estava (inclusive voltar e avançar, se ligados acima). O botão que abre a Órbita continua com ela.")
+                }
                 SecaoDeAppsIgnorados()
+            }
+
+            Section {
+                Toggle(isOn: $store.focoSegueMouse) {
+                    Text("O foco segue o mouse")
+                    Text("Parar o cursor sobre a janela de outro app traz esse app para a frente — sem clicar. Arrastando algo ou segurando uma tecla, nada muda.")
+                }
+                if store.focoSegueMouse {
+                    Picker("Depois de parado por", selection: $store.focoAtraso) {
+                        Text("Na hora").tag(0.1)
+                        Text("0,3 segundo").tag(0.3)
+                        Text("Meio segundo").tag(0.5)
+                        Text("Um segundo").tag(1.0)
+                    }
+                }
+                Toggle(isOn: $store.filtroDeClique) {
+                    Text("Filtrar o clique duplo acidental")
+                    Text("Para mouses com o botão gasto, que dão dois cliques num só: um segundo clique que chega em poucos milissegundos, no mesmo lugar, é descartado. O clique duplo de propósito continua funcionando.")
+                }
+                if store.filtroDeClique {
+                    LabeledContent("Janela do repique") {
+                        Slider(value: $store.filtroDeCliqueMs, in: 30...120, step: 5).frame(width: 200)
+                        Text("\(Int(store.filtroDeCliqueMs)) ms").monospacedDigit().frame(width: 50)
+                    }
+                }
+                Toggle(isOn: $store.cliqueDoMeio) {
+                    Text("Clique com três dedos é o clique do meio")
+                    Text("No trackpad, clicar com três dedos encostados vira o clique do meio — abrir link em nova aba, fechar aba no navegador.")
+                }
+            } header: {
+                Text("Mais do mouse")
+            } footer: {
+                Text("Estes três pedem Acessibilidade e funcionam mesmo com o módulo do mouse desligado.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+/// Ajustes → Finder: recortar e colar arquivos, e o instalador de .dmg.
+private struct FinderSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.recorteNoFinder) {
+                    Text("⌘X e ⌘V movem arquivos")
+                    Text("No Finder, ⌘X marca os arquivos e o ⌘V em outra pasta move-os para lá — sem lembrar do ⌥⌘V. Renomeando um arquivo, ⌘X continua recortando o texto. Pede Acessibilidade.")
+                }
+            } header: {
+                Text("Recortar e colar")
+            }
+            Section {
+                Toggle(isOn: $store.instaladorDeDmg) {
+                    Text("Oferecer instalar ao abrir um .dmg")
+                    Text("Abrindo uma imagem de disco que traz um app, o Docka oferece copiá-lo para Aplicativos e ejetar a imagem. Uma versão antiga já instalada vai para o Lixo, de onde dá para recuperar.")
+                }
+                if store.instaladorDeDmg {
+                    Toggle("Depois de instalar, mandar o .dmg para o Lixo", isOn: $store.dmgParaOLixo)
+                }
+            } header: {
+                Text("Imagem de disco")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+/// Ajustes → Teclado: repique de teclas e a tecla super.
+private struct TecladoSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $store.repiqueDeTeclas) {
+                    Text("Ignorar o repique das teclas")
+                    Text("Para teclados que repetem a letra sem querer: a mesma tecla de novo em poucos milissegundos é descartada. Segurar a tecla para repetir continua funcionando.")
+                }
+                if store.repiqueDeTeclas {
+                    LabeledContent("Janela do repique") {
+                        Slider(value: $store.repiqueMs, in: 20...100, step: 5).frame(width: 200)
+                        Text("\(Int(store.repiqueMs)) ms").monospacedDigit().frame(width: 50)
+                    }
+                }
+            } header: {
+                Text("Repique")
+            }
+            Section {
+                Toggle(isOn: $store.teclaSuper) {
+                    Text("Caps Lock vira a tecla super (⌃⌥⇧⌘)")
+                    Text("Segurar o Caps Lock aperta ⌃⌥⇧⌘ de uma vez — quatro modificadores num dedo só, para atalhos que nenhum app usa. O Caps Lock deixa de travar as maiúsculas enquanto a opção estiver ligada, e volta ao normal ao desligar ou ao fechar o Docka.")
+                }
+            } header: {
+                Text("Tecla super")
+            } footer: {
+                Text("Pedem Acessibilidade. Os atalhos com ⌃⌥⇧⌘ podem ser gravados nos ajustes de Atalhos do Docka ou de qualquer app.")
             }
         }
         .formStyle(.grouped)
@@ -2437,6 +2607,279 @@ private struct EnergiaView: View {
     }
 }
 
+// MARK: - Som
+
+/// O que a página de som mostra, relido quando um dispositivo muda.
+private final class SomEstado: ObservableObject {
+    @Published var saidas: [SaidasDeAudio.Saida] = []
+    @Published var entradas: [SomController.Entrada] = []
+    @Published var entradaAtual: AudioObjectID?
+    @Published var nivel: Double = 0
+    @Published var nivelAjustavel = false
+    @Published var mudos = false
+    private var observador: NSObjectProtocol?
+
+    init() {
+        reler()
+        observador = NotificationCenter.default.addObserver(forName: .somMudou, object: nil, queue: .main) { [weak self] _ in
+            self?.reler()
+        }
+    }
+
+    func reler() {
+        saidas = SaidasDeAudio.lista()
+        entradas = SomController.entradas()
+        entradaAtual = SomController.entradaPadrao
+        nivelAjustavel = entradaAtual.map(SomController.nivelAjustavel) ?? false
+        nivel = Double(entradaAtual.flatMap(SomController.nivel) ?? 0)
+        mudos = SomController.shared.microfonesMudos
+    }
+}
+
+/// Ajustes → Som: a saída de cada app, a troca de saída, os fones e os microfones.
+private struct SomSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+    @StateObject private var som = SomEstado()
+
+    private var appsComRegra: [String] { store.saidaPorApp.keys.sorted { nome($0) < nome($1) } }
+
+    var body: some View {
+        Form {
+            Section {
+                ForEach(appsComRegra, id: \.self) { bundle in
+                    LabeledContent {
+                        HStack {
+                            Picker("Saída", selection: Binding(
+                                get: { store.saidaPorApp[bundle] ?? "" },
+                                set: { store.saidaPorApp[bundle] = $0 })) {
+                                ForEach(som.saidas) { s in Text(s.nome).tag(s.uid) }
+                                if let uid = store.saidaPorApp[bundle], !som.saidas.contains(where: { $0.uid == uid }) {
+                                    Text("Desconectada").tag(uid)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(width: 220)
+                            Button {
+                                store.saidaPorApp[bundle] = nil
+                            } label: {
+                                Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Remover")
+                        }
+                    } label: {
+                        Label {
+                            Text(nome(bundle))
+                        } icon: {
+                            Image(nsImage: icone(bundle)).resizable().frame(width: 18, height: 18)
+                        }
+                    }
+                }
+                Menu("Adicionar app") {
+                    ForEach(appsAbertos(), id: \.self) { bundle in
+                        Button(nome(bundle)) {
+                            store.saidaPorApp[bundle] = SaidasDeAudio.padrao.flatMap(SaidasDeAudio.uid) ?? som.saidas.first?.uid ?? ""
+                        }
+                    }
+                }
+                .fixedSize()
+            } header: {
+                Text("Saída de cada app")
+            } footer: {
+                Text("A música nos alto-falantes e a chamada no fone, por exemplo. Enquanto o app toca, o som dele passa pelo Docka até a saída escolhida — nada é gravado; o macOS pede a permissão de gravação de áudio do sistema na primeira vez. Com a saída desconectada, o app toca na saída padrão.")
+            }
+
+            Section {
+                LabeledContent("Atalho") { ShortcutRecorder(acao: .proximaSaida) }
+                Toggle(isOn: $store.baixarAoTirarFone) {
+                    Text("Baixar o volume quando o fone sair")
+                    Text("Tirou o fone (Bluetooth ou de fio) e o som foi para o alto-falante: o volume desce até o limite, para não tocar alto na sala.")
+                }
+                if store.baixarAoTirarFone {
+                    LabeledContent("No máximo") {
+                        Slider(value: $store.volumeSemFone, in: 0...0.5, step: 0.05).frame(width: 200)
+                        Text(Som.porcentagem(Float(store.volumeSemFone))).monospacedDigit().frame(width: 44)
+                    }
+                }
+            } header: {
+                Text("Saída")
+            } footer: {
+                Text("O atalho passa o som para a próxima saída conectada e mostra o nome dela.")
+            }
+
+            Section {
+                Picker("Microfone preferido", selection: $store.entradaPreferida) {
+                    Text("Nenhum — o sistema escolhe").tag("")
+                    ForEach(som.entradas) { e in Text(e.nome).tag(e.uid) }
+                    if !store.entradaPreferida.isEmpty, !som.entradas.contains(where: { $0.uid == store.entradaPreferida }) {
+                        Text("Desconectado").tag(store.entradaPreferida)
+                    }
+                }
+                LabeledContent("Nível do microfone atual") {
+                    Slider(value: Binding(get: { som.nivel }, set: { v in
+                        som.nivel = v
+                        if let d = som.entradaAtual { SomController.definirNivel(d, Float(v)) }
+                    }), in: 0...1).frame(width: 200)
+                    .disabled(!som.nivelAjustavel)
+                    Text(som.nivelAjustavel ? Som.porcentagem(Float(som.nivel)) : "fixo").monospacedDigit().frame(width: 44)
+                }
+                LabeledContent("Atalho para silenciar") { ShortcutRecorder(acao: .mudoMicrofones) }
+                LabeledContent(som.mudos ? "Todos os microfones estão mudos" : "Testar") {
+                    Button(som.mudos ? "Religar" : "Silenciar todos") { SomController.shared.alternarMudo() }
+                }
+            } header: {
+                Text("Microfone")
+            } footer: {
+                Text("Com um preferido, ele volta a ser o microfone do sistema sempre que estiver conectado — os AirPods não tomam o lugar do microfone do Mac. Silenciar vale para todos, inclusive os que conectarem depois, e religar devolve cada um como estava; ao fechar o Docka, eles voltam sozinhos. Alguns microfones não deixam mudar o nível.")
+            }
+        }
+        .formStyle(.grouped)
+        .onAppear { som.reler() }
+    }
+
+    private func appsAbertos() -> [String] {
+        let comRegra = Set(store.saidaPorApp.keys)
+        let bundles = NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular }
+            .compactMap(\.bundleIdentifier)
+            .filter { !comRegra.contains($0) && $0 != Bundle.main.bundleIdentifier }
+        return Array(Set(bundles)).sorted { nome($0).localizedCaseInsensitiveCompare(nome($1)) == .orderedAscending }
+    }
+
+    private func nome(_ bundle: String) -> String {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundle) else { return bundle }
+        var n = FileManager.default.displayName(atPath: url.path)
+        if n.hasSuffix(".app") { n.removeLast(4) }
+        return n
+    }
+
+    private func icone(_ bundle: String) -> NSImage {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundle) else {
+            return NSImage(systemSymbolName: "app.dashed", accessibilityDescription: nil) ?? NSImage()
+        }
+        return NSWorkspace.shared.icon(forFile: url.path)
+    }
+}
+
+// MARK: - Painéis
+
+/// Ajustes → Painéis: a barra de comando, o painel rápido e o modo de limpeza.
+private struct PaineisSettingsView: View {
+    @EnvironmentObject var store: DockaStore
+
+    private var ferramentas: [AcaoDeAtalho] {
+        Ferramentas.disponiveis().filter { $0 != .painelRapido }
+    }
+
+    private var favoritos: [String] {
+        let ids = Set(ferramentas.map(\.id))
+        return PainelRapido.favoritos(gravados: store.painelRapidoItens) { ids.contains($0) }
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                atalho(.barraDeComando)
+                Toggle(isOn: $store.barraArquivos) {
+                    Text("Buscar arquivos")
+                    Text("Pelo Spotlight, na sua pasta pessoal; os usados por último primeiro.")
+                }
+                Toggle(isOn: $store.barraMenus) {
+                    Text("Comandos de menu do app da frente")
+                    Text("Ache e execute qualquer item dos menus sem caçar onde ele está. Pede Acessibilidade.")
+                }
+                LabeledContent("Testar") {
+                    Button("Abrir a barra") { BarraDeComandoController.shared.abrir() }
+                }
+            } header: {
+                Text("Barra de comando")
+            } footer: {
+                Text("Um campo só para apps, janelas, arquivos, o que você copiou, snippets, comandos de menu e as ferramentas do Docka. Também faz contas (15% de 80), converte unidades (10 km em mi, 100 f para c) e acha emoji (joinha). ↩ escolhe; num arquivo, ⌘↩ mostra no Finder.")
+            }
+
+            Section {
+                ForEach($store.scripts) { $s in
+                    HStack(spacing: 8) {
+                        TextField("Nome", text: $s.nome)
+                            .frame(width: 150)
+                        TextField("Comando", text: $s.comando)
+                            .font(.system(.body, design: .monospaced))
+                        Button {
+                            store.scripts.removeAll { $0.id == s.id }
+                        } label: {
+                            Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Remover")
+                    }
+                    .labelsHidden()
+                }
+                Button("Adicionar script") {
+                    store.scripts.append(ScriptSalvo(nome: "Novo script", comando: "echo pronto"))
+                }
+            } header: {
+                Text("Scripts da barra")
+            } footer: {
+                Text("Digite o nome na barra para rodar. Roda no zsh de login (com o seu PATH), na pasta pessoal, e a primeira linha da saída aparece num aviso. Cadastre só comandos em que você confia.")
+            }
+
+            Section {
+                atalho(.painelRapido)
+                ForEach(ferramentas, id: \.id) { a in
+                    Toggle(isOn: Binding(
+                        get: { favoritos.contains(a.id) },
+                        set: { _ in store.painelRapidoItens = PainelRapido.alternar(a.id, em: favoritos) }
+                    )) {
+                        Label(Ferramentas.titulo(a), systemImage: Ferramentas.simbolo(a))
+                    }
+                }
+                LabeledContent("Testar") {
+                    HStack {
+                        Button("Voltar ao padrão") { store.painelRapidoItens = nil }
+                            .disabled(store.painelRapidoItens == nil)
+                        Button("Abrir o painel") { PainelRapidoController.shared.abrir() }
+                    }
+                }
+            } header: {
+                Text("Painel rápido")
+            } footer: {
+                Text("Uma paleta com as ferramentas marcadas, aberta em volta do cursor, na ordem em que foram marcadas. Clique, ↩ ou o número da posição escolhe. Recursos desligados não aparecem.")
+            }
+
+            Section {
+                atalho(.limpeza)
+                Picker("Enquanto limpa", selection: $store.limpezaVisual) {
+                    ForEach(ModoDeLimpeza.Visual.allCases) { v in Text(v.titulo).tag(v.rawValue) }
+                }
+                .pickerStyle(.segmented)
+                Picker("Duração", selection: $store.limpezaDuracao) {
+                    ForEach(ModoDeLimpeza.duracoes, id: \.self) { d in
+                        Text(d < 60 ? "\(Int(d)) segundos" : (d == 60 ? "1 minuto" : "\(Int(d / 60)) minutos")).tag(d)
+                    }
+                }
+                LabeledContent("Testar") {
+                    Button("Começar agora") { ModoDeLimpezaController.shared.comecar() }
+                }
+            } header: {
+                Text("Modo de limpeza")
+            } footer: {
+                Text("O teclado inteiro para de responder, inclusive brilho, volume e mídia; o botão de ligar e o Touch ID continuam. Com as telas pretas, os cliques também não chegam aos apps. Termina sozinho no fim do tempo, ou segurando o botão na tela. Pede Acessibilidade.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    @ViewBuilder
+    private func atalho(_ acao: AcaoDeAtalho) -> some View {
+        LabeledContent("Atalho") { ShortcutRecorder(acao: acao) }
+        if let erro = store.erroDoAtalho(acao) {
+            Label(erro, systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .font(.callout)
+        }
+    }
+}
+
 // MARK: - Ações rápidas
 
 private struct AcoesRapidasView: View {
@@ -2462,7 +2905,7 @@ private struct AcoesRapidasView: View {
                     }
                 }
             } footer: {
-                Text("Elas também ficam na aba Rápido do painel da barra de menus, e cada uma pode ter um atalho. Nenhuma pede permissão. Esvaziar o Lixo e trocar claro/escuro ficaram de fora porque exigiriam autorizar o Docka a controlar o Finder e os Eventos do Sistema.")
+                Text("Elas também ficam na aba Rápido do painel da barra de menus, no painel rápido e na barra de comando, e cada uma pode ter um atalho. As alternâncias (claro/escuro, Night Shift, Dock, arquivos ocultos, ícones da mesa) aparecem destacadas quando ligadas. Só esvaziar o Lixo pede permissão: o macOS pergunta uma vez se o Docka pode controlar o Finder.")
             }
         }
         .formStyle(.grouped)
@@ -2651,6 +3094,39 @@ private struct AtalhoView: View {
             }
 
             Section {
+                linha(.barraDeComando, titulo: "Barra de comando",
+                      detalhe: "Apps, janelas, arquivos, comandos de menu, contas e emoji")
+                linha(.painelRapido, titulo: "Painel rápido",
+                      detalhe: "As ferramentas favoritas em volta do cursor")
+                linha(.limpeza, titulo: "Modo de limpeza",
+                      detalhe: "Trava o teclado para limpar; segure o botão na tela para sair")
+            } header: {
+                Text("Painéis")
+            }
+
+            Section {
+                linha(.proximaSaida, titulo: "Próxima saída de som",
+                      detalhe: "Passa o som para a próxima saída conectada")
+                linha(.mudoMicrofones, titulo: "Silenciar os microfones",
+                      detalhe: "Todos de uma vez; o segundo toque religa")
+            } header: {
+                Text("Som")
+            }
+
+            Section {
+                if store.capturaControl {
+                    linha(.gravarTela, titulo: "Gravar a tela",
+                          detalhe: "Escolhe a área e grava; de novo, para")
+                }
+                linha(.midia, titulo: "Ferramentas de mídia",
+                      detalhe: "Comprimir e converter vídeo e imagem, GIF, texto")
+                linha(.manutencao, titulo: "Manutenção",
+                      detalhe: "Atualizações, limpeza, mensageiros, desinstalador, Homebrew, portas")
+            } header: {
+                Text("Mídia")
+            }
+
+            Section {
                 ForEach(AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)) { a in
                     linha(.rapida(a), titulo: a.titulo, detalhe: a.descricao)
                 }
@@ -2744,6 +3220,25 @@ enum AjustesAutoteste {
             desenhar(EncerrarSettingsView().frame(width: 600, height: 560), "ajustes-encerrar", NSSize(width: 600, height: 560)),
             desenhar(DockSettingsView().frame(width: 600, height: 300), "ajustes-dock", NSSize(width: 600, height: 300)),
             desenhar(IlhaSettingsView().frame(width: 600, height: 900), "ajustes-ilha", NSSize(width: 600, height: 900)),
+            desenhar(AjustesDoSistemaView().frame(width: 600, height: 720), "ajustes-sistema", NSSize(width: 600, height: 720)),
+            desenhar(TecladoSettingsView().frame(width: 600, height: 420), "ajustes-teclado", NSSize(width: 600, height: 420)),
+            desenhar(FinderSettingsView().frame(width: 600, height: 380), "ajustes-finder", NSSize(width: 600, height: 380)),
+            InstaladorPanel.desenhar(pasta: pasta),
+            desenhar(PaineisSettingsView().frame(width: 600, height: 1500), "ajustes-paineis", NSSize(width: 600, height: 1500)),
+            desenhar(SomSettingsView().frame(width: 600, height: 760), "ajustes-som", NSSize(width: 600, height: 760)),
+            desenhar(CapturaSettingsView().frame(width: 600, height: 1100), "ajustes-captura", NSSize(width: 600, height: 1100)),
+            {
+                let m = MidiaModelo()
+                m.itens = [.init(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Sonoma.heic")),
+                           .init(url: URL(fileURLWithPath: "/tmp/viagem.mov"))]
+                return desenhar(MidiaView().environmentObject(m).frame(width: 560, height: 640), "midia", NSSize(width: 560, height: 640))
+            }(),
+            BarraDeComandoController.desenhar(pasta: pasta, busca: "15% de 80", arquivo: "barra-conta.png"),
+            BarraDeComandoController.desenhar(pasta: pasta, busca: "10 km em mi", arquivo: "barra-conversao.png"),
+            BarraDeComandoController.desenhar(pasta: pasta, busca: "term", arquivo: "barra-busca.png"),
+            BarraDeComandoController.desenhar(pasta: pasta, busca: "joinha", arquivo: "barra-emoji.png"),
+            PainelRapidoController.desenhar(pasta: pasta),
+            desenhar(MouseSettingsView().frame(width: 600, height: 1300), "ajustes-mouse", NSSize(width: 600, height: 1300)),
             {
                 // o DDC responde (ou não) em segundo plano: espera a resposta antes de desenhar
                 TelasDeBrilho.shared.atualizarTelas()

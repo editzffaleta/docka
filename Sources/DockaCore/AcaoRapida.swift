@@ -3,9 +3,11 @@ import Foundation
 /// Ações de um toque: coisas do sistema que hoje exigem atalho decorado,
 /// ícone escondido ou Terminal.
 ///
-/// Todas funcionam sem permissão. Ficaram de fora as que exigiriam alguma —
-/// esvaziar o Lixo (Automação do Finder ou Acesso Total ao Disco) e trocar
-/// claro/escuro (Automação dos Eventos do Sistema).
+/// Quase todas funcionam sem permissão. A exceção é esvaziar o Lixo, que pede
+/// ao Finder — e o macOS pergunta uma vez se o Docka pode controlá-lo.
+///
+/// As últimas são alternâncias: têm estado (ligado/desligado), e o título diz
+/// o que o clique vai fazer.
 public enum AcaoRapida: String, CaseIterable, Identifiable, Codable, Sendable {
     case travarTela
     case apagarTelas
@@ -13,6 +15,11 @@ public enum AcaoRapida: String, CaseIterable, Identifiable, Codable, Sendable {
     case repouso
     case ejetarDiscos
     case iconesDaMesa
+    case aparencia
+    case nightShift
+    case dockAutomatico
+    case arquivosOcultos
+    case esvaziarLixo
 
     public var id: String { rawValue }
 
@@ -24,6 +31,11 @@ public enum AcaoRapida: String, CaseIterable, Identifiable, Codable, Sendable {
         case .repouso:        return "Repouso"
         case .ejetarDiscos:   return "Ejetar todos os discos"
         case .iconesDaMesa:   return "Ocultar ícones da mesa"
+        case .aparencia:      return "Modo escuro"
+        case .nightShift:     return "Night Shift"
+        case .dockAutomatico: return "Ocultar o Dock"
+        case .arquivosOcultos: return "Arquivos ocultos"
+        case .esvaziarLixo:   return "Esvaziar o Lixo"
         }
     }
 
@@ -35,6 +47,11 @@ public enum AcaoRapida: String, CaseIterable, Identifiable, Codable, Sendable {
         case .repouso:        return "Põe o Mac para dormir."
         case .ejetarDiscos:   return "Ejeta discos externos, imagens de disco e volumes de rede."
         case .iconesDaMesa:   return "Esconde ou mostra os arquivos da mesa. O Finder reinicia para aplicar."
+        case .aparencia:      return "Troca entre claro e escuro no sistema inteiro."
+        case .nightShift:     return "Liga ou desliga as cores quentes da tela agora, sem mexer no horário."
+        case .dockAutomatico: return "Liga ou desliga o Dock que some e aparece ao chegar na borda."
+        case .arquivosOcultos: return "Mostra ou esconde os arquivos ocultos no Finder, que reinicia para aplicar."
+        case .esvaziarLixo:   return "Apaga de vez o que está no Lixo, depois de confirmar. Pede para controlar o Finder."
         }
     }
 
@@ -46,6 +63,19 @@ public enum AcaoRapida: String, CaseIterable, Identifiable, Codable, Sendable {
         case .repouso:        return "moon.fill"
         case .ejetarDiscos:   return "eject.fill"
         case .iconesDaMesa:   return "eye.slash"
+        case .aparencia:      return "circle.lefthalf.filled"
+        case .nightShift:     return "sun.max.fill"
+        case .dockAutomatico: return "dock.rectangle"
+        case .arquivosOcultos: return "eye"
+        case .esvaziarLixo:   return "trash"
+        }
+    }
+
+    /// Tem estado ligado/desligado — o painel pinta a ligada.
+    public var alternancia: Bool {
+        switch self {
+        case .iconesDaMesa, .aparencia, .nightShift, .dockAutomatico, .arquivosOcultos: return true
+        default: return false
         }
     }
 }

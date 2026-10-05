@@ -45,7 +45,7 @@ enum SaidasDeAudio {
 
     static func uid(_ d: AudioObjectID) -> String? { texto(d, kAudioDevicePropertyDeviceUID) }
 
-    private static func dispositivos() -> [AudioObjectID] {
+    static func dispositivos() -> [AudioObjectID] {
         lista(AudioObjectID(kAudioObjectSystemObject), kAudioHardwarePropertyDevices)
     }
 
@@ -59,7 +59,7 @@ enum SaidasDeAudio {
         return ids
     }
 
-    private static func canais(_ d: AudioObjectID, escopo: AudioObjectPropertyScope) -> Int {
+    static func canais(_ d: AudioObjectID, escopo: AudioObjectPropertyScope) -> Int {
         var end = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyStreamConfiguration, mScope: escopo,
                                              mElement: kAudioObjectPropertyElementMain)
         var tam: UInt32 = 0
@@ -123,6 +123,8 @@ enum ProcessosDeAudio {
 /// desfaz o toque e o app volta a soar normal.
 protocol Desvio: AnyObject {
     var processos: Set<AudioObjectID> { get }
+    /// O UID da saída para onde o som vai.
+    var saida: String { get }
     func mudar(_ g: Float)
     func destruir()
 }
@@ -237,6 +239,12 @@ final class MixerModelo: ObservableObject {
         let icone: NSImage?
         let tocando: Bool
         let processos: [AudioObjectID]
+
+        /// Sem o ícone: cada leitura traz uma imagem nova, e compará-la
+        /// fazia a lista "mudar" a cada segundo e a ilha redesenhar à toa.
+        static func == (a: App, b: App) -> Bool {
+            a.id == b.id && a.nome == b.nome && a.tocando == b.tocando && a.processos == b.processos
+        }
     }
 
     @Published private(set) var apps: [App] = []
@@ -252,17 +260,45 @@ final class MixerModelo: ObservableObject {
     private let fila = DispatchQueue(label: "docka.mixer")
     private var criando: Set<String> = []
     private var relogio: Timer?
+    /// Quem quer a lista atualizada: a ilha aberta e as regras de saída.
+    private var pedidos: Set<String> = []
+    /// A saída escolhida para cada app (bundle → UID), dos ajustes.
+    private(set) var regras: [String: String] = [:]
+    /// Quando cada app com regra tocou pela última vez: o desvio fica um
+    /// pouco depois de o som parar, para não ser refeito a cada faixa.
+    private var ultimoSom: [String: Date] = [:]
+    static let folgaDepoisDoSom: TimeInterval = 30
+    /// Apps cujo desvio o macOS recusou: espera antes de tentar de novo,
+    /// senão o pedido de permissão voltaria a cada segundo.
+    private var recusados: [String: Date] = [:]
 
-    func olhar(_ ligar: Bool) {
-        if ligar, relogio == nil {
+    func olhar(_ ligar: Bool) { pedir("ilha", ligar) }
+
+    private func pedir(_ quem: String, _ ligar: Bool) {
+        if ligar { pedidos.insert(quem) } else { pedidos.remove(quem) }
+        if !pedidos.isEmpty, relogio == nil {
             atualizar()
             let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in self?.atualizar() }
             RunLoop.main.add(t, forMode: .common)
             relogio = t
-        } else if !ligar {
+        } else if pedidos.isEmpty {
             relogio?.invalidate()
             relogio = nil
         }
+    }
+
+    /// Lê as regras dos ajustes e passa a vigiar (ou deixa) os apps.
+    func sincronizarRegras() {
+        regras = DockaStore.shared.saidaPorApp
+        diagnostico("regras de saída: \(regras)")
+        pedir("regras", !regras.isEmpty)
+        reconciliar()
+    }
+
+    /// A saída que o app deve usar agora.
+    func saidaAlvo(_ bundle: String) -> String? {
+        Som.saidaEfetiva(regra: regras[bundle], conectadas: saidas.map(\.uid),
+                         padrao: saidaAtual.flatMap(SaidasDeAudio.uid))
     }
 
     /// Relê os processos e as saídas numa fila à parte: com um pedido de
@@ -293,10 +329,14 @@ final class MixerModelo: ObservableObject {
         for p in processos {
             grupos[MixerDaIlha.dono(p.bundle, apps: bundles), default: []].append(p)
         }
+        let agora = Date()
         let novos = grupos.compactMap { dono, ps -> App? in
             let tocando = ps.contains { $0.tocando }
-            // fica na lista quem toca agora ou tem um volume próprio
-            guard tocando || controles[dono] != nil else { return nil }
+            if tocando, regras[dono] != nil { ultimoSom[dono] = agora }
+            let tocouHaPouco = ultimoSom[dono].map { agora.timeIntervalSince($0) < Self.folgaDepoisDoSom } ?? false
+            // fica na lista quem toca agora, tem um volume próprio ou uma
+            // saída escolhida e tocou há pouco
+            guard tocando || controles[dono] != nil || tocouHaPouco else { return nil }
             // o app do Dock; senão, qualquer app com esse identificador (os
             // que tocam sem ícone no Dock), ou o dono do próprio processo
             let app = rodando.first { $0.bundleIdentifier == dono }
@@ -305,28 +345,48 @@ final class MixerModelo: ObservableObject {
             return App(id: dono, nome: app?.localizedName ?? dono, icone: app?.icon, tocando: tocando,
                        processos: ps.map(\.id))
         }.sorted { $0.nome.localizedCaseInsensitiveCompare($1.nome) == .orderedAscending }
-        if novos != apps { apps = novos }
+        if novos != apps {
+            diagnostico("apps com som: \(novos.map { "\($0.id)\($0.tocando ? " (tocando)" : "")" })")
+            apps = novos
+        }
         if s != saidas { saidas = s }
-        let trocouSaida = atual != saidaAtual
         saidaAtual = atual
-        // um processo novo do app (outra aba tocando) ou outra saída de som:
-        // o desvio é refeito para incluir tudo
-        for (bundle, d) in desvios {
-            guard let app = novos.first(where: { $0.id == bundle }) else { continue }
-            if trocouSaida || Set(app.processos) != d.processos, let c = controles[bundle] { refazer(bundle, c) }
+        reconciliar()
+    }
+
+    /// Cada app com o desvio certo: nenhum, quando não precisa; refeito,
+    /// quando o app abriu outro processo (outra aba tocando) ou a saída de
+    /// destino mudou; desfeito, quando o app sumiu da lista.
+    private func reconciliar() {
+        guard !simulando else { return }
+        let padrao = saidaAtual.flatMap(SaidasDeAudio.uid)
+        for app in apps {
+            let alvo = saidaAlvo(app.id)
+            let c = controles[app.id] ?? 1
+            if Som.precisaDesviar(controle: c, saida: alvo, padrao: padrao) {
+                if let d = desvios[app.id] {
+                    if d.processos != Set(app.processos) || d.saida != alvo { refazer(app.id, c) }
+                    else { d.mudar(MixerDaIlha.ganho(c)) }
+                } else if !criando.contains(app.id),
+                          recusados[app.id].map({ Date().timeIntervalSince($0) > 30 }) ?? true {
+                    refazer(app.id, c)
+                }
+            } else if let d = desvios[app.id] {
+                d.destruir()
+                desvios[app.id] = nil
+                diagnostico("desvio de \(app.id) desfeito (não precisa mais)")
+            }
+        }
+        for bundle in desvios.keys where !apps.contains(where: { $0.id == bundle }) {
+            desvios[bundle]?.destruir()
+            desvios[bundle] = nil
+            diagnostico("desvio de \(bundle) desfeito (parou de tocar)")
         }
     }
 
     func mudar(_ bundle: String, _ controle: Double) {
-        controles[bundle] = controle
-        if MixerDaIlha.precisaDesviar(controle) {
-            if let d = desvios[bundle] { d.mudar(MixerDaIlha.ganho(controle)) }
-            else if !criando.contains(bundle) { refazer(bundle, controle) }
-        } else {
-            desvios[bundle]?.destruir()
-            desvios[bundle] = nil
-            controles[bundle] = nil
-        }
+        controles[bundle] = MixerDaIlha.precisaDesviar(controle) ? controle : nil
+        reconciliar()
     }
 
     private func refazer(_ bundle: String, _ controle: Double) {
@@ -338,25 +398,33 @@ final class MixerModelo: ObservableObject {
             controles[bundle] = nil
             return
         }
+        guard let alvo = saidaAlvo(bundle) else { return }
         criando.insert(bundle)
         let processos = app.processos, nome = app.nome
         fila.async { [weak self] in
-            let d = SaidasDeAudio.padrao.flatMap(SaidasDeAudio.uid).flatMap {
-                DesvioDeApp(processos: processos, saidaUID: $0, nome: nome, ganho: MixerDaIlha.ganho(controle))
-            }
+            let d = DesvioDeApp(processos: processos, saidaUID: alvo, nome: nome, ganho: MixerDaIlha.ganho(controle))
             DispatchQueue.main.async {
                 guard let self else { d?.destruir(); return }
                 self.criando.remove(bundle)
                 guard let d else {
-                    self.falhou = "O macOS não deixou ajustar o som de \(nome). Confira a permissão de gravação de áudio do sistema."
+                    self.falhou = "O macOS não deixou desviar o som de \(nome). Confira a permissão de gravação de áudio do sistema."
                     self.controles[bundle] = nil
+                    self.recusados[bundle] = Date()
+                    diagnostico("desvio de \(bundle) → \(alvo) recusado pelo macOS")
                     return
                 }
-                // enquanto esperava, o controle pode ter voltado a 100% ou mudado
-                guard let atual = self.controles[bundle], MixerDaIlha.precisaDesviar(atual) else { d.destruir(); return }
+                // enquanto esperava, o controle ou a saída podem ter mudado
+                let atual = self.controles[bundle] ?? 1
+                let alvoAgora = self.saidaAlvo(bundle)
+                guard alvoAgora == alvo,
+                      Som.precisaDesviar(controle: atual, saida: alvoAgora,
+                                         padrao: self.saidaAtual.flatMap(SaidasDeAudio.uid)) else {
+                    d.destruir(); self.reconciliar(); return
+                }
                 d.mudar(MixerDaIlha.ganho(atual))
                 self.desvios[bundle] = d
                 self.falhou = nil
+                diagnostico("desvio de \(bundle) → \(alvo), ganho \(MixerDaIlha.ganho(atual))")
             }
         }
     }
@@ -372,10 +440,10 @@ final class MixerModelo: ObservableObject {
     }
 
     /// Ao desligar a ilha: todo som volta direto, sem passar pelo Docka.
+    /// As regras de saída por app continuam valendo.
     func desfazerTudo() {
-        desvios.values.forEach { $0.destruir() }
-        desvios = [:]
         controles = [:]
+        reconciliar()
     }
 }
 
@@ -432,7 +500,8 @@ struct MixerDaIlhaView: View {
             }
             .frame(width: 22, height: 22)
             .opacity(a.tocando ? 1 : 0.5)
-            Text(a.nome).font(.system(size: 11.5)).lineLimit(1).frame(width: 110, alignment: .leading)
+            Text(a.nome).font(.system(size: 11.5)).lineLimit(1).frame(width: 94, alignment: .leading)
+            saidaDoApp(a)
             Button { m.mudar(a.id, c > 0 ? 0 : 1) } label: {
                 Image(systemName: c > 0 ? "speaker.wave.2" : "speaker.slash.fill").font(.system(size: 11))
                     .foregroundStyle(c > 0 ? Color.white : Color.orange)
@@ -456,5 +525,29 @@ struct MixerDaIlhaView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Volume de \(a.nome)")
+    }
+
+    /// Para onde vai o som do app: a padrão ou uma saída só dele.
+    private func saidaDoApp(_ a: MixerModelo.App) -> some View {
+        let regra = DockaStore.shared.saidaPorApp[a.id]
+        return Menu {
+            Button { DockaStore.shared.saidaPorApp[a.id] = nil } label: {
+                if regra == nil { Label("Saída padrão", systemImage: "checkmark") } else { Text("Saída padrão") }
+            }
+            Divider()
+            ForEach(m.saidas) { s in
+                Button { DockaStore.shared.saidaPorApp[a.id] = s.uid } label: {
+                    if regra == s.uid { Label(s.nome, systemImage: "checkmark") } else { Text(s.nome) }
+                }
+            }
+        } label: {
+            Image(systemName: regra == nil ? "hifispeaker" : "hifispeaker.fill")
+                .font(.system(size: 11))
+                .foregroundStyle(regra == nil ? Color.white.opacity(0.6) : Color.accentColor)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(regra.flatMap { uid in m.saidas.first { $0.uid == uid }?.nome } ?? "Saída padrão")
     }
 }

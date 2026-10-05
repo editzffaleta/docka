@@ -4,6 +4,87 @@ Todas as mudanças relevantes do Docka, por versão. O formato segue o espírito
 do [Keep a Changelog](https://keepachangelog.com/pt-BR/), em português — como
 todo o resto por aqui.
 
+## [Não lançado]
+
+### Novo
+
+- **Ajustes do sistema** (página nova nos ajustes):
+  - **Manter os Espaços na ordem**: o macOS para de reorganizar os
+    Espaços pelo uso recente (o Dock reinicia por um instante para valer).
+  - **Impedir o app Música de abrir sozinho**: quando ele abre pelas
+    costas — tecla de tocar, fones conectando —, o Docka o fecha; aberto
+    de propósito, ele fica.
+  - **Desligar o Bluetooth no repouso** e religar ao acordar, só se estava
+    ligado antes. Pede a permissão de Bluetooth.
+  - **Aceleração do mouse**: sem aceleração ou com a curva escolhida, na
+    hora; ao desligar a opção, volta o que estava antes.
+- **Mouse e teclado** (todos opcionais, pedem Acessibilidade):
+  - **O foco segue o mouse**: parar o cursor sobre a janela de outro app
+    traz esse app para a frente, sem clicar.
+  - **Filtro de clique duplo acidental**, para mouses com o botão gasto.
+  - **Clique com três dedos é o clique do meio**, no trackpad.
+  - **O que cada botão do mouse faz**: voltar, avançar, Mission Control,
+    Apps, copiar, colar, desfazer, nova aba, fechar aba ou clique do meio.
+  - **Repique de teclas**, para teclados que repetem a letra sem querer
+    (página nova: Teclado).
+  - **Tecla super**: o Caps Lock vira ⌃⌥⇧⌘ enquanto está apertado; volta
+    a ser Caps Lock ao desligar ou fechar o Docka.
+- **Finder** (página nova):
+  - **⌘X e ⌘V movem arquivos**: o ⌘X marca, o ⌘V em outra pasta move —
+    sem lembrar do ⌥⌘V. Renomeando, ⌘X continua recortando o texto. Pede
+    Acessibilidade.
+  - **Instalador de imagem de disco**: ao abrir um .dmg que traz um app, o
+    Docka oferece copiá-lo para Aplicativos (a versão antiga vai para o
+    Lixo), ejeta a imagem e, se quiser, manda o .dmg para o Lixo.
+- **Painéis** (página nova):
+  - **Barra de comando**: um campo só para apps, janelas, arquivos (pelo
+    Spotlight), o que você copiou, snippets, comandos de menu do app da
+    frente e as ferramentas do Docka. Também faz contas ("15% de 80"),
+    converte unidades ("10 km em mi", "100 f para c") e acha emoji pelo nome
+    em português ("joinha"). Roda scripts salvos com nome.
+  - **Painel rápido**: as ferramentas favoritas numa paleta em volta do
+    cursor, com atalho; clique, ↩ ou o número da posição.
+  - **Modo de limpeza**: o teclado para de responder por um tempo, com as
+    telas pretas ou um aviso pequeno; termina sozinho ou segurando o botão.
+    Pede Acessibilidade.
+- **Manutenção** (janela nova, pela aba Utilidades, atalho ou barra de comando):
+  - **Atualizações**: confere os apps no feed do próprio desenvolvedor, na
+    App Store e no Homebrew — só quando você clica em Procurar.
+  - **Limpeza**: caches, registros e restos de apps já removidos, com o
+    tamanho de cada um; os do macOS, o de app aberto e os restos vêm
+    desmarcados.
+  - **Downloads dos mensageiros** (WhatsApp, Telegram e pastas suas): os mais
+    velhos que o prazo vão para o Lixo ou são juntados por mês.
+  - **Desinstalador**: o app e os arquivos dele na Biblioteca, revisados
+    antes; apps do macOS não são removidos.
+  - **Homebrew**: procurar, instalar e remover fórmulas e casks.
+  - **Portas abertas**: quem está esperando conexões, só no Mac ou na rede,
+    com o botão para encerrar.
+  - Tudo o que sai vai para o Lixo, nunca apagado de vez.
+- **Gravação de tela** (na página Captura): uma área ou a tela inteira,
+  com o som do Mac e o microfone em faixas separadas, os cliques à mostra e
+  um controle pequeno com o tempo e o parar. As janelas do Docka não
+  aparecem no vídeo. Pede o macOS 15.
+- **Ferramentas de mídia**: solte vídeos e imagens numa janela para
+  comprimir (nunca entrega um arquivo maior), fazer GIF ou tirar o áudio do
+  vídeo; converter, redimensionar e pôr marca d'água em imagens em lote, ou
+  tirar o texto delas. Tudo no Mac, e o original nunca é sobrescrito.
+- **Som** (página nova):
+  - **Saída de cada app**: a música nos alto-falantes e a chamada no fone.
+    Também no mixer da ilha, num menu em cada app. Pede a permissão de
+    gravação de áudio do sistema, como o mixer; nada é gravado.
+  - **Trocar de saída num atalho**, com o nome da nova num aviso.
+  - **Baixar o volume quando o fone sai** (Bluetooth ou de fio), até o
+    limite escolhido.
+  - **Microfone preferido**: volta a ser o do sistema sempre que conectado
+    — os AirPods não tomam o lugar do microfone do Mac.
+  - **Nível do microfone** e **silenciar todos os microfones** num atalho;
+    religar devolve cada um como estava, e fechar o Docka também.
+- **Alternâncias novas nas ações rápidas**: modo escuro, Night Shift, Dock
+  automático e arquivos ocultos — destacadas quando ligadas — e esvaziar o
+  Lixo (depois de confirmar; o macOS pergunta uma vez se o Docka pode
+  controlar o Finder).
+
 ## [1.5.2] — 2026-10-05
 
 ### Mudou

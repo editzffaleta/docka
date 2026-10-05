@@ -100,6 +100,45 @@ Para avaliar o impacto de um achado, vale conhecer o que o app **faz e não faz*
   ou atualização automática
 - ❌ Não lê conteúdo de arquivos do usuário (arrastar-e-soltar apenas repassa URLs ao app de destino via `NSWorkspace`)
 - ❌ Não roda com privilégios elevados nem instala helpers/daemons
+- ℹ️ Mouse e teclado, cada um só com a opção ligada: o "repique de teclas" e a
+  "tecla super" interceptam o teclado (só olham o código da tecla e o momento, para
+  descartar a repetição ou somar ⌃⌥⇧⌘ — nada é guardado); a tecla super remapeia o
+  Caps Lock para F18 no sistema de eventos (`UserKeyMapping`, somado aos remapeamentos
+  que já existiam e desfeito ao desligar ou fechar o Docka); o clique do meio lê só a
+  CONTAGEM de dedos no trackpad, pela MultitouchSupport do sistema
+- ℹ️ Finder, cada um só com a opção ligada: o recortar e colar intercepta o teclado
+  só com o Finder na frente e só olha ⌘X e ⌘V; o instalador de .dmg lê o
+  `hdiutil info` para saber de que imagem veio o volume, copia o app para
+  /Applications só depois do seu clique, e o que é substituído ou apagado vai
+  para o Lixo — nada é apagado de vez
+- ℹ️ Manutenção: nada roda sozinho. As atualizações só consultam a rede ao clicar em
+  Procurar (o feed declarado por cada app e a busca pública da App Store, em sessão
+  efêmera); limpeza, mensageiros e desinstalador movem para o Lixo, nunca apagam de
+  vez, e recusam apps do macOS; o Homebrew roda os comandos do próprio `brew`, com
+  as permissões do usuário; "Encerrar" nas portas manda o pedido normal de fechar
+  (SIGTERM) a um processo do próprio usuário, depois de confirmar
+- ℹ️ Mídia: a gravação de tela usa o ScreenCaptureKit só entre o início e o
+  parar que você escolhe, grava num arquivo local e deixa as janelas do Docka fora
+  da imagem; as ferramentas de mídia convertem com AVFoundation, ImageIO e Vision
+  no próprio Mac, gravam ao lado do original e nunca o sobrescrevem
+- ℹ️ Som: a saída de cada app usa o mesmo toque de processo do mixer (o som passa
+  pelo Docka até a saída escolhida, só enquanto o app toca, e nada é gravado); o
+  microfone preferido, o nível, o mudo e a troca de saída são propriedades de
+  dispositivo do Core Audio, sem permissão — e os microfones silenciados voltam
+  como estavam ao religar ou ao fechar o Docka
+- ℹ️ Painéis: a barra de comando busca arquivos pelo Spotlight só na pasta pessoal
+  e só enquanto está aberta, e lê os menus do app da frente pela Acessibilidade só
+  ao abrir; os scripts salvos rodam no `zsh` do usuário (sem privilégio a mais) só
+  quando escolhidos; o modo de limpeza descarta as teclas por um prazo fixo, sem
+  ler nem guardar nada, e o prazo é conferido a cada tecla — o teclado volta mesmo
+  que a interface trave. As alternâncias usam funções do sistema (claro/escuro pelo
+  SkyLight, Dock automático pelo CoreDock, Night Shift pelo CoreBrightness), e
+  esvaziar o Lixo pede ao Finder por Apple Events, só depois da sua confirmação
+- ℹ️ Ajustes do sistema, cada um só com a opção ligada: "Espaços na ordem" grava
+  `mru-spaces` nas preferências do Dock e reinicia o Dock; "Bluetooth no repouso"
+  desliga e religa o Bluetooth pelo IOBluetooth (pede a permissão de Bluetooth);
+  "aceleração do mouse" muda a propriedade `HIDMouseAcceleration` do sistema de
+  eventos e guarda o valor de antes para devolvê-lo ao desligar
 - ℹ️ A seção Agentes de IA da ilha lê os registros que o Claude Code (`~/.claude/projects`)
   e o Codex (`~/.codex/sessions`) gravam no Mac — só dos últimos 7 dias, e de cada linha
   só modelo, tokens, horário, projeto e motivo da parada; o texto das conversas não é

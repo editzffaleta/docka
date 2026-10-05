@@ -288,12 +288,14 @@ private struct AbaRapido: View {
             let acoes = AcaoRapida.allCases.filter(AcoesRapidasBackend.disponivel)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                 ForEach(acoes) { a in
+                    let ligada = AcoesRapidasBackend.ligada(a) == true
                     Button {
                         JanelaDoPainel.fechar()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { AcoesRapidasBackend.executar(a) }
                     } label: {
                         VStack(spacing: 5) {
                             Image(systemName: a.simbolo).font(.system(size: 15))
+                                .foregroundStyle(ligada ? Color.accentColor : Color.primary)
                             Text(AcoesRapidasBackend.titulo(a))
                                 .font(.system(size: 9.5))
                                 .multilineTextAlignment(.center)
@@ -301,7 +303,8 @@ private struct AbaRapido: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         .frame(maxWidth: .infinity, minHeight: 58)
-                        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.primary.opacity(0.06)))
+                        .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(ligada ? Color.accentColor.opacity(0.18) : Color.primary.opacity(0.06)))
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -542,6 +545,32 @@ private struct AbaUtilidades: View {
 
     var body: some View {
         VStack(spacing: 8) {
+            LinhaDeAcao(simbolo: "magnifyingglass", titulo: "Barra de comando",
+                        descricao: "Apps, janelas, arquivos, menus, contas e emoji", atalho: .barraDeComando) {
+                BarraDeComandoController.shared.abrir()
+            }
+            LinhaDeAcao(simbolo: "square.grid.3x3.fill", titulo: "Painel rápido",
+                        descricao: "As suas ferramentas favoritas numa paleta", atalho: .painelRapido) {
+                PainelRapidoController.shared.abrir()
+            }
+            if store.capturaControl {
+                LinhaDeAcao(simbolo: "record.circle", titulo: "Gravar a tela",
+                            descricao: "Uma área ou a tela inteira, com som", atalho: .gravarTela) {
+                    GravacaoController.shared.escolherArea()
+                }
+            }
+            LinhaDeAcao(simbolo: "photo.on.rectangle.angled", titulo: "Ferramentas de mídia",
+                        descricao: "Comprimir, converter, GIF e texto", atalho: .midia) {
+                MidiaController.shared.abrir()
+            }
+            LinhaDeAcao(simbolo: "wrench.and.screwdriver", titulo: "Manutenção",
+                        descricao: "Atualizações, limpeza, desinstalar, Homebrew, portas", atalho: .manutencao) {
+                ManutencaoController.shared.abrir()
+            }
+            LinhaDeAcao(simbolo: "keyboard.badge.ellipsis", titulo: "Modo de limpeza",
+                        descricao: "Trava o teclado para passar um pano", atalho: .limpeza) {
+                ModoDeLimpezaController.shared.comecar()
+            }
             if store.historicoControl {
                 LinhaDeAcao(simbolo: "doc.on.clipboard", titulo: "Histórico",
                             descricao: "O que você copiou, com busca", atalho: .historico) {

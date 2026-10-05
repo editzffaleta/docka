@@ -107,7 +107,7 @@ final class NotasModelo: ObservableObject {
 /// Um painel sem borda recusa virar janela-chave por padrão, e aí o que se
 /// digita vai para o app da frente. Não-ativante e com `canBecomeKey`, ele
 /// recebe as teclas enquanto o app em que a pessoa estava continua o ativo.
-final class PainelDeNotas: NSPanel {
+class PainelDeNotas: NSPanel {
     var aoEsc: (() -> Void)?
     override var canBecomeKey: Bool { true }
     override func cancelOperation(_ sender: Any?) { aoEsc?() }

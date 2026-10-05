@@ -403,6 +403,14 @@ final class TrayManager {
         case .capturaArea:     if store.capturaControl { CapturaController.capturarArea() }
         case .ilha:            if store.ilhaControl { IlhaController.shared.atalho(nil) }
         case .secaoDaIlha(let s): if store.ilhaControl { IlhaController.shared.atalho(s) }
+        case .barraDeComando:  BarraDeComandoController.shared.alternar()
+        case .painelRapido:    PainelRapidoController.shared.alternar()
+        case .limpeza:         ModoDeLimpezaController.shared.alternar()
+        case .proximaSaida:    SomController.shared.proximaSaida()
+        case .mudoMicrofones:  SomController.shared.alternarMudo()
+        case .gravarTela:      if store.capturaControl || GravacaoController.shared.gravando { GravacaoController.shared.alternar() }
+        case .midia:           MidiaController.shared.abrir()
+        case .manutencao:      ManutencaoController.shared.abrir()
         }
     }
 

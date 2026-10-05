@@ -166,6 +166,11 @@ Notas rápidas numa lateral, para anotar sem abrir app nem trocar de janela.
 | **Rolagem suave** | Cada dente vira um deslize curto com desaceleração; dentes seguidos se somam |
 | **Rolar de lado** | Segurando ⌥, ⌃ ou ⌘, a roda rola na horizontal |
 | **Botões laterais** | Voltam e avançam no Finder, Safari, Chrome e outros (⌘[ / ⌘]); o botão da Órbita continua com ela |
+| **Foco segue o mouse** *(Acessibilidade)* | Parar o cursor sobre a janela de outro app traz o app para a frente, sem clicar |
+| **Clique duplo acidental** *(Acessibilidade)* | Descarta o segundo clique que chega em poucos milissegundos no mesmo lugar — mouse com o botão gasto |
+| **Clique do meio com três dedos** *(Acessibilidade)* | No trackpad, clicar com três dedos vira o clique do meio |
+| **O que cada botão faz** | Voltar, avançar, Mission Control, Apps, copiar, colar, desfazer, nova aba, fechar aba ou clique do meio, por botão |
+| **Repique de teclas e tecla super** *(Acessibilidade)* | Ignora a letra repetida sem querer; o Caps Lock vira ⌃⌥⇧⌘ enquanto apertado |
 | **Apps a ignorar** | Com um deles na frente, o mouse fica como o sistema manda |
 
 ### Captura *(módulo opcional)*
@@ -199,12 +204,21 @@ Réguas verticais que vivem numa lateral da tela e aparecem do mesmo jeito que a
 
 | Recurso | Descrição |
 |---------|-----------|
+| **Ajustes do sistema** | Espaços em ordem fixa, impedir o Música de abrir sozinho, Bluetooth desligado no repouso (pede a permissão de Bluetooth) e aceleração do mouse — cada um desfeito ao desligar |
+| **Finder** | ⌘X e ⌘V movem arquivos (Acessibilidade); ao abrir um .dmg com um app, oferece instalar em Aplicativos e ejetar a imagem |
+| **Barra de comando** | Um campo só para apps, janelas, arquivos, o que você copiou, snippets, comandos de menu do app da frente (Acessibilidade) e as ferramentas do Docka — e para contas, conversão de unidades, emoji e scripts salvos |
+| **Manutenção** | Atualizações (feed do desenvolvedor, App Store e Homebrew, só quando você pede), limpeza de caches, registros e restos de apps, downloads dos mensageiros, desinstalador que leva os arquivos do app junto, Homebrew sem Terminal e portas abertas — tudo vai para o Lixo, nada é apagado de vez |
+| **Gravação de tela** | Uma área ou a tela inteira, com o som do Mac e o microfone em faixas separadas e um controle pequeno com o tempo e o parar; as janelas do Docka não aparecem no vídeo (Gravação de Tela, macOS 15) |
+| **Ferramentas de mídia** | Solte vídeos e imagens para comprimir, fazer GIF, tirar o áudio, converter e redimensionar em lote, pôr marca d'água ou tirar o texto — tudo no Mac, sem sobrescrever o original |
+| **Som** | A saída de cada app (música nos alto-falantes, chamada no fone), trocar de saída num atalho, baixar o volume quando o fone sai, microfone preferido, nível do microfone e silenciar todos os microfones num atalho |
+| **Painel rápido** | As ferramentas favoritas numa paleta em volta do cursor, com atalho |
+| **Modo de limpeza** | Trava o teclado por um tempo para passar um pano, com as telas pretas ou um aviso pequeno; termina sozinho ou segurando o botão (Acessibilidade) |
 | **Abrir no login** | O Docka sobe sozinho quando você entra no Mac, via `SMAppService` — sem helper, sem permissão, e você pode desligar direto nas Configurações do Sistema |
 | **Vive na barra de menus** | Sem ícone no Dock e fora do ⌘Tab; a janela de configurações aparece só quando você pede |
 | **Pressure Zone** | Modo opcional que só revela a bandeja quando você empurra o cursor contra o canto de propósito — evita aberturas acidentais em apps de tela cheia |
 | **Calibração ao vivo** | Tamanho dos ícones, ampliação, alcance, Tom e material do vidro por slider — com efeito imediato na bandeja, sem reiniciar |
 | **Manter acordado** | Impede o Mac de dormir por um tempo escolhido (15 min a 5 h) ou até desligar, com ou sem tela acesa. No menu da barra, na seção Energia e num atalho próprio; a xícara na barra avisa que está ligado |
-| **Ações rápidas** | Travar a tela, apagar as telas, proteção de tela, repouso, ejetar todos os discos e ocultar os ícones da mesa — num submenu opcional da barra e com atalho próprio cada uma |
+| **Ações rápidas** | Travar a tela, apagar as telas, proteção de tela, repouso, ejetar todos os discos, ocultar os ícones da mesa, modo escuro, Night Shift, Dock automático, arquivos ocultos e esvaziar o Lixo — no painel da barra, no painel rápido, na barra de comando e com atalho próprio cada uma |
 | **Atalhos por ação** | Grave as combinações na aba Atalhos — uma por bandeja, brilho, volume, órbita, cada anel, prateleira, bloco de notas, o Manter acordado e cada ação rápida; conflito entre ações do Docka é apontado pelo nome |
 | **Acessibilidade** | Respeita **Reduzir Movimento** do sistema (sem partículas, sem deslize, sem quique) e rotula a bandeja para o VoiceOver |
 | **Onboarding em 3 passos** | Boas-vindas → escolha de apps (grade com busca) → modo de revelação |
@@ -352,6 +366,12 @@ sem ela continuam funcionando no modo sem permissão.
 | Prévia do Dock | Acessibilidade | Saber sobre qual ícone do Dock o cursor está e listar, trazer ou fechar as janelas do app | Nenhuma prévia aparece |
 | Prévia do Dock — miniaturas | Gravação de Tela | Capturar as janelas do app só enquanto a prévia está aberta; nada é gravado | Ícone do app e título no lugar da miniatura |
 | Arrastar segurando teclas | Acessibilidade | Interceptar cliques com as teclas escolhidas apertadas e mover a janela sob o cursor | Arrastar só pela barra de título, como sempre |
+| Manutenção — mensageiros | Acesso Total ao Disco (só para o WhatsApp) | Ler a pasta de mídia que o WhatsApp guarda dentro dos dados dele | A seção avisa que não consegue ler e mostra o resto |
+| Gravação de tela | Gravação de Tela (+ Microfone, se ligado) | Gravar a área escolhida até você parar; o vídeo vai para a pasta das capturas | A gravação não começa |
+| Saída de cada app | Gravação de áudio do sistema | Passar o som do app pelo Docka até a saída escolhida, só enquanto ele toca; nada é gravado | O app toca na saída padrão |
+| Barra de comando — menus | Acessibilidade | Ler os itens dos menus do app da frente só com a barra aberta, e clicar no escolhido | A barra busca todo o resto, sem os menus |
+| Modo de limpeza | Acessibilidade | Descartar as teclas enquanto ele dura — nada é lido nem guardado | O modo não começa |
+| Esvaziar o Lixo | Automação do Finder (o macOS pergunta na primeira vez) | Pedir ao Finder que esvazie o Lixo, depois da sua confirmação | A ação avisa que falta a permissão |
 | Encaixar janelas | Acessibilidade | Ler e mudar posição e tamanho da janela da frente, no atalho ou no menu Janelas | Os atalhos não fazem nada (um aviso sonoro) e os ajustes mostram o que falta |
 
 > Assinado sem certificado de desenvolvedor (ad-hoc), o Docka muda de assinatura a cada versão compilada, e o macOS pode pedir a permissão de novo depois de uma atualização.
@@ -368,9 +388,12 @@ A maioria dos utilitários de borda de tela pede Acessibilidade ou Monitoramento
 
 ### E a rede?
 
-O Docka faz **uma** conexão de saída, e só quando você pede: ao adicionar um **site** à órbita, ele busca a logo daquele site (`apple-touch-icon` ou `favicon.ico`) **no próprio site** — nunca num resolvedor de terceiros, que receberia sua lista de sites de brinde. Sessão efêmera (sem cookies), resposta limitada a 1 MB, resultado em cache local. Sem rede, o anel usa um globo desenhado localmente e nada quebra.
+O Docka só se conecta quando você pede, e em dois casos:
 
-Fora isso: **nenhuma** conexão. Sem telemetria, sem verificação de atualização, sem analytics.
+- ao adicionar um **site** à órbita, ele busca a logo daquele site (`apple-touch-icon` ou `favicon.ico`) **no próprio site** — nunca num resolvedor de terceiros, que receberia sua lista de sites de brinde. Sessão efêmera (sem cookies), resposta limitada a 1 MB, resultado em cache local. Sem rede, o anel usa um globo desenhado localmente e nada quebra;
+- ao clicar em **Procurar** nas atualizações da Manutenção, ele lê o feed que cada app declara no próprio Info.plist (o do desenvolvedor) e, para os apps da App Store, pergunta à Apple a versão atual. Sessão efêmera, nada sobre você vai junto.
+
+Fora isso: **nenhuma** conexão. Sem telemetria, sem verificação de atualização do próprio Docka, sem analytics.
 
 ## Instalação
 
