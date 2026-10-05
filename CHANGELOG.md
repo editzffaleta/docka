@@ -18,6 +18,18 @@ todo o resto por aqui.
   (foco, pausa e pausa longa a cada quatro focos) e cronômetro com voltas.
   O tempo aparece nas asas da ilha fechada; ao terminar, a ilha abre com
   um aviso e um som.
+- **Seis seções novas na ilha**:
+  - **Controles**: manter acordado (30 min, 1 h, 2 h ou sempre) e as ações
+    rápidas.
+  - **Sistema**: CPU, memória e rede com gráfico, bateria e disco.
+  - **Arquivos**: a prateleira dentro da ilha — arraste qualquer coisa até
+    o recorte e ela abre pronta para receber; leve de volta arrastando, um
+    a um ou tudo de uma vez; AirDrop e compactar em .zip.
+  - **Rascunho**: o bloco de notas, com abas, digitando direto na ilha.
+  - **Capturas recentes**: as últimas capturas de tela, com miniatura, da
+    pasta escolhida no Capturar Tela.
+  - **Downloads**: os arquivos recentes e os downloads em andamento, com o
+    progresso nas asas da ilha fechada.
 
 ## [1.4.0] — 2026-10-05
 

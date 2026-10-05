@@ -20,15 +20,24 @@ final class IlhaController {
     private var monitorDeClique: Any?
     private var observadorDeTelas: NSObjectProtocol?
     private var tiques = 0
+    /// O `changeCount` da área de arrasto no momento em que o botão desceu:
+    /// se mudar com o botão ainda apertado, há algo sendo arrastado.
+    private var arrastoNoClique: Int?
     private var store: DockaStore { .shared }
 
     /// Altura do conteúdo da ilha aberta, abaixo do recorte, por seção.
     static func alturaDoConteudo(_ secao: Ilha.Secao?, volume: Bool) -> CGFloat {
         if volume { return 76 }
         switch secao {
-        case nil:    return 248
-        case .timer: return 124
-        default:     return 124
+        case nil:          return 248
+        case .timer:       return 124
+        case .controles:   return 150
+        case .sistema:     return 166
+        case .arquivos:    return 124
+        case .rascunho:    return 200
+        case .capturas:    return 144
+        case .downloads:   return 168
+        default:           return 124
         }
     }
     static let alturaMaxima: CGFloat = 248
@@ -56,7 +65,10 @@ final class IlhaController {
             .environmentObject(DockaStore.shared))
         // o tamanho é o do painel, fixo: o SwiftUI não redimensiona a janela
         hv.sizingOptions = []
-        p.contentView = hv
+        p.contentView = ConteinerDaIlha(conteudo: hv, entrou: { [weak self] in self?.arrastoEntrou() },
+                                        saiu: { [weak self] in self?.estado.alvo = false })
+        p.aoEsc = { [weak self] in guard let self else { return }; self.aplicar(self.vigia.fechar()) }
+        ArquivosDaIlhaModelo.shared.observarDownloads(!store.ilhaOcultas.contains(Ilha.Secao.downloads.rawValue))
         p.setFrame(estado.quadroDoPainel, display: true)
         p.orderFrontRegardless()
 
@@ -74,6 +86,8 @@ final class IlhaController {
 
     private func desligar() {
         relogio?.invalidate(); relogio = nil
+        ArquivosDaIlhaModelo.shared.observarDownloads(false)
+        if panel?.isKeyWindow == true { panel?.resignKey() }
         if let m = monitorDeClique { NSEvent.removeMonitor(m) }
         monitorDeClique = nil
         if let o = observadorDeTelas { NotificationCenter.default.removeObserver(o) }
@@ -121,13 +135,24 @@ final class IlhaController {
         if estado.avisoAte.map({ agora > $0 }) == true { estado.avisoAte = nil; estado.aviso = nil }
         let rapido = estado.estado == .aberta && estado.timer.modo == .cronometro && estado.timer.rodando
         if estado.timer.ativo && (rapido ? tiques % 3 == 0 : tiques % 15 == 0) { estado.agora = agora }
-        if tiques % 15 == 0 { atualizarAtividades(agora) }
+        if tiques % 15 == 0 {
+            ArquivosDaIlhaModelo.shared.lerProgressos()
+            atualizarAtividades(agora)
+        }
+        // com a seção à vista, as pastas são relidas de vez em quando
+        if tiques % 90 == 0, estado.estado == .aberta {
+            if estado.secao == .capturas { ArquivosDaIlhaModelo.shared.atualizarCapturas() }
+            if estado.secao == .downloads { ArquivosDaIlhaModelo.shared.atualizarDownloads() }
+        }
+        focoDoTeclado(p)
 
         let loc = NSEvent.mouseLocation
+        vigiarArrasto(loc)
         let sobre = zonaInterativa().contains(loc)
         // botão apertado com a ilha aberta (arrastando a régua do timer, por
         // exemplo) ou aviso na tela: ela não fecha sozinha
         let fixada = (estado.estado == .aberta && NSEvent.pressedMouseButtons != 0) || estado.aviso != nil
+            || (estado.secao == .rascunho && p.isKeyWindow)
         let espera: TimeInterval? = store.ilhaAbrirAoPairar > 0 ? store.ilhaAbrirAoPairar : nil
         aplicar(vigia.leu(sobreAIlha: sobre, em: agora, abrirAoPairar: espera, fixada: fixada))
         if p.ignoresMouseEvents == sobre { p.ignoresMouseEvents = !sobre }
@@ -142,7 +167,12 @@ final class IlhaController {
         case .fechada, .pairando:
             r = (estado.atividades.isEmpty ? g.pairando : g.compacta).insetBy(dx: -4, dy: -4)
         case .aberta:
-            let a = g.aberta(altura: Self.alturaDoConteudo(estado.secao, volume: estado.volumeAberto))
+            // a área da grade inteira, mesmo com uma seção mais baixa à vista:
+            // quem clica num bloco da última fileira fica com o cursor abaixo
+            // da seção que abriu — e a ilha fecharia debaixo dele
+            let altura = max(Self.alturaDoConteudo(estado.secao, volume: estado.volumeAberto),
+                             Self.alturaDoConteudo(nil, volume: false))
+            let a = g.aberta(altura: altura)
             let lado = Ilha.Geometria.vaoDosBotoes + Ilha.Geometria.botao
             r = a.insetBy(dx: -lado - 6, dy: -10)
         }
@@ -167,9 +197,47 @@ final class IlhaController {
         aplicar(vigia.fechar())
     }
 
+    /// O Rascunho precisa do teclado: com ele à vista, o painel vira a
+    /// janela-chave (sem ativar o Docka — o app da frente continua na
+    /// frente). Fora dele, devolve o teclado na hora.
+    private func focoDoTeclado(_ p: NSPanel) {
+        let quer = estado.estado == .aberta && estado.secao == .rascunho
+        if quer && !p.isKeyWindow { p.makeKey() }
+        if !quer && p.isKeyWindow {
+            NotasModelo.shared.gravarAgora()
+            p.resignKey()
+        }
+    }
+
+    /// Um arquivo sendo arrastado chegando perto do recorte abre a ilha antes
+    /// de ele encostar no topo da tela — lá em cima, parado, o macOS abre o
+    /// Mission Control (foi o que o teste mostrou).
+    private func vigiarArrasto(_ loc: CGPoint) {
+        let apertado = NSEvent.pressedMouseButtons & 1 != 0
+        let area = NSPasteboard(name: .drag).changeCount
+        if !apertado { arrastoNoClique = nil; return }
+        if arrastoNoClique == nil { arrastoNoClique = area; return }
+        guard area != arrastoNoClique, estado.estado != .aberta,
+              !ArquivosDaIlhaModelo.shared.estadoDeArrasto.arrastandoParaFora else { return }
+        let c = estado.geometria.compacta
+        let aproximacao = CGRect(x: c.minX - 120, y: c.minY - 110, width: c.width + 240, height: c.height + 110)
+        if aproximacao.contains(loc) { arrastoEntrou() }
+    }
+
+    /// Algo sendo arrastado chegou à ilha: ela abre em Arquivos, pronta para
+    /// receber.
+    private func arrastoEntrou() {
+        estado.alvo = true
+        guard !ArquivosDaIlhaModelo.shared.estadoDeArrasto.arrastandoParaFora else { return }
+        estado.secao = .arquivos
+        estado.volumeAberto = false
+        if estado.estado != .aberta { aplicar(vigia.abrir()) }
+    }
+
     private func atualizarAtividades(_ agora: Date) {
         var lista: [Ilha.Atividade] = []
         if let a = estado.timer.atividade(em: agora) { lista.append(a) }
+        if let a = ArquivosDaIlhaModelo.shared.atividade { lista.append(a) }
         let visiveis = Ilha.visiveis(lista, combinar: store.ilhaCombinar, escolhida: estado.escolhida)
         if visiveis != estado.atividades { estado.atividades = visiveis }
     }
@@ -206,7 +274,8 @@ final class IlhaController {
         escolherAtividade: { [weak self] id in
             self?.estado.escolhida = id
             self?.atualizarAtividades(Date())
-        }
+        },
+        fechar: { [weak self] in guard let self else { return }; self.aplicar(self.vigia.fechar()) }
     )
 
     /// Clique na ilha fechada: abre na seção da atividade que está nas asas
@@ -215,6 +284,7 @@ final class IlhaController {
         if estado.estado != .aberta {
             switch estado.atividades.first?.tipo {
             case .timer, .pomodoro, .cronometro: estado.secao = .timer
+            case .download: estado.secao = .downloads
             default: estado.secao = nil
             }
             estado.volumeAberto = false
@@ -254,7 +324,9 @@ final class IlhaController {
 /// O painel da ilha: pode virar a janela-chave (para os campos de texto das
 /// próximas seções) sem tirar o foco do app da frente.
 final class PainelDaIlha: NSPanel {
+    var aoEsc: (() -> Void)?
     override var canBecomeKey: Bool { true }
+    override func cancelOperation(_ sender: Any?) { aoEsc?() }
     /// A ilha mora em cima da barra de menus: sem isto, o AppKit empurra a
     /// janela para fora dela — e ela ia parar acima da tela.
     override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
@@ -271,6 +343,8 @@ final class IlhaEstado: ObservableObject {
     /// O relógio das vistas — só muda quando há algo correndo.
     @Published var agora = Date()
     @Published var aviso: String?
+    /// Algo sendo arrastado está sobre a ilha.
+    @Published var alvo = false
     var avisoAte: Date?
     var geometria = Ilha.Geometria(recorte: CGRect(x: 0, y: 0, width: 190, height: 32), temRecorte: false)
     var quadroDoPainel: CGRect = .zero
@@ -284,6 +358,7 @@ struct AcoesDaIlha {
     let timer: (_ mudar: (inout TimerDaIlha, Date) -> Void) -> Void
     let dispensarAviso: () -> Void
     let escolherAtividade: (String) -> Void
+    var fechar: () -> Void = {}
 }
 
 // MARK: - A forma
@@ -435,8 +510,14 @@ struct VistaDaIlha: View {
     @ViewBuilder
     private func secao(_ s: Ilha.Secao) -> some View {
         switch s {
-        case .timer: TimerDaIlhaView(mudar: acoes.timer)
-        default:     Text("Em breve").foregroundStyle(.secondary)
+        case .timer:     TimerDaIlhaView(mudar: acoes.timer)
+        case .controles: ControlesDaIlha(fechar: acoes.fechar)
+        case .sistema:   SistemaDaIlha()
+        case .arquivos:  ArquivosDaIlhaView(alvo: e.alvo)
+        case .rascunho:  RascunhoDaIlha()
+        case .capturas:  CapturasDaIlha(agora: Date())
+        case .downloads: DownloadsDaIlha(agora: Date())
+        default:         Text("Em breve").foregroundStyle(.secondary)
         }
     }
 
@@ -736,6 +817,47 @@ enum IlhaAutoteste {
             },
             cena("ilha-volume") { $0.estado = .aberta; $0.volumeAberto = true },
             cena("ilha-aviso") { $0.estado = .aberta; $0.secao = .timer; $0.aviso = "O timer terminou" },
+            cena("ilha-controles") { $0.estado = .aberta; $0.secao = .controles },
+            cena("ilha-sistema") { $0.estado = .aberta; $0.secao = .sistema },
+            cena("ilha-arquivos") { $0.estado = .aberta; $0.secao = .arquivos },
+            cena("ilha-arquivos-alvo") { $0.estado = .aberta; $0.secao = .arquivos; $0.alvo = true },
         ].joined(separator: "\n")
+    }
+}
+
+// MARK: - Soltar arquivos na ilha
+
+/// A raiz do painel, em AppKit, registrada para receber arquivos, links e
+/// texto — o AppKit procura quem aceita a soltura subindo a partir da view
+/// sob o cursor, e o SwiftUI de dentro não se registra para nada.
+final class ConteinerDaIlha: NSView {
+    private let entrou: () -> Void
+    private let saiu: () -> Void
+
+    init(conteudo: NSView, entrou: @escaping () -> Void, saiu: @escaping () -> Void) {
+        self.entrou = entrou
+        self.saiu = saiu
+        super.init(frame: .zero)
+        conteudo.autoresizingMask = [.width, .height]
+        addSubview(conteudo)
+        registerForDraggedTypes([.fileURL, .URL, .string])
+    }
+    required init?(coder: NSCoder) { fatalError() }
+
+    /// Soltar de volta o que saiu da própria ilha não faz nada.
+    private var aceita: Bool { !ArquivosDaIlhaModelo.shared.estadoDeArrasto.arrastandoParaFora }
+
+    override func draggingEntered(_ info: NSDraggingInfo) -> NSDragOperation {
+        guard aceita else { return [] }
+        entrou()
+        return .copy
+    }
+    override func draggingUpdated(_ info: NSDraggingInfo) -> NSDragOperation { aceita ? .copy : [] }
+    override func draggingExited(_ info: NSDraggingInfo?) { saiu() }
+    override func draggingEnded(_ info: NSDraggingInfo) { saiu() }
+    override func performDragOperation(_ info: NSDraggingInfo) -> Bool {
+        saiu()
+        guard aceita else { return false }
+        return PrateleiraModelo.shared.receber(info.draggingPasteboard)
     }
 }
